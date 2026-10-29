@@ -1409,6 +1409,7 @@ function drawNow() {
   if (scened && BG.kind === "treeroom") treeBusyMeasure();   // (ticket 242: where its pictures can hang, measured once a room is drawn)
   if (hoverOn) showHover();   // (the hover glow, over the new drawing: ticket 135)
   if (scened) showEnterGlow();   // (the passage X, Enter or a tap would take, and the others within reach: tickets 145, 187)
+  if (scened) actGlow();   // (ticket 639: the chest, the thing to carry, the action press or a tap would take, glowing)
   // (the fumes' Web Animations, for the segments the new scene brought: ticket 118)
   if (bgShown.helix && scenery) { bgShown.helix = false; if (!sceneryStill()) startHelix(scenery); }   // (ticket 164: the fumes held still on a slow computer)
   if (stills || stillPic.on) showStillPic(stills);   // (ticket 164: the still pictures on, or off again)
@@ -1416,6 +1417,10 @@ function drawNow() {
   else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride) topDownFigure(B);   // (ticket 621: seen from above, as the room is; ticket 624: in every pose)
   if (carry && !lieAlong) { const f = document.getElementById("figure"), H = figureT.base || 300;   // (ticket 629: the pot held over the head)
     if (f) f.insertAdjacentHTML("beforeend", `<g data-carry="pot">${potSvg(0, figureT.g - H * 1.02, 0.13 * H, carry.color)}</g>`); }
+  // (ticket 639) the tool held (✋ hold it, in the 🎒 tab), in the hand on the side they face, leaning out; not while it swings
+  { const tool = !lieAlong && !carry && !swinging && toolHeld(); const f = tool && document.getElementById("figure");
+    if (f) { const H = figureT.base || 300, side = state.body.facing === "left" ? -1 : 1;
+      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${netSvg(1)}</g>`); } }
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units

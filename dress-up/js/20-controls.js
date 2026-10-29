@@ -2384,24 +2384,33 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // are in this place, and a measure of what it costs on this computer.
   if (kind === "scripting") { scriptingPanel(box); return box; }   // (ticket 482)
   if (kind === "recordings") { recordingsPanel(box); return box; }   // (ticket 608, 25-recordings.js)
-  // (ticket 632) the backpack's cards: each thing's picture, its name, when and where it was got; its uses, none yet
+  // (ticket 632) the backpack's cards: each thing's picture, its name, when and where it was got; (ticket 639) put down, held, let go
   if (kind === "packlist") {
     const list = el("div", { class: "pack-list" }), names = Object.fromEntries(CHEST_GIFTS);
     let sig = null;
     const render = () => {
-      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify(items);
+      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify([items, toolHeld(), state.background.kind === "none"]);
       if (s === sig) return; sig = s;
-      if (!items.length) { list.replaceChildren(el("p", { class: "hint" }, "Nothing in it yet: open a 💰 treasure chest (in a dungeon room, walk up to it and press the action that goes through doors).")); return; }
+      if (!items.length) { list.replaceChildren(el("p", { class: "hint" }, "Nothing in it yet: open a 💰 treasure chest, or walk up to a thing that glows (a potion, a mushroom, a bottle, a net...) and press Enter, or tap it.")); return; }
+      const nowhere = state.background.kind === "none", held = toolHeld();
       list.replaceChildren(...items.map((it, i) => {
         const pic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         pic.setAttribute("viewBox", "-60 -100 120 110"); pic.setAttribute("class", "pack-pic"); pic.setAttribute("aria-hidden", "true");
         try { pic.innerHTML = giftSvg(it.id, {}); } catch (e) { /* (a thing not drawn: its name alone) */ }
         const when = it.got ? new Date(it.got).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
         return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || it.id),
-          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`), el("div", { class: "hint pack-uses" }, "uses: none yet")]);
+          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`), el("div", { class: "row pack-uses" }, [
+            // (ticket 639) take it out: on the floor in front of the friend; a tool: held in the hand, or put away; a bee: let go
+            el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down"),
+            ...(TOOLS[it.id] ? [el("button", { "aria-pressed": String(held === it.id), onclick: () => toolHold(it.id) }, held === it.id ? "🎒 put it away" : "✋ hold it")] : []),
+            ...(it.id === "bottlebee" ? [el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => beeFree(i) }, "🐝 let it go")] : [])])]);
       }));
     };
-    render(); syncs.push(render); box.append(list); return box;
+    render(); syncs.push(render); box.append(list);
+    // (ticket 639) the plate puzzle, set up here
+    box.append(el("div", { class: "row" }, [el("button", { onclick: () => plateSetUp() }, "🧩 put the plate puzzle here"),
+      el("span", { class: "hint" }, "three chests, three stone plates: each treasure on the plate that shows it")]));
+    return box;
   }
   if (kind === "advanced") {
     // (syncs run on every frame of a walk: the page is changed only when a value changes)

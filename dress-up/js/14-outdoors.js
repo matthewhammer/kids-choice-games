@@ -2544,7 +2544,47 @@ function caveMushroomSvg(t, seed, o) {
 // by its own drawing (giftSvg), its foot at 0, 0, about 70 units tall
 const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown", "👑 a crown"], ["shield", "🛡️ a new shield"], ["sword", "🗡️ a sword"],
   ["potion", "🧪 a potion"], ["helmet", "🪖 a helmet"], ["gem", "🔮 a glowing gem"], ["shell", "🐚 a shell"], ["starfish", "⭐ a starfish"],
-  ["toadstool", "🍄 a toadstool"], ["glowcap", "💡 a glowing mushroom"]];
+  ["toadstool", "🍄 a toadstool"], ["glowcap", "💡 a glowing mushroom"],
+  // (ticket 639, Matthew 2026-10-29: "some items I want the player to be able to place into backpack: potions, chocolate bar (new item;
+  // placeable on floor ...), glass bottle with cork, bug catcher's net, ... glass bottle holds bee, backpack holds glass bottle; certain
+  // small mushrooms") the things to carry, each also a thing to put in a place; a hammer and a horseshoe for the smithy; a dragon egg
+  ["chocolate", "🍫 a chocolate bar"], ["bottle", "🍾 a glass bottle with a cork"], ["bottlebee", "🐝 a bee in a bottle"], ["net", "🥅 a bug net"],
+  ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"]];
+// (ticket 639) what can be picked up into the 🎒 backpack from a place, with the action press: these kinds of thing, and "item", a thing
+// put down from the backpack (its id, drawn by giftSvg). A thing's id in the backpack: its kind, or an item's own id
+const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item"]);
+const carryId = t => t.kind === "item" ? t.id || "gold" : t.kind;
+// (ticket 639) the tools: held in the hand (state.pack.tool) and swung with "use tool" (U, or the controller's 🥅 button)
+const TOOLS = { net: "🥅 the bug net" };
+// a glass bottle with a cork, empty or with a bee buzzing in it: its foot at 0, 0
+function bottleSvg(bee) {
+  return `<path d="M-7 -58 L7 -58 L7 -40 Q24 -31 24 -13 Q24 3 0 3 Q-24 3 -24 -13 Q-24 -31 -7 -40 Z" fill="#d6eef8" fill-opacity="0.75" stroke="#5a7a8a" stroke-width="2.5"/>` +
+    `<path d="M-15 -22 Q-16 -10 -9 -4" stroke="#ffffff" stroke-width="3" fill="none" opacity="0.8" stroke-linecap="round"/>` +
+    `<rect x="-8.5" y="-68" width="17" height="12" rx="3" fill="#b07a45" stroke="#6b4423" stroke-width="2"/>` +
+    (bee ? `<g transform="translate(0 -16)">${beeSvg(0.8)}<animateTransform attributeName="transform" type="translate" values="-6 -16;6 -20;-2 -12;-6 -16" dur="1.3s" repeatCount="indefinite"/></g>` : "");
+}
+// a bee, its middle at 0, 0, facing our right: striped, two wings beating
+function beeSvg(k = 1) {
+  return `<g transform="scale(${k})"><ellipse cx="-3" cy="-11" rx="7" ry="5" fill="#ffffff" opacity="0.85" stroke="#9aa" stroke-width="1"><animate attributeName="ry" values="5;1.5;5" dur="0.12s" repeatCount="indefinite"/></ellipse>` +
+    `<ellipse cx="5" cy="-11" rx="7" ry="5" fill="#ffffff" opacity="0.85" stroke="#9aa" stroke-width="1"><animate attributeName="ry" values="5;1.5;5" dur="0.12s" begin="0.06s" repeatCount="indefinite"/></ellipse>` +
+    `<ellipse cx="0" cy="0" rx="12" ry="8.5" fill="#f2c230" stroke="#231f1a" stroke-width="1.8"/><path d="M-4 -8 L-4 8 M3 -8 L3 8" stroke="#231f1a" stroke-width="3.2"/>` +
+    `<circle cx="10" cy="-2" r="1.6" fill="#231f1a"/><path d="M-12 0 L-17 0" stroke="#231f1a" stroke-width="2"/></g>`;
+}
+// (ticket 639) a stone plate for the plate puzzle: a slab with what it wants carved on it, lit gold when that thing lies on it
+function plateSvg(t) {
+  const lit = !!t.lit;
+  return `<ellipse cx="0" cy="0" rx="46" ry="15" fill="${lit ? "#f6d76b" : "#8d8a83"}" stroke="${lit ? "#b8860b" : "#5c5a55"}" stroke-width="3"/>` +
+    `<ellipse cx="0" cy="-3" rx="40" ry="11" fill="${lit ? "#ffe9a0" : "#a5a29b"}"/>` +
+    `<g transform="scale(0.42 0.16)" opacity="${lit ? 0.9 : 0.55}" style="filter: grayscale(1)">${giftSvg(t.wants || "crown", {})}</g>` +
+    (lit ? `<ellipse cx="0" cy="-3" rx="54" ry="20" fill="none" stroke="#fff3b0" stroke-width="3" opacity="0.8"><animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.6s" repeatCount="indefinite"/></ellipse>` : "");
+}
+// a bug net: its pole from the hand at 0, 0 up and out to a hoop and its bag (up = -y)
+function netSvg(k = 1) {
+  return `<g transform="scale(${k})"><path d="M0 0 L0 -86" stroke="#9a6b3a" stroke-width="5" stroke-linecap="round"/>` +
+    `<path d="M-20 -102 Q-26 -70 0 -58 Q26 -70 20 -102" fill="#ffffff" fill-opacity="0.35" stroke="#c9d3da" stroke-width="2"/>` +
+    `<path d="M-14 -96 L10 -66 M14 -96 L-10 -66 M-20 -88 L20 -88 M-16 -76 L16 -76" stroke="#c9d3da" stroke-width="1" opacity="0.8"/>` +
+    `<ellipse cx="0" cy="-102" rx="21" ry="8" fill="none" stroke="#6b7c87" stroke-width="3.5"/></g>`;
+}
 function giftSvg(id, o = {}) {
   const coin = (x, y) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="12" ry="5" fill="#e8c33a" stroke="#9a7a12" stroke-width="1.5"/>`;
   const gem = (x, y, col, s = 1) => `<path d="M${f1(x - 10 * s)} ${f1(y - 6 * s)} L${f1(x - 4 * s)} ${f1(y - 14 * s)} L${f1(x + 4 * s)} ${f1(y - 14 * s)} L${f1(x + 10 * s)} ${f1(y - 6 * s)} L${f1(x)} ${f1(y + 6 * s)} Z" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="1.5"/>`;
@@ -2560,6 +2600,21 @@ function giftSvg(id, o = {}) {
     case "shell": return `<g transform="scale(1.4)">${seaShellSvg("scallop", SHELL_COLORS[1])}</g>`;
     case "starfish": return `<g transform="scale(1.3)">${starfishSvg(STAR_COLORS[0], 3)}</g>`;
     case "toadstool": return toadstool(0, 0, 1.5, "#d62828");
+    // (ticket 639) the things to carry
+    case "chocolate": return `<g transform="rotate(-8)"><rect x="-30" y="-24" width="60" height="22" rx="3" fill="#5b3216" stroke="#2e180a" stroke-width="2"/>` +
+      `<path d="M-15 -24 L-15 -2 M0 -24 L0 -2 M15 -24 L15 -2" stroke="#3d200c" stroke-width="2"/><path d="M-30 -14 L-8 -24 L30 -24 L30 -2 L-30 -2 Z" fill="#c0392b"/>` +
+      `<path d="M-30 -14 L-8 -24" stroke="#e8c33a" stroke-width="2.5"/><text x="10" y="-9" font-size="10" font-weight="700" fill="#fff6dc" text-anchor="middle" font-family="sans-serif">CHOC</text></g>`;
+    case "bottle": return bottleSvg(false);
+    case "bottlebee": return bottleSvg(true);
+    case "net": return `<g transform="rotate(35) translate(0 12)">${netSvg(0.75)}</g>`;
+    case "cavemushroom": return caveMushroomSvg({ style: "cluster", color: CAVE_MUSHROOM_COLORS[1] || CAVE_MUSHROOM_COLORS[0], glow: false }, 5, o);
+    case "hammer": return `<g transform="rotate(-20)"><rect x="-4" y="-62" width="8" height="62" rx="3" fill="#9a6b3a" stroke="#5e3a1a" stroke-width="2"/>` +
+      `<rect x="-20" y="-76" width="40" height="16" rx="3" fill="#7d8790" stroke="#3f464c" stroke-width="2.5"/><rect x="-20" y="-76" width="40" height="5" fill="#a9b3bb"/></g>`;
+    case "horseshoe": return `<path d="M-22 0 L-22 -26 Q-22 -50 0 -50 Q22 -50 22 -26 L22 0 L12 0 L12 -26 Q12 -40 0 -40 Q-12 -40 -12 -26 L-12 0 Z" fill="#8a9298" stroke="#454b50" stroke-width="2.5"/>` +
+      `<circle cx="-17" cy="-14" r="2" fill="#3f464c"/><circle cx="17" cy="-14" r="2" fill="#3f464c"/><circle cx="-14" cy="-34" r="2" fill="#3f464c"/><circle cx="14" cy="-34" r="2" fill="#3f464c"/>`;
+    case "egg": return `<ellipse cx="0" cy="-28" rx="22" ry="29" fill="#7fbf7a" stroke="#2f6b2a" stroke-width="2.5"/>` +
+      `<path d="M-14 -40 l6 4 l-6 4 M8 -46 l6 4 l-6 4 M-4 -20 l6 4 l-6 4 M10 -22 l5 4 l-5 4" stroke="#2f6b2a" stroke-width="2" fill="none"/>` +
+      `<ellipse cx="-8" cy="-42" rx="5" ry="8" fill="#ffffff" opacity="0.4"/>`;
     default: return caveMushroomSvg({ style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true }, 11, o);
   }
 }
@@ -3318,6 +3373,8 @@ function fencePieceSvg(o, t, i, s) {
   return fenceSvg(st, Math.min(d * r, -d * l), Math.max(d * r, -d * l), [0], t.seed ?? 900 + i);
 }
 const THING_PARAMS = {
+  // (ticket 639) a thing put down from the backpack: which
+  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["wants", "🧩 the picture on it", "choice", CHEST_GIFTS]],   // (a plate: what it wants on it)
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
   rock: [["tone", "🎨", "color", ROCK_TONES]],
@@ -3383,7 +3440,7 @@ const THING_PARAMS = {
   kelp: [["color", "🎨", "color", SEAPLANT_COLORS]], seagrass: [["color", "🎨", "color", SEAPLANT_COLORS]],
   seafan: [["color", "🎨", "color", CORAL_COLORS]], sealettuce: [["color", "🎨", "color", SEAPLANT_COLORS]],
 };
-const THING_DEFAULTS = { deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three)
+const THING_DEFAULTS = { item: { id: "gold" }, plate: { wants: "crown" }, bee: {}, chocolate: {}, bottle: {}, net: {}, deadtree: { h: 300, droop: false, color: "#24192f" }, skullstake: { eyes: 100 }, palisade: { stakes: 6, skulls: true }, rock: { tone: ROCK_TONES[0] },   // (ticket 368: the first three)
                          tree: { h: 380, leaves: "summer" }, pine: { tiers: 6 }, bush: { flowers: "none" },   // (ticket 369: swallowed by the note above, 0.0.287-0.0.297)
                          toadstool: { cap: TOADSTOOL_CAPS[0], glow: false }, moss: { style: "haircap", on: "floor", color: "none", lobes: true }, lichen: { style: "crust", on: "back", color: "none" }, potion: { shape: "flask", color: POTION_COLORS[5] }, sign: { text: "hello!" },
                          campfire: { burning: true }, cauldron: { fumes: "simple" },
@@ -3573,8 +3630,13 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["farm", "🚜 farm"], ["desert", "🌵 desert"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["places", "📦 from the places"]];
-const THING_KINDS = { rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["farm", "🚜 farm"], ["desert", "🌵 desert"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["carry", "🎒 to carry"], ["places", "📦 from the places"]];
+// (ticket 639) things to carry: their own group; "item" (a thing put down from the backpack) has none, so
+// it is not in the menu (THING_KINDS[k].group)
+const THING_KINDS_639 = { chocolate: { label: "🍫 chocolate bar", size: 1, group: "carry" }, bottle: { label: "🍾 glass bottle", size: 1, group: "carry" },
+                          net: { label: "🥅 bug net", size: 1, group: "carry" }, bee: { label: "🐝 bee", size: 1, group: "carry", moving: true },
+                          plate: { label: "🧩 stone plate", size: 1, group: "carry" }, item: { label: "🎁 something put down", size: 1 } };
+const THING_KINDS = { ...THING_KINDS_639, rock: { label: "🪨 rock", size: 1, group: "nature" }, bush: { label: "🌿 bush", size: 1, group: "nature" }, tree: { label: "🌳 tree", size: 1, group: "nature" },
                       pine: { label: "🌲 pine", size: 1, group: "nature" }, toadstool: { label: "🍄 toadstool", size: 1, group: "nature" }, moss: { label: "🌱 moss", size: 1, group: "nature" }, lichen: { label: "🪨 lichen", size: 1, group: "nature" },
                       log: { label: "🪵 log", size: 1, group: "camp" }, campfire: { label: "🔥 campfire", size: 1, group: "camp", moving: true }, bench: { label: "🪑 bench", size: 1, group: "camp" },
                       barrel: { label: "🛢️ barrel", size: 1, group: "camp" }, cauldron: { label: "🫕 cauldron", size: 1, group: "magic", moving: true },
@@ -3718,9 +3780,9 @@ function palisadeSvg(n, skulls, seed) {
 // (the kinds whose drawings lfoTimed or sceneLfo time: their cache keys carry the LFOs' stamps, thingsLayer)
 const LFO_THINGS = new Set(["gem", "puddle", "cascade", "cavemushroom", "chest", "kelp", "seagrass", "seafan", "sealettuce", "campfire", "cauldron",
                             "cow", "pig", "chicken", "barn"]);   // (the farm animals: ticket 504)
-const thingDepth = (o, t) => t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
+const thingDepth = (o, t) => t.kind === "plate" ? t.z - 20 : t.kind === "trapdoor" ? t.z - TRAP_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 :
   t.kind === "puddle" ? t.z - PUDDLE_RY * depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100 : t.z;   // (ticket 471: one stands in a puddle, in front of its back edge)
-const thingLabel = t => t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
+const thingLabel = t => t.kind === "item" ? (CHEST_GIFTS.find(([k]) => k === t.id) || [, "🎁 " + t.id])[1] : t.fallen ? `🪨 fallen ${t.fallen}` : t.kind === "lifted" ? `📦 ${t.name} (${liftPlaceLabel(t.from)})` : (THING_KINDS[t.kind] || { label: t.kind }).label;
 // (a thing's drawing, standing at x, its feet at depth z, sized as the friend is there)
 // (ticket 206, Matthew, after the Ubuntu laptop: every cauldron's fumes simple, unless its own 💨 fumes
 // are upgraded to ✨ fancy, one by one; 0.0.129's "auto" is simple now. Ticket 202's rule, cheap when
@@ -3738,6 +3800,11 @@ function thingSvg(o, t, i) {
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
   const body = t.kind === "lifted" ? liftedBody(t, at) :
                t.kind === "lever" ? at(leverThingSvg(t, o)) :
+               // (ticket 639) things to carry, a bee
+               t.kind === "item" ? at(shadow(34) + `<g transform="scale(1.2)">${giftSvg(t.id || "gold", o)}</g>`) :
+               t.kind === "chocolate" || t.kind === "bottle" || t.kind === "net" ? at(shadow(32) + `<g transform="scale(1.2)">${giftSvg(t.kind, o)}</g>`) :
+               t.kind === "plate" ? at(plateSvg(t)) :
+               t.kind === "bee" ? at(`<g transform="translate(0 -70)">${beeSvg(1.3)}<animateTransform attributeName="transform" type="translate" values="0 -70;24 -84;40 -66;14 -58;-18 -74;0 -70" dur="3.4s" repeatCount="indefinite"/></g>` + shadow(10)) :
                t.kind === "helmet" ? at(helmetSvg(0, 0, 1.4, { plume: t.plume || "#c0392b", side: t.facing === "left" ? -1 : t.facing === "right" ? 1 : 0, back: t.facing === "away" })) :
                t.kind === "trapdoor" ? (t.open && !t.boulder ? `<g data-hole="${f1(t.x - TRAP_RX * s)} ${f1(t.x + TRAP_RX * s)} ${f1(t.z - TRAP_RY * s)} ${f1(t.z + TRAP_RY * s)}">` : "<g>") + at(trapdoorThingSvg(t, i)) + "</g>" :
                t.kind === "rock" ? at(rockSvg(0, 0, 38, seed, t.tone || ROCK_TONES[0])) :

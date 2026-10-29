@@ -4,6 +4,17 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.461 (2026-10-29)
+
+Everything in 0.0.460, plus:
+
+- **Pick things up.** Walk up to a potion, a small mushroom, a 🍫 chocolate bar, a 🍾 glass bottle or a 🥅 bug net and press Enter (or the controller's 🫳 button, or tap it): it flies into the 🎒 backpack. What the action would take glows, as a door in reach does, and a tap on a chest or a thing to carry walks there and takes it.
+- **Put things down.** Each card in the 🎒 Backpack tab has ⬇️ put down: the thing goes on the floor in front of the friend, and can be picked up again.
+- **Things to find.** The witch's room, the healer's hut and the smithy each have things lying about to pick up (potions, mushrooms, a bottle, a chocolate bar, a hammer, a horseshoe, a sword, a shield, a helmet); the tree house has a bug net and a chocolate bar; bees buzz in the clearing and the forests. New things to put anywhere, in 🪨 things: 🎒 to carry.
+- **Tools, and catching a bee.** ✋ hold it (the bug net's card) puts the net in the friend's hand; "use tool" (U on a keyboard, 🥅 on the controller: Y, shared with crouching while a tool is held) swings it. Swung at a bee with an empty glass bottle in the backpack, the bee goes into the bottle and the cork pops on; 🐝 let it go lets it out again.
+- **The plate puzzle.** 🧩 put the plate puzzle here (the 🎒 tab): three shut chests and three stone plates. Put each treasure on the plate that shows it, and something appears...
+- **New controller actions** in 🎮 Controls: 🫳 open a chest, pick up, lift a pot (on ✨'s button), and 🥅 use the tool you hold.
+
 ## 0.0.460 (2026-10-26)
 
 Everything in 0.0.459, plus:

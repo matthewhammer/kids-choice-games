@@ -199,6 +199,9 @@ pic.addEventListener("pointerdown", e => {
     if (board) Object.assign(drag, { board: board.dataset.way, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 284) pressed on a 🎚️ lever: as a board, a press let go before it has gone SIGN_DRAG_PX pulls it
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
+    // (ticket 639, Matthew: "some players don't have a keyboard handy") pressed on a shut 💰 chest, a thing to carry, or (the net held) a
+    // 🐝: as a lever, a press let go before SIGN_DRAG_PX walks there and opens it, picks it up, or swings
+    else if (T && ((T.kind === "chest" && T.open === false) || CARRY_KINDS.has(T.kind) || (T.kind === "bee" && toolHeld()))) Object.assign(drag, { act: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 471, the review after 0.0.385) pressed on a 🕳️ cave passage's opening: as a board, a press let go before it has
     // gone SIGN_DRAG_PX goes through it, as any doorway clicked; moved further, the passage is dragged
     else if (T && e.target.closest && e.target.closest(".thing .portal")) Object.assign(drag, { door: true, cx: e.clientX, cy: e.clientY, far: false });
@@ -261,7 +264,7 @@ pic.addEventListener("pointermove", e => {
   if (drag.roomLever) { if (!drag.far && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) >= SIGN_DRAG_PX) drag.far = true; return; }   // (ticket 305)
   if (drag.pose) { poseTo(drag.pose, figUnits(e, drag.T)); dragChanged(); return; }
   if (drag.thing) {
-    if ((drag.board || drag.lever || drag.sit || drag.door) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
+    if ((drag.board || drag.lever || drag.sit || drag.door || drag.act) && !drag.far) { if (Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < SIGN_DRAG_PX) return; drag.far = true; }
     // kept in the scene, as the figure is
     const p = picUnits(e), F = sceneFrame, B = state.background;
     const x = Math.round(clamp(drag.x0 + p.x - drag.px, F.left, F.right)), y = Math.round(clamp(drag.y0 + p.y - drag.py, figYMin(F), F.bottom - F.ground));
@@ -351,6 +354,7 @@ const letGo = () => {
   const pullRoom = drag && drag.roomLever && !drag.far ? drag.roomLever : null;   // (ticket 305)
   const sitName = drag && drag.sit && !drag.far ? drag.sit : null;   // (ticket 413)
   const goDoor = drag && drag.door && !drag.far ? drag.put : null;   // (ticket 471: a cave passage pressed, not moved)
+  const actOn = drag && drag.act && !drag.far ? drag.put : null;   // (ticket 639: a chest, a thing to carry, a bee, pressed)
   picDragging = false;
   // (a joint let go: the friend settles on their lower foot, the frame round them)
   const posing = drag && drag.pose, placed = drag && drag.figure, put = drag && drag.put !== undefined;
@@ -365,6 +369,8 @@ const letGo = () => {
   // (ticket 471: the passage found again, drawn anew as it was let go)
   if (goDoor !== null) { const p = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${goDoor}"] .portal`); if (p && !entering) enterScene(p); }
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
+  if (actOn !== null) { const T = (state.background.things || [])[actOn];
+    if (T) leverAct(`[data-drag="thing:${actOn}"]`, () => { if (T.kind === "bee") toolUse(); else actionPress(); }); }
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
   if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)
     const t = seatsHere(state.background).find(q => q.name === sitName);
@@ -903,6 +909,11 @@ document.addEventListener("keydown", e => {
   if (actionPress()) { e.preventDefault(); return; }
   if (enterAt) { e.preventDefault(); enterPicture(); }
 });
+// (ticket 639) U: use the tool held (the 🥅 bug net: a swing)
+document.addEventListener("keydown", e => {
+  if ((e.key !== "u" && e.key !== "U") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  if (toolUse()) e.preventDefault();
+});
 // (ticket 629) T: throw the pot held
 document.addEventListener("keydown", e => {
   if ((e.key !== "t" && e.key !== "T") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
@@ -1184,7 +1195,9 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"]];   // (tickets 221, 499)
+                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"],
+                     // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
+                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1299,7 +1312,7 @@ function padPoll(t) {
   const coasting = !moving && ramp > 0 && Math.hypot(padVel[0], padVel[1]) > 2 && BG.kind !== "none" && !entering && !drag && !onLadder;
   if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
-  const run = held("run"), low = held("crouch") || padCrawl;
+  const run = held("run"), low = (held("crouch") && !(toolHeld() && btn("tool") === btn("crouch"))) || padCrawl;   // (ticket 639: a tool held takes Y from crouching)
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
@@ -1315,7 +1328,9 @@ function padPoll(t) {
   if (hit("throw") && carry) potThrow();   // (ticket 629: holding a pot, its press throws it, and does not jump)
   else if (hit("jumpShort") && !onLadder) { startJump(B.anim, "jump"); changed(); }
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
-  if (hit("enter")) enterPicture();   // (ticket 145)
+  const acted = hit("act") && actionPress();   // (ticket 639: a chest, a thing to carry or a pot in reach, before the passage)
+  if (hit("enter") && !acted) enterPicture();   // (ticket 145)
+  if (hit("tool")) toolUse();   // (ticket 639)
   blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
   if (blowPad) blowGo();
   firePad = held("fire");   // (ticket 499: fire while it is held)
@@ -1488,11 +1503,206 @@ function chestOpen(t) {
   requestAnimationFrame(frame);
 }
 // the action: a pot in reach (none held) is lifted; a shut chest in reach opened; else, as before, through the nearest passage
+// (ticket 639, Matthew 2026-10-29: "how to use the backpack: make visible, place item inside, take item out and place into world")
+// A thing to carry (CARRY_KINDS) within reach is picked up by the action press: it flies up to the friend and into their 🎒
+// backpack, its own looks kept (from: "floor", t); ⬇️ put down on its card (the 🎒 tab) puts it back, on the floor in front of them.
+const CARRY_REACH = 110, PACK_FLY_MS = 450;
+const packList = () => Array.isArray(state.backpack) ? state.backpack : [];
+function carryNear() {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let best = null;
+  (B.things || []).forEach((t, i) => {
+    if (!CARRY_KINDS.has(t.kind)) return;
+    const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6);
+    if (d < CARRY_REACH && (!best || d < best.d)) best = { i, d };
+  });
+  return best ? best.i : -1;
+}
+// a thing's picture flying between a place in the picture and the friend's back, shrinking into the pack (in) or growing out of it
+function packFly(inner, x, z, into, done) {
+  const T = figureT, H = T.base || 300, k = T.k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("data-pack-fly", into ? "in" : "out"); O.append(g);
+  const bx = T.dx, by = T.sg + T.dy - k * H * 0.62, t0 = performance.now(), sc = k * 0.8;
+  const frame = now => {
+    const u = Math.min(1, (now - t0) / PACK_FLY_MS), v = into ? u : 1 - u, e = v * v * (3 - 2 * v);
+    const px = x + (bx - x) * e, py = z + (by - z) * e - 60 * k * Math.sin(Math.PI * e);
+    g.setAttribute("transform", `translate(${f1(px)} ${f1(py)}) scale(${(sc * (1 - 0.7 * e)).toFixed(3)})`); g.innerHTML = inner;
+    if (u < 1) { requestAnimationFrame(frame); return; }
+    g.remove(); if (done) done();
+  };
+  requestAnimationFrame(frame);
+}
+function pickUp(i) {
+  const B = state.background, t = (B.things || [])[i];
+  if (!t || !CARRY_KINDS.has(t.kind)) return;
+  const id = carryId(t), { x, z, uid, seed, ...looks } = t;
+  B.things = B.things.filter((_, j) => j !== i);
+  state.backpack = [...packList(), { id, got: Date.now(), from: "floor", t: looks }];
+  plateCheck(); changed(); draw();
+  packFly(giftSvg(id, B), x ?? 0, (z ?? SCENE.ground) - 20 * figureT.k, true);
+}
+// the floor in front of the friend, the way they face
+function frontSpot() {
+  const B = state.background, f = state.body.facing, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  const dx = f === "right" ? 70 : f === "left" ? -70 : 0, dz = f === "back" || f === "away" ? -45 : f === "right" || f === "left" ? 6 : 34;
+  return [Math.max(SCENE.left + 30, Math.min(-SCENE.left - 30, fx + dx)), Math.max(SCENE.top + 30, Math.min(SCENE.ground + 40, fz + dz))];
+}
+function putDown(k) {
+  const list = packList(), it = list[k], B = state.background;
+  if (!it || B.kind === "none") return;
+  const [x, z] = frontSpot(), looks = it.t || {};
+  const kind = looks.kind && CARRY_KINDS.has(looks.kind) ? looks.kind : THING_KINDS[it.id] && CARRY_KINDS.has(it.id) ? it.id : "item";
+  const t = { ...(THING_DEFAULTS[kind] || {}), ...looks, kind, x: Math.round(x), z: Math.round(z), seed: 1 + Math.floor(Math.random() * 99999) };
+  if (kind === "item") t.id = it.id;
+  if (state.pack && state.pack.tool === it.id && !list.some((o, j) => j !== k && o.id === it.id)) state.pack = { ...state.pack, tool: "" };   // (a tool put down is not held)
+  state.backpack = list.filter((_, j) => j !== k);
+  changed(); draw();
+  packFly(giftSvg(it.id, B), x, z - 20 * figureT.k, false, () => { B.things = [...(B.things || []), t]; plateCheck(); changed(); draw(); });
+}
+// (ticket 639) a 🐝 in a bottle let go: out of the bottle, buzzing, beside the friend; the bottle empty again
+function beeFree(k) {
+  const list = packList(), it = list[k], B = state.background;
+  if (!it || it.id !== "bottlebee" || B.kind === "none") return;
+  const [x, z] = frontSpot();
+  state.backpack = list.map((o, j) => j === k ? { ...o, id: "bottle", t: undefined } : o);
+  B.things = [...(B.things || []), { kind: "bee", x: Math.round(x), z: Math.round(z), seed: 1 + Math.floor(Math.random() * 99999) }];
+  changed(); draw(); scriptSay("Bzzz! Off you go, bee!", "🐝");
+}
+// (ticket 639, Matthew: "using the bug catcher's net would be another kind of action, with a mappable button in game controls ('use
+// tool', for bug catching net, and maybe other tools later, like shovels or hammers -- a la Harvest Moon and Legend of Zelda)") A tool
+// in the backpack is held (✋ hold it, its card), drawn in the friend's hand (drawNow); "use tool" (U, or 🥅 on the controller) swings
+// it. The net, swung near a 🐝 with an empty 🍾 bottle in the pack: the bee in the bottle, the bottle back in the pack.
+const NET_REACH = 150, SWING_MS = 360;
+let swinging = false;
+const toolHeld = () => { const id = state.pack && state.pack.tool; return id && TOOLS[id] && packList().some(o => o.id === id) ? id : ""; };
+function toolHold(id) { state.pack = { ...(state.pack || {}), tool: toolHeld() === id ? "" : id }; changed(); draw(); }
+function toolUse() {
+  const id = toolHeld(), B = state.background;
+  if (!id || swinging || entering || B.kind === "none") return false;
+  const T = figureT, H = T.base || 300, k = T.k, f = state.body.facing, side = f === "left" ? -1 : 1;
+  const hx = T.dx + side * 0.22 * H * k, hy = T.sg + T.dy - 0.5 * H * k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("data-swing", id); O.append(g); swinging = true; draw();
+  const t0 = performance.now();
+  const frame = now => {
+    const u = Math.min(1, (now - t0) / SWING_MS), a = side * (-70 + 150 * u * u * (3 - 2 * u));
+    g.setAttribute("transform", `translate(${f1(hx)} ${f1(hy)}) rotate(${a.toFixed(1)}) scale(${(k * H / 300 * 1.1).toFixed(3)})`); g.innerHTML = netSvg(1);
+    if (u < 1) { requestAnimationFrame(frame); return; }
+    g.remove(); swinging = false; netCatch(); draw();
+  };
+  requestAnimationFrame(frame);
+  return true;
+}
+function netCatch() {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let bee = -1, bd = Infinity;
+  (B.things || []).forEach((t, i) => { if (t.kind !== "bee") return; const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6); if (d < NET_REACH && d < bd) { bee = i; bd = d; } });
+  if (bee < 0) return;
+  const list = packList(), b = list.findIndex(o => o.id === "bottle");
+  if (b < 0) { scriptSay("The bee buzzed away! Bring an empty 🍾 glass bottle in your backpack.", "🐝"); const t = B.things[bee]; t.x = Math.max(SCENE.left + 40, Math.min(-SCENE.left - 40, (t.x ?? 0) + (Math.random() < 0.5 ? -160 : 160))); changed(); return; }
+  const t = B.things[bee];
+  B.things = B.things.filter((_, j) => j !== bee);
+  state.backpack = list.map((o, j) => j === b ? { ...o, id: "bottlebee", t: undefined, got: Date.now() } : o);
+  changed(); draw();
+  // the bottle out over the friend's head, the bee buzzing into it, the cork on with a pop, and back into the pack
+  const T = figureT, H = T.base || 300, k = T.k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("data-gift", "bottlebee"); O.append(g);
+  const bx = T.dx, by = T.sg + T.dy - k * H * 1.1, sx = t.x ?? bx, sy = (t.z ?? by) - 70 * k, t0 = performance.now(), sc = k * H / 300 * 1.3;
+  chestFlourish("chestsparkle");
+  const frame = now => {
+    const e = now - t0, u = Math.min(1, e / 700), x = sx + (bx - sx) * u, y = sy + (by - 16 * sc - sy) * u + Math.sin(e / 50) * 6 * (1 - u);
+    const corked = e > 750;
+    g.innerHTML = `<g transform="translate(${f1(bx)} ${f1(by)}) scale(${sc.toFixed(3)})">${corked ? bottleSvg(true) : bottleSvg(false).replace(/<rect x="-8.5"[^>]*\/>/, "")}</g>` +
+      (corked ? "" : `<g transform="translate(${f1(x)} ${f1(y)}) scale(${(sc * 0.8).toFixed(3)})">${beeSvg(1)}</g>`) +
+      (e > 750 && e < 950 ? `<text x="${f1(bx + 30 * sc)}" y="${f1(by - 80 * sc)}" font-size="${f1(22 * sc)}" font-weight="700" fill="#b4361d" font-family="sans-serif">pop!</text>` : "");
+    if (e < 1900) { requestAnimationFrame(frame); return; }
+    g.remove(); packFly(giftSvg("bottlebee", B), bx, by, true);
+  };
+  requestAnimationFrame(frame);
+}
+// (ticket 639, Matthew 2026-10-29: "some placeable objects in each room with a person that can also be picked up (healer, blacksmith,
+// witch) -- that could be the start to some stories that my kids create. Let's leave the world open to explore now, and no fixed puzzles")
+// The first time one of these rooms is shown, its own things to carry are put on its floor (B.carrySeeded): taken, they are gone from it
+const ROOM_CARRY = {
+  witchroom: [["potion", -250, -60, { shape: "flask", color: 2 }], ["potion", -190, -95, { shape: "round", color: 4 }], ["toadstool", 200, -70, {}],
+              ["cavemushroom", 250, -105, { style: "glowcap" }], ["item", 130, -40, { id: "toadstool" }]],
+  healerroom: [["potion", -240, -70, { shape: "flask", color: 0 }], ["potion", -180, -100, { shape: "round", color: 1 }], ["bottle", 210, -60, {}],
+               ["chocolate", 160, -95, {}], ["item", 250, -40, { id: "glowcap" }]],
+  smithy: [["item", -240, -60, { id: "hammer" }], ["item", -170, -95, { id: "horseshoe" }], ["item", 190, -70, { id: "sword" }],
+           ["item", 250, -105, { id: "shield" }], ["item", 120, -40, { id: "helmet" }]],
+  // (Matthew: "except for one, for now --- need bug catcher's net to catch a bug; find it in tree house; also need glass bottle to keep
+  // bug; find at healer's house") the net in the tree house, the bottle only at the healer's, and bees where the flowers are
+  treeroom: [["net", -200, -60, {}], ["chocolate", 190, -80, {}]],
+  clearing: [["bee", -150, -120, {}], ["bee", 180, -60, {}]], fairyforest: [["bee", 120, -100, {}]], forest: [["bee", -120, -90, {}]],
+};
+function roomCarrySeed() {
+  const B = state.background, list = ROOM_CARRY[B.kind];
+  if (!list || B.carrySeeded) return;
+  B.carrySeeded = true;
+  B.things = [...(B.things || []), ...list.map(([kind, x, dz, o], i) => {
+    const t = { ...(THING_DEFAULTS[kind] || {}), ...o, kind, x, z: SCENE.ground + dz, seed: 301 + i };
+    if (kind === "potion") t.color = POTION_COLORS[o.color % POTION_COLORS.length];
+    return t;
+  })];
+  queueMicrotask(() => { changed(); draw(); });
+}
+// (ticket 639, Matthew: "let's have some small puzzles --- my one about the bug catching, and yours about plates") the plate puzzle:
+// each 🧩 stone plate lit while the thing it wants lies on it; every plate here lit, the first time, a big chest appears among them
+// with the prize (a 🥚 dragon egg), to a fanfare
+const PLATE_REACH = 55;
+function plateCheck() {
+  const B = state.background, things = B.things || [], plates = things.filter(t => t.kind === "plate");
+  if (!plates.length) return;
+  for (const p of plates) p.lit = things.some(t => CARRY_KINDS.has(t.kind) && carryId(t) === (p.wants || "crown") && Math.hypot((t.x ?? 0) - (p.x ?? 0), ((t.z ?? 0) - (p.z ?? 0)) / 0.6) < PLATE_REACH);
+  if (B.plateSolved || !plates.every(p => p.lit)) return;
+  B.plateSolved = true;
+  const x = plates.reduce((a, p) => a + (p.x ?? 0), 0) / plates.length, z = Math.min(...plates.map(p => p.z ?? 0)) - 70;
+  B.things = [...things, { kind: "chest", x: Math.round(x), z: Math.round(z), open: false, treasure: "crown", gives: "egg", flourish: "chestroyal", rec: "", seed: 7 }];
+  chestFlourish("chestfanfare"); scriptSay("Click! All the plates are lit... a treasure chest appeared!", "🧩");
+}
+// "🧩 put the plate puzzle here" (the 🎒 tab): three shut chests (a crown, a shell, a sword) and three plates carved with them, around
+// the friend, added to the things already here; solved once (B.plateSolved), set up again to play again
+function plateSetUp() {
+  const B = state.background;
+  if (B.kind === "none") return;
+  const fz = SCENE.ground + (B.figY ?? 0), back = Math.max(SCENE.top + 60, fz - 150), xs = [-230, 0, 230], wants = ["crown", "shell", "sword"];
+  const order = [2, 0, 1];   // (each chest away from its own plate: a little looking about)
+  const chests = xs.map((x, i) => ({ kind: "chest", x, z: Math.round(back), open: false, treasure: "gold", gives: wants[order[i]], flourish: "chestfanfare", rec: "", seed: 11 + i }));
+  const plates = xs.map((x, i) => ({ kind: "plate", x: x + 40, z: Math.round(Math.min(SCENE.ground + 20, fz + 60)), wants: wants[i], seed: 21 + i }));
+  B.things = [...(B.things || []).filter(t => t.kind !== "plate" && !(t.kind === "chest" && t.gives === "egg")), ...chests, ...plates];
+  B.plateSolved = false; plateCheck(); changed(); draw();
+  scriptSay("Open the chests, and put each treasure on the plate that shows it!", "🧩");
+}
+// the action press: a pot in reach (none held) is lifted; a shut chest in reach opened; a thing to carry picked up; else, as before,
+// through the nearest passage. actTarget: which of them it would be, for the glow (actGlow) and a click or tap on it
+function actTarget() {
+  if (presenting || carry || entering) return null;
+  const p = potNear(); if (p) return { kind: "pot", p };
+  const c = chestNear(); if (c) return { kind: "chest", t: c, i: (state.background.things || []).indexOf(c) };
+  const i = carryNear(); if (i >= 0) return { kind: "carry", i };
+  return null;
+}
 function actionPress() {
   if (presenting) return true;
-  if (!carry) { const p = potNear(); if (p) { potLift(p); return true; } }
-  if (!carry) { const c = chestNear(); if (c) { chestOpen(c); return true; } }
-  return false;
+  const a = actTarget();
+  if (!a) return false;
+  if (a.kind === "pot") potLift(a.p); else if (a.kind === "chest") chestOpen(a.t); else pickUp(a.i);
+  return true;
+}
+// (ticket 639, Matthew: "some players don't have a keyboard handy -- we should make the chest glow, like doors and ladders do now")
+// what the action press would take, glowing as a passage in reach does (passFrame), and a click or tap on it takes it
+let actGlowEl = null;
+function actGlow() {
+  roomCarrySeed();
+  const a = actTarget(), node = bgShown.node;
+  const el = a && a.kind !== "pot" && a.i >= 0 ? document.querySelector(`#pic [data-drag="thing:${a.i}"]`) : null;
+  const want = el ? "thing:" + a.i : null;
+  if (actGlowEl && actGlowEl.isConnected && actGlowEl.dataset.for === want) return;
+  if (actGlowEl) actGlowEl.remove(); actGlowEl = null;
+  if (!el) return;
+  let b; try { b = el.getBBox(); } catch (e) { return; }
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "enter-glow act-glow"); g.setAttribute("pointer-events", "none"); g.dataset.for = want;
+  g.innerHTML = passFrame(b, false); el.append(g); actGlowEl = g;
 }
 function potSvg(x, y, r, color) {
   const dk = darker(color), lt = mix(color, "#ffffff", 0.35);
@@ -1552,7 +1762,7 @@ function padUse(id) {
   // (an action newer than the layout kept, as ticket 145's ✨: on its usual
   // button, unless another action has that one)
   const usual = id === TOUCH_ID ? TOUCH_CONTROLS : DEFAULTS.controls;
-  if (kept) for (const [a] of PAD_ACTIONS) if (!(a in kept)) C[a] = PAD_ACTIONS.some(([o]) => o !== a && C[o] === usual[a]) ? -1 : usual[a];
+  if (kept) for (const [a] of PAD_ACTIONS) if (!(a in kept)) C[a] = PAD_ACTIONS.some(([o]) => o !== a && C[o] === usual[a] && usual[o] !== usual[a]) ? -1 : usual[a];   // (two meant to share a button, as 🏺 and 🐸: shared)
   padId = id;
 }
 // (ticket 150) The on-screen controller, for a tablet or a phone with no
@@ -1571,7 +1781,7 @@ function padUse(id) {
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7, throw: 1 };
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7, throw: 1, act: 3, tool: 2 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };
