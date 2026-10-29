@@ -1829,7 +1829,7 @@ SEATS.fairyforest = (c, B) => { const { W, g, k } = c, n = Math.max(4, Math.min(
 function fairyforestScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o } = c;
   // (ticket 490) by the clock: the time of day, the sun and the moon where and when the game says (🌍)
-  const clock = o.fairyTime === "clock", time = clock ? skyTimeOf(o, true) : FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
+  const clock = timeSet(o.fairyTime) === "clock", time = clock ? skyTimeOf(o, true) : FAIRY_SKY[o.fairyTime] ? o.fairyTime : "day", night = time === "night", dusk = time === "sunset" || night;
   const [tint, ta] = FAIRY_TINT[time], tn = col => ta ? mix(col, tint, ta) : col;
   const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
   // the sky: its sun low or high, or the moon and stars

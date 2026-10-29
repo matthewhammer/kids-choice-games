@@ -326,10 +326,11 @@ function lieOn(t) {
   // (ticket 412) along a sleeping bag: on the back, facing us, the arms along the sides, the feet at its open end (drawNow
   // turns them to its slant and shortens them to its length, the head on its pillow)
   if (t.along) { body.facing = "front"; body.poseArmL = body.poseArmR = 80 - (body.arms ?? 0);
-    B.figX = Math.round(t.along.near[0]); B.figY = Math.round(t.along.near[1] - SCENE.ground); changed(); return; }
+    B.figX = Math.round(t.along.near[0]); B.figY = Math.round(t.along.near[1] - SCENE.ground); changed(); sleepIfNight(); return; }
   // (sunk in a little: it rests on its lower arm, which lifted the body clear of a soft bed)
   B.figX = Math.round((t.x0 + t.x1) / 2); B.figY = Math.round(t.y - SCENE.ground + (t.flat ? 4 : 10) * (SCENE.bottom - SCENE.top) / 700);
   changed();
+  sleepIfNight();   // (ticket 657: lying down at night, to sleep till morning)
 }
 function standUp() {
   const B = state.background, t = seatNow();
@@ -1662,6 +1663,91 @@ function leafPuffs(at) {
     g.remove();
   };
   requestAnimationFrame(frame);
+}
+// (ticket 657, M's next highest excitement: night and day, and "the need to sleep at night"; Matthew: "an advanced toggle for
+// night vs day; the default is off; when on, we need to find a place to sleep at night, and when we choose to lay down at night
+// (as in Harvest Moon, a game M has played), we advance into the day cycle ... for now just record the number of nights we've
+// slept") With 🌗 night and day on (⚙️ Advanced, state.days) the game's own hour runs (🌍 where and when: background.skyHour, its
+// date skyDay, skyMonth, skyYear), a whole day in state.days.dayMinutes, and stops while the page is hidden. The places with a
+// time of day of their own follow it (timeSet); every other is darkened as the sun goes down (dayTint: lighter inside, none in
+// the imagination's places), with the hour shown at the top. Lying down after sunset on a bed, a bunk, a sleeping bag or a
+// blanket (lieOn) is sleeping: the picture goes dark, and it is the next morning, one more night slept. Up all night, morning
+// comes anyway, and no night is counted. The hour is written to the friend's settings a quarter hour at a time (each one a
+// drawing, and saved), the darkness every second.
+const WAKE_HOUR = 7, DAY_TINT = "#0b1236";
+let dayClock = null, dayWritten = null, nightSaid = false, sleeping = false;
+const sunAlt = h => skyNow({ ...state.background, skyHour: h }).sun.alt * 180 / Math.PI;
+// the darkness over a place at hour h: none while the sun is 6° up, all of it when the sun is 12° down
+function dayTint(h) {
+  const kind = state.background.kind;
+  if (!daysOn() || kind === "none" || ELSEWHERE.includes(kind) || TIME_PLACES.has(kind)) return 0;
+  const dark = Math.max(0, Math.min(1, (6 - sunAlt(h)) / 18));
+  return dark * (INSIDE_KINDS.has(kind) || kind === "dungeon" ? 0.3 : 0.55);
+}
+function nextDay(B) {
+  const Y = Math.round(B.skyYear ?? 2026), M = Math.round(B.skyMonth ?? 10), D = Math.round(B.skyDay ?? 20);
+  const len = [31, (Y % 4 === 0 && (Y % 100 !== 0 || Y % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][M - 1] || 31;
+  if (D < len) B.skyDay = D + 1; else if (M < 12) { B.skyDay = 1; B.skyMonth = M + 1; } else { B.skyDay = 1; B.skyMonth = 1; B.skyYear = Y + 1; }
+}
+const clockText = h => { const m = Math.floor((h % 1) * 6) * 10; return `${(Math.floor(h) + 11) % 12 + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`; };
+// the darkness and the hour, over the picture (makerOver: under a swing, the bubbles, what flies), written only where they change
+function nightShow(h = dayClock) {
+  let g = document.getElementById("day-night");
+  if (!daysOn() || h === null || state.background.kind === "none") { if (g) g.remove(); return; }
+  const O = makerOver(), [x, y, w, ht] = (O.getAttribute("viewBox") || "0 0 800 600").split(/[\s,]+/).map(Number);
+  if (!g) {
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.id = "day-night";
+    g.innerHTML = `<rect class="tint" fill="${DAY_TINT}" opacity="0"/><g class="clock"><rect rx="10" fill="#0b1236" opacity="0.55"/><text fill="#ffffff" font-family="sans-serif" font-weight="700" text-anchor="middle"/></g>`;
+    O.prepend(g);
+  }
+  const at = (n, k, v) => { v = String(v); if (n.getAttribute(k) !== v) n.setAttribute(k, v); };
+  const tint = g.querySelector(".tint"), box = g.querySelector(".clock rect"), text = g.querySelector(".clock text"), fs = ht * 0.04;
+  at(tint, "x", x); at(tint, "y", y); at(tint, "width", w); at(tint, "height", ht);
+  if (!sleeping) at(tint, "opacity", dayTint(h).toFixed(3));
+  const words = `${sunAlt(h) > 0 ? "☀️" : "🌙"} ${clockText(h)} · 🛌 ${state.days.nights || 0}`;
+  if (text.textContent !== words) text.textContent = words;
+  at(text, "x", f1(x + w / 2)); at(text, "y", f1(y + fs * 1.6)); at(text, "font-size", f1(fs));
+  at(box, "x", f1(x + w / 2 - fs * 4.6)); at(box, "y", f1(y + fs * 0.45)); at(box, "width", f1(fs * 9.2)); at(box, "height", f1(fs * 1.55));
+}
+// the clock, each second: on a quarter hour, the hour written (a drawing); as the sun sets, a word about sleeping
+setInterval(() => {
+  const B = state.background;
+  if (!daysOn() || B.kind === "none") { dayClock = dayWritten = null; nightShow(); return; }
+  if (document.hidden || sleeping) return;
+  // (the hour set by hand, in 🌍 where and when, or by a friend loaded: the clock goes on from there)
+  if (dayClock === null || B.skyHour !== dayWritten) dayClock = dayWritten = Number(B.skyHour ?? 12);
+  dayClock += 24 / (60 * Math.max(1, state.days.dayMinutes || 12));
+  if (dayClock >= 24) { dayClock -= 24; nextDay(B); }
+  const a = sunAlt(dayClock);
+  if (a < -6 && !nightSaid) { nightSaid = true; scriptSay("Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket.", "🌙"); }
+  if (a > 0) nightSaid = false;
+  const q = Math.floor(dayClock * 4) / 4;   // (the quarter hour begun)
+  if (q !== dayWritten) { B.skyHour = dayWritten = q; changed(); }
+  nightShow(dayClock);
+}, 1000);
+// (from lieOn) lying down: after sunset, to sleep; by day, a word
+function sleepIfNight() {
+  if (!daysOn() || sleeping) return;
+  const h = dayClock ?? Number(state.background.skyHour ?? 12);
+  if (sunAlt(h) < 0) sleepTillMorning(h);
+  else scriptSay("It's still daytime. Come back to bed when it's dark.", "☀️");
+}
+function sleepTillMorning(h) {
+  sleeping = true;
+  nightShow(h);
+  const tint = document.querySelector("#day-night .tint"), from = tint ? Number(tint.getAttribute("opacity")) || 0 : 0;
+  // (by a timer, not animation frames: a page out of sight runs none, and the night would never end)
+  const fade = (a, b, ms, then) => { const t0 = performance.now();
+    const f = () => { const u = Math.min(1, (performance.now() - t0) / ms); if (tint) tint.setAttribute("opacity", (a + (b - a) * u).toFixed(3)); if (u < 1) setTimeout(f, 30); else then(); };
+    f(); };
+  fade(from, 0.95, 1200, () => {
+    const B = state.background;
+    if (h >= 12) nextDay(B);   // (asleep before midnight: it is tomorrow when they wake)
+    B.skyHour = dayClock = dayWritten = WAKE_HOUR; nightSaid = false;
+    state.days = { ...state.days, nights: (state.days.nights || 0) + 1 };
+    changed();
+    setTimeout(() => fade(0.95, dayTint(WAKE_HOUR), 1400, () => { sleeping = false; nightShow(); scriptSay(`Good morning! Nights slept: ${state.days.nights}.`, "🌅"); }), 400);
+  });
 }
 function netCatch() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);

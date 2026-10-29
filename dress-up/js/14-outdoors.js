@@ -234,7 +234,7 @@ function hawkSvg() {
 // the same): day, or a tint over everything at sunset and at night, the
 // moon out at night; and how fast its water falls (100 = the usual)
 const FALL_TINT = { day: ["#ffffff", 0], sunset: ["#9a3412", 0.25], night: ["#0b1030", 0.55] };
-const fallTimeOf = o => o.fallTime === "clock" ? skyTimeOf(o, false) : FALL_TINT[o.fallTime] ? o.fallTime : "day",   // (ticket 490: or by the clock)
+const fallTimeOf = o => timeSet(o.fallTime) === "clock" ? skyTimeOf(o, false) : FALL_TINT[o.fallTime] ? o.fallTime : "day",   // (ticket 490: or by the clock; ticket 657: so while night and day runs)
       fallRateOf = o => Math.max(0.1, (o.fallRate ?? 100) / 100);
 // the falls' pool: the line where the falls meet it, its water (an ellipse
 // about (0, cy)), and the near bank's edge over its near side (for its
@@ -354,7 +354,7 @@ function waterfallScene(c) {
   // everything, the friend too: where they stand among the objects, it is
   // over them all the same)
   // (ticket 490: by the clock, the moon in its phase where it is, the sun low at dusk, instead of the moon drawn always the same)
-  const clock = o.fallTime === "clock";
+  const clock = timeSet(o.fallTime) === "clock";
   if (time !== "day") s += SEP + obj(time === "night" ? "dark" : "sunset light", Infinity, part("wf-tint", [c.F, time, clock ? skyKey(o) : ""], () => all(FALL_TINT[time][0]).replace("<rect ", `<rect pointer-events="none" opacity="${FALL_TINT[time][1]}" `) +
     // (the sky open above the cliff's top, and beside it above the jungle: behind them, the moon is hidden)
     (clock ? skyBodiesSvg(c, o, y0 + H * 0.4, y0 + 8 * k, "#0b1030", ([x, y]) => y < top - 14 * k || (Math.abs(x) > W * 0.33 && y < y0 + H * 0.28)) : time === "night" ? `<circle cx="${f1(-W * 0.32)}" cy="${f1(y0 + H * 0.12)}" r="${f1(26 * k)}" fill="#fff6d6" opacity="0.95"/><circle cx="${f1(-W * 0.32 + 10 * k)}" cy="${f1(y0 + H * 0.12 - 6 * k)}" r="${f1(22 * k)}" fill="#0b1030" opacity="0.35"/>` : "")));
@@ -460,7 +460,7 @@ function campfireFlamesSvg(o, night, time) {
 function campsiteScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, o, side } = c;
   // (ticket 490) by the clock: the time of day, the sun and the moon where and when the game says (🌍)
-  const clock = o.campTime === "clock", time = clock ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
+  const clock = timeSet(o.campTime) === "clock", time = clock ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", fire = o.fireOn ?? true, fz = (o.flameSize ?? 100) / 100;
   const food = o.campFood ?? "none", tents = o.tents ?? 2, night = time === "night";
   const fx = 0, fy = g + 40 * k;
   const starKeys = night ? [o.starShape, o.starSize, o.starBright, o.starTwinkle] : [];
@@ -572,7 +572,7 @@ SEATS.tent = (c, B) => {
 function tentScene(c) {
   const { x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, o } = c;
   const n = Math.max(1, Math.min(CAMP_TENTS.length, Math.round(o.tent ?? 1))), T = CAMP_TENTS[n - 1];
-  const time = o.campTime === "clock" ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", night = time === "night", fire = o.fireOn ?? true;   // (ticket 490)
+  const time = timeSet(o.campTime) === "clock" ? skyTimeOf(o, false) : CAMP_SKY[o.campTime] ? o.campTime : "day", night = time === "night", fire = o.fireOn ?? true;   // (ticket 490; 657)
   // the far wall (its peak, and its corners on the floor), the door in it,
   // and the point the seams run to (at the eye's height)
   const { back, half, vy, out } = tentFrame(c), apex = y0 + H * 0.08, top = y0 + H * 0.3, dh = W * 0.12;
@@ -771,7 +771,7 @@ function caveScene(c) {
   });
   // the mouth: the light outside, the jungle blurred beyond, the curtain
   // of water falling across it, mist at its foot
-  const clock = o.fallTime === "clock", moonUp = clock && skyNow(o).moon.alt > 0;   // (ticket 490: by the clock, the moon in its phase, when it is up)
+  const clock = timeSet(o.fallTime) === "clock", moonUp = clock && skyNow(o).moon.alt > 0;   // (ticket 490: by the clock, the moon in its phase, when it is up)
   s += SEP + part("cave-mouth", [c.F, fw, mist, rate, time, PERF.blur, clock ? skyKey(o) : ""], () => {
     // (the light outside, by the falls' time of day)
     const sky = { day: ["#effcff", "#a9dcc6"], sunset: ["#ffe0b0", "#e8946a"], night: ["#4a5c88", "#1c2742"] }[time];

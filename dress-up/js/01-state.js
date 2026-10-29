@@ -633,6 +633,8 @@ const DEFAULTS = {
   person: { id: "p1", name: "", template: false, from: null }, peopleAway: {},
   // (ticket 482) 📜 Scripting: the rules on or off, and each module's text (null: the shipped one, scriptsState)
   scripts: { on: false, common: null, rooms: {} },
+  // (ticket 657) 🌗 night and day (⚙️ Advanced): on or off, how many minutes a whole day takes, and the nights slept in a bed
+  days: { on: false, dayMinutes: 12, nights: 0 },
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: false, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
@@ -1003,6 +1005,11 @@ const INSPECT_ON = { allArrows: true, showPath: true, showSolids: true, showMade
 if (INSPECT_ALL) Object.assign(DEFAULTS.access, INSPECT_ON);
 for (const kd of [...NORTH_OUT, ...NORTH_ROOMS]) DEFAULTS.background["north_" + kd] = northDefault(kd);   // (ticket 214: each place's 🔭)
 let state = clone(DEFAULTS);
+// (ticket 657) 🌗 night and day on: the places with a time of day of their own (day, sunset, night) follow the game's clock
+// (🌍 where and when), whatever their own setting says; 26-drags-and-start.js runs the clock
+const TIME_PLACES = new Set(["waterfall", "cave", "campsite", "tent", "fairyforest"]);
+const daysOn = () => !!(state.days && state.days.on);
+const timeSet = v => daysOn() ? "clock" : v;
 // (ticket 155, Matthew: "The priority is 60 FPS at all times, for all
 // actions that a game controller does in the scene.") What a background
 // can draw that costs frames is kept OFF until it can be made fast, each
@@ -1501,7 +1508,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.465", released: "2026-10-29" };
+const VERSION = { number: "0.0.466", released: "2026-10-29" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

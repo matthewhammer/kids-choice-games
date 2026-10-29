@@ -64,8 +64,8 @@ const handSliderShown = (key, h) => h.style === SLIDER_STYLE[key] || ((key === "
 // two rows (as the music's): every place is of exactly one kind.
 // (ticket 490) the place's time of day is by the clock (🌍 where and when shows)
 // (the review after 0.0.385) night, as chosen or by the clock (the stars are drawn either way)
-const nightBy = (t, b, sunrise) => t === "night" || (t === "clock" && skyTimeOf(b, sunrise) === "night");
-const clockHere = b => ((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";
+const nightBy = (t, b, sunrise) => { t = timeSet(t); return t === "night" || (t === "clock" && skyTimeOf(b, sunrise) === "night"); };   // (ticket 657: or by the running clock)
+const clockHere = b => timeSet((b.kind === "waterfall" || b.kind === "cave") ? b.fallTime : (b.kind === "campsite" || b.kind === "tent") ? b.campTime : b.kind === "fairyforest" ? b.fairyTime : null) === "clock";   // (ticket 657: everywhere, while night and day runs)
 const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespace", "🫧 bubble space"], ["bubbleroom", "🫧 the bubble room"], ["imagination", "💭 our imagination"], ["forest", "🌲 forest"], ["underwater", "🐠 underwater"], ["deepsea", "🪸 deep sea"],
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
@@ -2457,6 +2457,18 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                     "🎚️ pull levers from where you stand (no walking to them)");
                         syncs.push(() => setPressed(b, !!A().leverFar));
                         return el("div", { class: "row" }, [b]); })(),
+               // (ticket 657, M's next: night and day, and "the need to sleep at night") 🌗 night and day, saved with the friend
+               // (state.days), off to start: the game's hour runs, a whole day in dayMinutes; the nights slept in a bed, counted
+               (() => { const D = () => state.days || (state.days = clone(DEFAULTS.days));
+                        const b = el("button", { class: "day-night-toggle", "aria-pressed": String(!!D().on), onclick: () => { D().on = !D().on; b.setAttribute("aria-pressed", String(D().on)); changed(); } },
+                                    "🌗 night and day: night falls, and you sleep in a bed till morning");
+                        const len = el("input", { type: "range", min: "4", max: "60", step: "1", value: String(D().dayMinutes ?? 12), "aria-label": "minutes a whole day takes",
+                                                  oninput: e => { D().dayMinutes = Number(e.target.value); changed(); } });
+                        const lenText = el("span", { class: "hint" }), count = el("span", { class: "hint" });
+                        const more = el("div", { class: "row day-night-more" }, [el("span", { class: "hint" }, "⏱️ a whole day takes"), len, lenText, count]);
+                        syncs.push(() => { setPressed(b, !!D().on); setHidden(more, !D().on); const m = D().dayMinutes ?? 12;
+                          if (len.value !== String(m)) len.value = String(m); setText(lenText, `${m} minutes`); setText(count, ` · 🛌 nights slept: ${D().nights || 0}`); });
+                        return el("div", {}, [el("div", { class: "row" }, [b]), more]); })(),
                meter,
                el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
     perfMeter.node = meter;

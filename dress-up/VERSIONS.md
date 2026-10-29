@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.466 (2026-10-29)
+
+Everything in 0.0.465, plus:
+
+- **🌗 Night and day** (M's idea; in ⚙️ Advanced, off to start). Turned on, time passes: the hour shows at the top of the picture (☀️ by day, 🌙 by night), and after sunset each place grows dark (less so inside). The waterfall, the cave, the camp site, the tent and the fairy forest show their own night, with the moon and the stars. ⏱️ sets how many minutes a whole day takes (12 to start).
+- **Sleeping.** When night falls: "Find somewhere to sleep". Lie down on a bed, a bunk, a sleeping bag or a blanket after sunset, and you sleep: it goes dark, and it is 7 in the morning, the next day. 🛌 counts the nights you have slept, at the top of the picture and in ⚙️ Advanced. Lying down in the daytime is only a rest. Stay up all night, and morning comes anyway.
+- The hour and the date are the ones in 🌍 where and when, so the sun and the moon are where they would be.
+
 ## 0.0.465 (2026-10-29)
 
 Everything in 0.0.464, plus:
