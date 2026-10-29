@@ -1852,6 +1852,7 @@ function makerOver() {
     pic.after(O);
   }
   const vb = pic.getAttribute("viewBox"); if (vb && O.getAttribute("viewBox") !== vb) O.setAttribute("viewBox", vb);
+  if (O.style.display) O.style.display = "";   // (ticket 639: wanted, so shown; makerRun hides it only while nothing but its bubbles is in it)
   return O;
 }
 // (ticket 290, Matthew: "the ones that extend into the room don't pop when we walk through them.. That's the critical
@@ -1986,13 +1987,13 @@ const makerTheme = (B, L) => ({ color: B["bubble" + L + "Color"], size: B["bubbl
   sparkle: B["bubble" + L + "Sparkle"] || "none", sparkleColor: B["bubble" + L + "SparkleColor"] || "#ffffff" });
 function makerRun() {
   const B = state.background, has = B.kind !== "none" && (B.things || []).some(t => t.kind === "bubblemaker");
-  if (!has) { if (makerSim.raf) cancelAnimationFrame(makerSim.raf); makerSim.raf = 0; makerSim.list = []; if (makerSim.layer) { makerSim.layer.remove(); makerSim.layer = null; } const O = document.getElementById("pic-over"); if (O) O.style.display = "none"; return; }
+  if (!has) { if (makerSim.raf) cancelAnimationFrame(makerSim.raf); makerSim.raf = 0; makerSim.list = []; if (makerSim.layer) { makerSim.layer.remove(); makerSim.layer = null; } const O = document.getElementById("pic-over"); if (O && !O.children.length) O.style.display = "none"; return; }
   // (the same layer every drawing, its bubbles in it: a drawing takes everything but the scene out of the picture, and this
   // puts it back, on top)
   let L = makerSim.layer;
   if (!L) { L = makerSim.layer = document.createElementNS("http://www.w3.org/2000/svg", "g"); L.id = "maker-bubbles"; L.setAttribute("pointer-events", "none"); makerSim.list = []; }
   if (MAKER_LEVERS.overlay) { const O = makerOver(); if (O.style.display) O.style.display = ""; if (L.parentNode !== O) O.append(L); }
-  else { const O = document.getElementById("pic-over"); if (O) O.style.display = "none"; if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L); }
+  else { const O = document.getElementById("pic-over"); if (L.parentNode !== pic || pic.lastChild !== L) pic.append(L); if (O && !O.children.length) O.style.display = "none"; }
   if (!makerSim.raf) { makerSim.last = 0; makerSim.raf = requestAnimationFrame(makerTick); }
 }
 function makerTick(t) {
@@ -2590,9 +2591,9 @@ function plateSvg(t) {
 // a bug net: its pole from the hand at 0, 0 up and out to a hoop and its bag (up = -y)
 function netSvg(k = 1) {
   return `<g transform="scale(${k})"><path d="M0 0 L0 -86" stroke="#9a6b3a" stroke-width="5" stroke-linecap="round"/>` +
-    `<path d="M-20 -102 Q-26 -70 0 -58 Q26 -70 20 -102" fill="#ffffff" fill-opacity="0.35" stroke="#c9d3da" stroke-width="2"/>` +
-    `<path d="M-14 -96 L10 -66 M14 -96 L-10 -66 M-20 -88 L20 -88 M-16 -76 L16 -76" stroke="#c9d3da" stroke-width="1" opacity="0.8"/>` +
-    `<ellipse cx="0" cy="-102" rx="21" ry="8" fill="none" stroke="#6b7c87" stroke-width="3.5"/></g>`;
+    `<path d="M-20 -102 Q-26 -70 0 -58 Q26 -70 20 -102" fill="#eef4f7" fill-opacity="0.55" stroke="#7d8b94" stroke-width="2"/>` +
+    `<path d="M-14 -96 L10 -66 M14 -96 L-10 -66 M-20 -88 L20 -88 M-16 -76 L16 -76" stroke="#7d8b94" stroke-width="1.2" opacity="0.9"/>` +
+    `<ellipse cx="0" cy="-102" rx="21" ry="8" fill="none" stroke="#3f4a52" stroke-width="4"/></g>`;   // (darker: it was lost against the grass)
 }
 function giftSvg(id, o = {}) {
   const coin = (x, y) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="12" ry="5" fill="#e8c33a" stroke="#9a7a12" stroke-width="1.5"/>`;

@@ -115,8 +115,9 @@ async function scenes() {
     await shot("14-plates", PIC);
     texts.plates = await ev(`(async () => { ${W} const B = state.background;
       for (const c of B.things.filter(t => t.kind === "chest")) { B.figX = c.x; B.figY = c.z - SCENE.ground + 20; changed(); draw(); await w(200); actionPress(); await w(3100); }
-      for (const p of B.things.filter(t => t.kind === "plate")) { const k = state.backpack.findIndex(x => x.id === p.wants);
-        B.figX = p.x; B.figY = p.z - SCENE.ground - 34; state.body.facing = "front"; changed(); draw(); await w(200); putDown(k); await w(900); }
+      for (const p of B.things.filter(t => t.kind === "plate" && t.wants !== "any")) { B.figX = p.x; B.figY = p.z - SCENE.ground - 20; changed(); draw(); await w(250); actionPress(); await w(1000); }
+      const st = B.things.find(t => t.kind === "item" && t.id === "statue"); B.figX = st.x; B.figY = st.z - SCENE.ground - 10; changed(); draw(); await w(300); actionPress(); await w(800);
+      const any = B.things.find(t => t.kind === "plate" && t.wants === "any"); B.figX = any.x; B.figY = any.z - SCENE.ground - 20; changed(); draw(); await w(300); actionPress(); await w(1100);
       B.figX = 0; B.figY = -60; state.body.facing = "front"; changed(); draw(); await w(1200); return { solved: !!B.plateSolved, egg: B.things.some(t => t.kind === "chest" && t.gives === "egg") }; })()`);
     await shot("15-plates-solved", PIC);
   });

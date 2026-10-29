@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.464 (2026-10-29)
+
+Everything in 0.0.463, plus:
+
+- **Fixed:** swinging the 🥅 bug net, catching a 🐝 in a bottle, and things flying into and out of the 🎒 backpack could not be seen in most places (the picture they are drawn in was hidden while the place was drawn again).
+- The bug net is drawn darker, so it can be seen against grass.
+
 ## 0.0.463 (2026-10-29)
 
 Everything in 0.0.462, plus:
