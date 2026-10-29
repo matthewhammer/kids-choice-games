@@ -1,0 +1,635 @@
+{
+ "chest": true,
+ "putDown": [
+  "crown"
+ ],
+ "pickUp": true,
+ "pot": true,
+ "healer": [
+  "potion",
+  "potion",
+  "bottle",
+  "chocolate",
+  "item:glowcap"
+ ],
+ "bee": [
+  "net",
+  "bottlebee"
+ ],
+ "plates": {
+  "solved": true,
+  "egg": true
+ },
+ "maze": {
+  "cols": 8,
+  "rows": 8,
+  "start": "0,7",
+  "cells": {
+   "0,0": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "1,0": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "2,0": {
+    "N": false,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": [
+     {
+      "kind": "cavemushroom",
+      "id": "glowcap",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "3,0": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "4,0": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": [
+     {
+      "kind": "plate",
+      "id": "any",
+      "uid": "dg-g2",
+      "opens": "E",
+      "sw": "hold",
+      "hidden": false
+     },
+     {
+      "kind": "rock",
+      "id": "",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "5,0": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "6,0": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": [
+     {
+      "kind": "potion",
+      "id": "",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "7,0": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": [
+     {
+      "kind": "chest",
+      "id": "crown",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     },
+     {
+      "kind": "chest",
+      "id": "gold",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     },
+     {
+      "kind": "chest",
+      "id": "egg",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     },
+     {
+      "kind": "chest",
+      "id": "gems",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     },
+     {
+      "kind": "plate",
+      "id": "any",
+      "uid": "dg-out-switch",
+      "opens": "",
+      "sw": "toggle",
+      "hidden": false
+     },
+     {
+      "kind": "passage",
+      "id": "ladder",
+      "uid": "puxiua3",
+      "opens": "",
+      "sw": "",
+      "hidden": true
+     }
+    ]
+   },
+   "0,1": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "1,1": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "2,1": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "3,1": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "4,1": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "5,1": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "6,1": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "7,1": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,2": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "1,2": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "2,2": {
+    "N": false,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": [
+     {
+      "kind": "item",
+      "id": "statue",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "3,2": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "4,2": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "5,2": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": [
+     {
+      "kind": "chest",
+      "id": "gems",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "6,2": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "7,2": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,3": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "1,3": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "2,3": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "3,3": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "4,3": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "5,3": {
+    "N": true,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "6,3": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "7,3": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,4": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "1,4": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "2,4": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "3,4": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "4,4": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "5,4": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "6,4": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "7,4": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,5": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "1,5": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "2,5": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "3,5": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "4,5": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "5,5": {
+    "N": false,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "6,5": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": false,
+    "things": [
+     {
+      "kind": "plate",
+      "id": "gems",
+      "uid": "dg-g3",
+      "opens": "S",
+      "sw": "hold",
+      "hidden": false
+     }
+    ]
+   },
+   "7,5": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,6": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": false,
+    "things": [
+     {
+      "kind": "chest",
+      "id": "sword",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "1,6": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "2,6": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "3,6": {
+    "N": false,
+    "E": true,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "4,6": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": true,
+    "things": []
+   },
+   "5,6": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": [
+     {
+      "kind": "plate",
+      "id": "any",
+      "uid": "dg-g1",
+      "opens": "N",
+      "sw": "toggle",
+      "hidden": false
+     }
+    ]
+   },
+   "6,6": {
+    "N": false,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "7,6": {
+    "N": true,
+    "E": false,
+    "S": true,
+    "W": false,
+    "things": []
+   },
+   "0,7": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": [
+     {
+      "kind": "sign",
+      "id": "",
+      "uid": "",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     },
+     {
+      "kind": "passage",
+      "id": "ladder",
+      "uid": "pf2quh5",
+      "opens": "",
+      "sw": "",
+      "hidden": false
+     }
+    ]
+   },
+   "1,7": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "2,7": {
+    "N": false,
+    "E": true,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "3,7": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "4,7": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "5,7": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   },
+   "6,7": {
+    "N": true,
+    "E": true,
+    "S": false,
+    "W": false,
+    "things": []
+   },
+   "7,7": {
+    "N": true,
+    "E": false,
+    "S": false,
+    "W": true,
+    "things": []
+   }
+  }
+ },
+ "g1": {
+  "lit": true,
+  "opens": "N"
+ },
+ "g2": {
+  "lit": true,
+  "held": true
+ },
+ "g3": "5,2",
+ "out": true,
+ "version": "0.0.464"
+}
