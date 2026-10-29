@@ -1473,7 +1473,7 @@ function chestNear() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
   let best = null;
   for (const t of B.things || []) {
-    if (t.kind !== "chest" || t.open !== false) continue;
+    if (t.kind !== "chest" || t.open !== false || t.hidden) continue;
     const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6);
     if (d < CHEST_REACH && (!best || d < best.d)) best = { t, d };
   }
@@ -1519,7 +1519,7 @@ function carryNear() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
   let best = null;
   (B.things || []).forEach((t, i) => {
-    if (!CARRY_KINDS.has(t.kind)) return;
+    if (!CARRY_KINDS.has(t.kind) || t.hidden) return;
     const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6);
     if (d < CARRY_REACH && (!best || d < best.d)) best = { i, d };
   });
@@ -1684,6 +1684,14 @@ function plateCheck() {
 // (ticket 639) a floor switch's 🔗 trap doors, as a lever's (leverPullApply): open while it is down, shut when it comes up
 function switchWorks(p) {
   const B = state.background, swung = [];
+  // (ticket 639, Matthew: "will the floor switches control passageways in the dungeon") 🚪 a way out of this room, open while it is down,
+  // on both sides; and ✨ things it brings out (its shows: uids, in any world), the first time it goes down, there for good
+  if (p.opens && WORLD_DIRS[p.opens]) { const W = state.world, at = W && W.at, [c, r] = String(at || "").split(",").map(Number), [dc, dr] = WORLD_DIRS[p.opens], nb = `${c + dc},${r + dr}`;
+    if (W && W.cells[at] && W.cells[nb]) { if (p.lit) { worldWayOn(W, at, p.opens); worldWayOn(W, nb, WORLD_OPP[p.opens]); } else { worldWayOff(W, at, p.opens); worldWayOff(W, nb, WORLD_OPP[p.opens]); }
+      queueMicrotask(() => { changed(); draw(); if (p.lit) scriptSay("Rumble... a way opened!", "🚪"); }); } }
+  if (p.lit && (p.shows || []).length) { let n = 0;
+    passagesEach(T => { for (const t of T) if (t.hidden && p.shows.includes(t.uid)) { t.hidden = false; n++; } });
+    if (n) { p.shows = []; queueMicrotask(() => { changed(); draw(); chestFlourish("chestsparkle"); scriptSay("Something appeared!", "✨"); }); } }
   (B.things || []).forEach((d, j) => { if (d.kind === "trapdoor" && (p.works || []).includes(d.uid) && !!d.open !== !!p.lit) { d.open = !!p.lit; swung.push([j, d.open]); } });
   if (!swung.length) return;
   queueMicrotask(() => { changed(); draw(); for (const [j, open] of swung) lidSwing(`[data-drag="thing:${j}"] .pit-lid`, open); });
@@ -1719,7 +1727,7 @@ function actTarget() {
 function plateNear() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
   let best = -1, bd = Infinity;
-  (B.things || []).forEach((t, i) => { if (t.kind !== "plate" || (t.wants === "any" ? t.held : t.lit) || t.switch === "toggle") return; const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6); if (d < CARRY_REACH && d < bd) { best = i; bd = d; } });
+  (B.things || []).forEach((t, i) => { if (t.kind !== "plate" || t.hidden || (t.wants === "any" ? t.held : t.lit) || t.switch === "toggle") return; const d = Math.hypot((t.x ?? 0) - fx, ((t.z ?? 0) - fz) / 0.6); if (d < CARRY_REACH && d < bd) { best = i; bd = d; } });
   return best;
 }
 const giftName = id => ((CHEST_GIFTS.find(([k]) => k === id) || [, id])[1]);

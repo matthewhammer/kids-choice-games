@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.463 (2026-10-29)
+
+Everything in 0.0.462, plus:
+
+- **🗝️ The dungeon**, a new world in every game: an 8 by 8 maze of dungeon rooms. The way in is a ⚫ hole in the start world's cemetery (and a 🪜 ladder back up). Three walls on the way through are gates, each opened by a floor switch in the room before it: one to step on, one to keep down (there is a 🪨 rock in that room), and one that wants 💎 gems (from a chest somewhere in the maze). The side passages have things to find. The treasure room at the far corner has four chests, and a floor switch that brings out a 🪜 ladder up, out to the castle.
+- **Floor switches can open a way** out of their room (🚪, while they are down), and bring out hidden things.
+- In 🗺️ World design, a new world can be made from **🗝️ the dungeon maze**.
+
 ## 0.0.462 (2026-10-29)
 
 Everything in 0.0.461, plus:

@@ -1058,6 +1058,7 @@ function worldsInit(S = state) {
   if (W.id === WORLD_FIRST && W.name === undefined) W.name = "start";
   if (!S.worldsAway || typeof S.worldsAway !== "object" || Array.isArray(S.worldsAway)) S.worldsAway = {};
   if (!S.worldTemplates || typeof S.worldTemplates !== "object" || Array.isArray(S.worldTemplates)) S.worldTemplates = {};
+  if (S === state && !S.dungeonMade && S.background && typeof dungeonMazeWorld === "function") dungeonWorldEnsure(S);   // (ticket 639: once per game)
 }
 const worldNum = W => +String(W.id || "").replace(/\D/g, "") || 1;
 const worldTitle = W => String(W.name || "").trim() || "world " + worldNum(W);
@@ -1088,9 +1089,105 @@ function worldSwitch(id, key = null, side = null, draw = true) {
   if (to.cells[at]) worldEnter(at, key ? side : null, draw); else if (draw) changed();
 }
 const WORLD_SMALL = { cols: 3, rows: 3, start: "1,1", cells: { "1,1": { kind: "emptyroom", ways: [] } } };
+// (ticket 639, Matthew 2026-10-29: "we have a default 'start' world --- let's also introduce a default 'dungeon' world as well. And we can
+// find a way to connect the start world and the dungeon world. In that dungeon world, let's create an 8-8 grid that has maze elements
+// using the stuff we are introducing now in various ways"; "the final room of the dungeon should have treasure chests, and a ladder that
+// appears when we hit a floor switch, leading us out of the dungeon") 🗝️ The dungeon: an 8 by 8 maze of dungeon rooms, the same every
+// time (a seeded walk), its way in at the bottom left and its treasure room at the top right. On the way between them three walls are
+// gates, each opened by a floor switch in the room before it: a 🔁 toggle to step on, a ⬇️ switch to keep down (a 🪨 rock in its room), and
+// one that wants 💎 gems, from a chest in a side passage. The side passages hold things to find; the treasure room, chests, and a switch
+// that brings out a 🪜 ladder up. Returns the world, its things' uids marked for linking (dungeonWorldEnsure).
+function dungeonMazeWorld() {
+  const N = 8, key = (c, r) => `${c},${r}`, r0 = seeded(6390); let ri = 0; const R = () => r0(ri++), dirs = [["N", 0, -1], ["E", 1, 0], ["S", 0, 1], ["W", -1, 0]];
+  const inG = (c, r) => c >= 0 && r >= 0 && c < N && r < N, start = [0, N - 1], end = [N - 1, 0];
+  // the maze: a walk that never comes back to a room, backing up when it is stuck (every room reached, one way between any two)
+  const edges = new Set(), seen = new Set([key(...start)]), stack = [start], parent = {};
+  const ek = (a, b) => [a, b].sort().join("|");
+  while (stack.length) {
+    const [c, r] = stack[stack.length - 1], next = dirs.map(([, dc, dr]) => [c + dc, r + dr]).filter(([x, y]) => inG(x, y) && !seen.has(key(x, y)));
+    if (!next.length) { stack.pop(); continue; }
+    const [x, y] = next[Math.floor(R() * next.length)];
+    edges.add(ek(key(c, r), key(x, y))); seen.add(key(x, y)); parent[key(x, y)] = key(c, r); stack.push([x, y]);
+  }
+  // a few more ways, so it is not one long corridor (never on the way to the end: the gates stay the only way through)
+  const path = []; for (let k = key(...end); k; k = parent[k]) path.unshift(k);
+  const onPath = new Set(path);
+  for (let i = 0; i < 6; i++) { const c = Math.floor(R() * (N - 1)), r = Math.floor(R() * N), a = key(c, r), b = key(c + 1, r); if (!onPath.has(a) && !onPath.has(b)) edges.add(ek(a, b)); }
+  // the gates: three ways on the path, a quarter, half and three quarters along
+  const gates = [0.25, 0.5, 0.75].map(f => { const i = Math.max(1, Math.min(path.length - 2, Math.round(f * (path.length - 1)))); return [path[i - 1], path[i]]; });
+  const gateSet = new Set(gates.map(([a, b]) => ek(a, b)));
+  const dirTo = (a, b) => { const [ac, ar] = a.split(",").map(Number), [bc, br] = b.split(",").map(Number); return dirs.find(([, dc, dr]) => ac + dc === bc && ar + dr === br)[0]; };
+  // which stage a room is in: reached from the way in before the first gate (0), after it (1), and so on
+  const stage = {}; { let front = [key(...start)], st = 0; const left = new Set(gateSet);
+    const flood = from => { const q = [...from]; while (q.length) { const k = q.shift(); if (stage[k] !== undefined) continue; stage[k] = st;
+      const [c, r] = k.split(",").map(Number); for (const [, dc, dr] of dirs) { const m = key(c + dc, r + dr); if (inG(c + dc, r + dr) && edges.has(ek(k, m)) && !left.has(ek(k, m)) && stage[m] === undefined) q.push(m); } } };
+    flood(front); for (const [a, b] of gates) { left.delete(ek(a, b)); st++; flood([b]); } }
+  const deadEnds = Object.keys(stage).filter(k => k !== key(...start) && k !== key(...end) && dirs.filter(([, dc, dr]) => { const [c, r] = k.split(",").map(Number); return edges.has(ek(k, key(c + dc, r + dr))); }).length === 1);
+  const cells = {};
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const k = key(c, r), way = d => { const [, dc, dr] = dirs.find(x => x[0] === d); return inG(c + dc, r + dr) && edges.has(ek(k, key(c + dc, r + dr))) && !gateSet.has(ek(k, key(c + dc, r + dr))); };
+    cells[k] = { kind: "dungeon", ...Object.fromEntries(CROSS_DIRS.map(([d]) => ["cross" + d, ["N", "E", "S", "W"].includes(d) && way(d)])), crossFloor: CROSS_FLOORS[0], crossBack: "woods",
+      crossCave: "stone", crossHole: "", crossLedge: "", crossOpen: "", crossShade: 30 + Math.floor(R() * 50), crossMoss: Math.floor(R() * 3), crossMossKind: DUNGEON_MOSS[Math.floor(R() * DUNGEON_MOSS.length)][0],
+      crossShrooms: Math.floor(R() * 3), crossShroomKind: DUNGEON_SHROOMS[Math.floor(R() * DUNGEON_SHROOMS.length)][0], crossSeed: 1 + Math.floor(R() * 9999), crossStairs: "", things: [] };
+  }
+  // (now and then, two rooms side by side with no wall between them: run from one to the next)
+  for (const e of edges) { if (gateSet.has(e) || R() > 0.25) continue; const [a, b] = e.split("|"), d = dirTo(a, b);
+    if (d === "E" || d === "W") { cells[a].crossOpen = commaSet(cells[a].crossOpen, d, true); cells[b].crossOpen = commaSet(cells[b].crossOpen, WORLD_OPP[d], true); } }
+  const G = SCENE.ground, put = (k, t) => cells[k].things.push({ size: 100, mirror: false, seed: 100 + Math.floor(R() * 9000), ...t });
+  const chest = (gives, more = {}) => ({ kind: "chest", open: false, treasure: gives === "gems" ? "gems" : gives === "crown" ? "crown" : "gold", gives, flourish: "chestfanfare", rec: "", ...more });
+  // the way in: a sign, and the ladder back up (linked by dungeonWorldEnsure)
+  put(key(...start), { kind: "sign", x: -170, z: G - 150, text: "The dungeon! Find the treasure room." });
+  put(key(...start), { kind: "passage", style: "ladder", x: 150, z: G - 170, uid: "dg-in", to: "cemetery" });
+  // the gates' switches, each in the room before its wall
+  const [g1, g2, g3] = gates;
+  put(g1[0], { kind: "plate", switch: "toggle", wants: "any", opens: dirTo(g1[0], g1[1]), x: 0, z: G - 120, uid: "dg-g1" });
+  put(g2[0], { kind: "plate", switch: "hold", wants: "any", opens: dirTo(g2[0], g2[1]), x: -120, z: G - 110, uid: "dg-g2" });
+  put(g2[0], { kind: "rock", x: 170, z: G - 210, tone: ROCK_TONES[0] });
+  put(g3[0], { kind: "plate", switch: "hold", wants: "gems", opens: dirTo(g3[0], g3[1]), x: 0, z: G - 120, uid: "dg-g3" });
+  // the gems for the third gate: in a side passage before it (stage 2), or else in its own room
+  const gemsAt = deadEnds.find(k => stage[k] === 2) || deadEnds.find(k => stage[k] <= 2) || g3[0];
+  put(gemsAt, { ...chest("gems"), x: 60, z: G - 200 });
+  // the other side passages: something to find in each
+  const finds = [{ kind: "cavemushroom", style: "glowcap" }, { kind: "item", id: "statue" }, chest("sword"), { kind: "potion", shape: "flask", color: POTION_COLORS[3] }, chest("shield"),
+                 { kind: "item", id: "horseshoe" }, { kind: "chocolate" }, chest("helmet"), { kind: "cavemushroom", style: "cluster" }, { kind: "item", id: "rock" }, chest("potion"), { kind: "toadstool" }];
+  deadEnds.filter(k => k !== gemsAt).forEach((k, i) => put(k, { ...finds[i % finds.length], x: -100 + Math.floor(R() * 200), z: G - 140 - Math.floor(R() * 80) }));
+  // the treasure room: chests, and a switch that brings out the ladder up (and its hole above, in the start world)
+  const E = key(...end);
+  put(E, { ...chest("crown"), x: -250, z: G - 230 }); put(E, { ...chest("gold"), x: -110, z: G - 250 }); put(E, { ...chest("egg"), x: 30, z: G - 250 }); put(E, { ...chest("gems"), x: 170, z: G - 230 });
+  put(E, { kind: "plate", switch: "toggle", wants: "any", x: 0, z: G - 90, uid: "dg-out-switch", shows: ["dg-out", "dg-out-twin"] });
+  put(E, { kind: "passage", style: "ladder", x: 280, z: G - 110, uid: "dg-out", to: "castle", hidden: true });   // (in its own corner, clear of the chests)
+  return { name: "dungeon", cols: N, rows: N, start: key(...start), at: key(...start), cells };
+}
+// (ticket 639) the dungeon world, once in every game (state.dungeonMade): made, and linked to the start world: a ⚫ hole in the cemetery
+// down to the way in (its ladder back up), and the treasure room's ladder up to the castle (a hole there, hidden as the ladder is, till
+// its switch is pressed). Kept when the start world has no cemetery or castle: linked to its start square instead.
+function dungeonWorldEnsure(S = state) {
+  if (!S || !S.world || S.dungeonMade) return;
+  S.dungeonMade = true;   // (first: worldsInit calls this)
+  worldsInit(S);
+  const all = [S.world, ...Object.values(S.worldsAway)], n = 1 + Math.max(0, ...all.map(worldNum)), D = Object.assign(dungeonMazeWorld(), { id: "w" + n });
+  S.worldsAway[D.id] = D;
+  const W1 = all.find(w => w.id === WORLD_FIRST);
+  if (!W1) return;
+  const sq = kind => Object.keys(W1.cells).find(k => W1.cells[k].kind === kind) || W1.start;
+  const thingsOf = (W, k) => { if (W === S.world && W.at === k && S.background && S.background.kind === W.cells[k].kind) return S.background.things || (S.background.things = []); const c = W.cells[k]; return c.things || (c.things = []); };
+  const link = (inUid, outKey, outKind, outStyle, hidden) => {
+    const inKey = Object.keys(D.cells).find(k => (D.cells[k].things || []).some(t => t.uid === inUid)), t = D.cells[inKey].things.find(x => x.uid === inUid);
+    const uidIn = passageUid(), uidOut = passageUid(), a = ARRIVE[outKind] || [0, 60];
+    const there = { kind: "passage", style: outStyle, x: Math.round(a[0]) + 140, z: Math.round(SCENE.ground + Math.max(0, a[1] - 40)), seed: 4000 + n, size: 100, mirror: false, to: "dungeon",
+      uid: uidOut, dest: { world: D.id, key: inKey, kind: "dungeon" }, twin: uidIn, ...(hidden ? { hidden: true } : {}) };
+    thingsOf(W1, outKey).push(there);
+    for (const u of [inUid]) for (const c of Object.values(D.cells)) for (const p of c.things || []) if (p.kind === "plate" && (p.shows || []).includes(u + "-twin")) p.shows = p.shows.map(x => x === u + "-twin" ? uidOut : x === u ? uidIn : x);
+    for (const c of Object.values(D.cells)) for (const p of c.things || []) if (p.kind === "plate" && (p.shows || []).includes(inUid)) p.shows = p.shows.map(x => x === inUid ? uidIn : x);
+    Object.assign(t, { uid: uidIn, dest: { world: W1.id, key: outKey, kind: W1.cells[outKey].kind }, twin: uidOut, to: W1.cells[outKey].kind });
+  };
+  link("dg-in", sq("cemetery"), W1.cells[sq("cemetery")].kind, "floorhole", false);
+  link("dg-out", sq("castle"), W1.cells[sq("castle")].kind, "floorhole", true);
+}
 function worldTemplatesAll() {
   worldsInit();
   return [{ id: "first", name: "🗺️ the first world", world: WORLD_DEFAULT }, { id: "small", name: "🔲 one square: the empty room", world: WORLD_SMALL },
+          { id: "dungeon", name: "🗝️ the dungeon maze", world: dungeonMazeWorld() },   // (ticket 639)
           ...Object.entries(state.worldTemplates).map(([id, t]) => ({ id, name: "📐 " + t.name, world: t.world }))];
 }
 // (a world's copy for a new world or a template: its squares and things, never its links, which pair with other worlds)

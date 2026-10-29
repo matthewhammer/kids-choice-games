@@ -2479,7 +2479,7 @@ function cascadeThingSvg(t, seed, o) {
 // of the list but a castle's or a tree house's rooms, which need more to say which), and back by ⬅️ as any way. Its
 // opening is the doorway (glowing, gone through as any: the friend walks to its foot, or, a hole in the floor, its
 // middle); the rock round it stands where it is drawn but is no more in the way than a door (one goes into it).
-const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳️ a hole through a wall of rock"], ["floorhole", "⚫ a hole in the floor"]];
+const PASSAGE_STYLES = [["arch", "🌑 a natural archway"], ["wallhole", "🕳️ a hole through a wall of rock"], ["floorhole", "⚫ a hole in the floor"], ["ladder", "🪜 a ladder up"]];   // (ticket 639: the dungeon's way out)
 // (the review after 0.0.385: only places a doorway can take the friend to, enterScene's, so not 🌊 open water or 🪸 deep sea,
 // reached only from the world's squares)
 const passagePlaces = () => (typeof PLACES === "undefined" ? [] : PLACES).filter(([k]) => !["none", "castleroom", "treeroom"].includes(k) && (SCENES[k] || PICTURE_CHOICES.some(([q]) => q === k)));
@@ -2491,6 +2491,13 @@ function passageThingSvg(t, seed) {
   // data-passage (enterScene: to the square or inside it is linked to, its dest, out by its twin); no data-door, so measureMarks
   // keeps it a doorway, glowing its opening
   const portal = inner => `<g class="portal" data-to="${to}"${t.uid ? ` data-way="p-${t.uid}" data-passage="${t.uid}"` : ""}>${inner}</g>`;
+  // (ticket 639) a wooden ladder up through a hole in the ceiling, light falling down it
+  if (st === "ladder") {
+    const rungs = [...Array(6)].map((_, i) => `<line x1="-17" y1="${-12 - i * 26}" x2="17" y2="${-12 - i * 26}" stroke="#7a4f2a" stroke-width="5" stroke-linecap="round"/>`).join("");
+    return `<ellipse class="flat" cx="0" cy="2" rx="46" ry="10" fill="#fff6c8" opacity="0.35"/>` +
+      portal(`<path d="M-30 4 L30 4 L22 -170 L-22 -170 Z" fill="#fff6c8" opacity="0.18"/><rect x="-26" y="-178" width="52" height="16" rx="6" fill="#1a1612"/>` +
+        `<path d="M-20 4 L-17 -168 M20 4 L17 -168" stroke="#8b5e34" stroke-width="6" stroke-linecap="round"/>` + rungs);
+  }
   if (st === "floorhole") {
     const pts = [];
     for (let n = 0; n <= 18; n++) { const a = n / 18 * 2 * Math.PI, b = 1 + 0.2 * (Rs(n, 3) - 0.5); pts.push([48 * Math.cos(a) * b, 15 * Math.sin(a) * b]); }
@@ -3382,7 +3389,7 @@ function fencePieceSvg(o, t, i, s) {
 }
 const THING_PARAMS = {
   // (ticket 639) a thing put down from the backpack: which
-  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["switch", "🧩 kind", "choice", [["hold", "⬇️ down only while something is on it"], ["toggle", "🔁 flips each time you step on it"]]],
+  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["opens", "🚪 opens a way out of this room, while it is down", "choice", [["", "no way"], ["N", "⬆️"], ["E", "➡️"], ["S", "⬇️"], ["W", "⬅️"]]], ["switch", "🧩 kind", "choice", [["hold", "⬇️ down only while something is on it"], ["toggle", "🔁 flips each time you step on it"]]],
           ["wants", "⬇️ what holds it down", "choice", () => [["any", "🪨 anything (a rock, a statue, the friend)"], ...CHEST_GIFTS]],
           ["works", "🔗 its trap doors (open while it is down)", "wires"]],   // (Matthew: "will the floor switches control ... trap doors")   // (Matthew: "like legend of zelda ... they had two kinds")   // (a plate: what it wants on it)
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
@@ -3805,6 +3812,7 @@ function liftedBody(t, at) {
   return at(`<g transform="scale(${(1 / L.s0).toFixed(4)}) translate(${f1(-liftCx(L))} ${f1(-L.z)})">${L.defs}${L.inner}</g>`);
 }
 function thingSvg(o, t, i) {
+  if (t.hidden) return "";   // (ticket 639: a thing a floor switch brings out, till then not there)
   const s = depthSize(o, t.z - SCENE.ground) * (t.size ?? 100) / 100, seed = t.seed ?? 900 + i;
   const at = inner => `<g transform="translate(${f1(t.x)} ${f1(t.z)}) scale(${(t.mirror ? -s : s).toFixed(3)} ${s.toFixed(3)})">${inner}</g>`;
   const shadow = r => `<ellipse cx="0" cy="2" rx="${f1(r)}" ry="${f1(r * 0.22)}" fill="#000000" opacity="0.18"/>`;
