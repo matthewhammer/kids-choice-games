@@ -7,7 +7,7 @@
 // leaves the lever working as before.
 // (ticket 520) and Hazel's tiles: the levers run through Hazel.runProgram (Hazel builds the program from the module texts), and,
 // with runProgram taken away (an older library), through the fallback, the text the page joins. Under the editors, Hazel's app in
-// a frame (index.html#embed, from hazel.org: another origin, so its own target, attached to with Target.setAutoAttach; or, where
+// a frame (index.html#embed, from build.hazel.org: another origin, so its own target, attached to with Target.setAutoAttach; or, where
 // Chrome keeps it in the page's process, its own context): it says ready, shows the shipped program as tiles with no error mark,
 // and, once Flip(1, Done) is typed in TrapRoom's box, an error mark in the tiles and TrapRoom's error in its status; while the
 // game is full screen it is display: none; a click in it keeps the keys there, to type (ticket 578: the tiles take edits), and a
@@ -27,19 +27,19 @@ ws.addEventListener("message", e => { const m = JSON.parse(e.data); if (m.id && 
   if (m.method === "Target.attachedToTarget" && m.params.targetInfo.type === "iframe") { frameSessions.set(m.params.sessionId, m.params.targetInfo.targetId); send("Runtime.enable", {}, m.params.sessionId); }
   if (m.method === "Target.detachedFromTarget") frameSessions.delete(m.params.sessionId);
   // (or in it: the frame's own context, by its frame's id)
-  if (m.method === "Runtime.executionContextCreated" && !m.sessionId) { const c = m.params.context; if (c.origin === "https://hazel.org" && c.auxData && c.auxData.isDefault) frameCtxs.set(c.auxData.frameId, c.id); } });
+  if (m.method === "Runtime.executionContextCreated" && !m.sessionId) { const c = m.params.context; if (c.origin === "https://build.hazel.org" && c.auxData && c.auxData.isDefault) frameCtxs.set(c.auxData.frameId, c.id); } });
 const ev = async x => { const r = await send("Runtime.evaluate", { expression: x, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 300)); return r.result.result.value; };
 // (ticket 578: six more frames from the same URL, a box's tiles each, and the newest attached was taken, often a box's with 0 tokens:
 // the whole program's frame is the one whose id is its iframe's, DOM.describeNode's frameId, which needs no DOM.enable)
 const progFrameId = async () => { const o = await send("Runtime.evaluate", { expression: "scriptFrame && scriptFrame.iframe", objectGroup: "f482" });
   const id = o.result && o.result.result && o.result.result.objectId; if (!id) return null;
   const d = await send("DOM.describeNode", { objectId: id }); send("Runtime.releaseObjectGroup", { objectGroup: "f482" }); return (d.result && d.result.node && d.result.node.frameId) || null; };
-// (an expression in Hazel's frame of the whole program, wherever Chrome put it: the value from the one at https://hazel.org, or null)
+// (an expression in Hazel's frame of the whole program, wherever Chrome put it: the value from the one at https://build.hazel.org, or null)
 const frameEv = async x => {
   const fid = await progFrameId(); if (!fid) return null;
   const tries = [...[...frameSessions].filter(([, t]) => t === fid).map(([s]) => ["", s]), ...(frameCtxs.has(fid) ? [[frameCtxs.get(fid), undefined]] : [])];
   for (const [ctx, s] of tries) {
-    const r = await send("Runtime.evaluate", { expression: `location.origin === "https://hazel.org" ? (${x}) : undefined`, returnByValue: true, ...(ctx ? { contextId: ctx } : {}) }, s);
+    const r = await send("Runtime.evaluate", { expression: `location.origin === "https://build.hazel.org" ? (${x}) : undefined`, returnByValue: true, ...(ctx ? { contextId: ctx } : {}) }, s);
     const v = r.result && !r.result.exceptionDetails && r.result.result ? r.result.result.value : undefined;
     if (v !== undefined) return v;
   }
@@ -101,7 +101,7 @@ try {
   const st0 = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`));
   ok("the frame scrolled into view (out of it, Chrome gives it no animation frames)", inView0 === true, inView0);
   // (ticket 578: the tiles that take edits are embed-editable's build, f849f43; the library stays js-library-embed's)
-  ok("Hazel's frame (index.html#embed on embed-editable's build) says ready", src === "https://hazel.org/build/embed-editable/index.html#embed" && T.phase === "ready", [src, T.phase]);
+  ok("Hazel's frame (index.html#embed on embed-editable's build) says ready", src === "https://build.hazel.org/embed-editable/index.html#embed" && T.phase === "ready", [src, T.phase]);
   ok("the frame shows the shipped program as tiles (its modules and on_event among them), with no error mark, and its status says fine", !!look && look.tokens > 20 && look.words && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
   const Z = JSON.parse(await ev(`JSON.stringify({ height: scriptFrame && scriptFrame.height, style: scriptFrame && parseInt(scriptFrame.iframe.style.height) })`));
   const row = parseFloat(look && look.row) || 30;

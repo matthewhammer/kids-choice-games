@@ -23,14 +23,16 @@
 
 // (tickets 482, 520) The Hazel build the game uses: its library (hazel-lib.js, window.Hazel) and its app in a frame (index.html#embed).
 // For now the embed branch's build, hazelgrove/hazel#2719 (stacked on #2711), which has Hazel.runProgram and the frame; when #2719
-// merges into #2711, this goes back to "https://hazel.org/build/js-library/", until the library ships with the game.
-const SCRIPT_BUILD = "https://hazel.org/build/js-library-embed/";
+// merges into #2711, this goes back to "https://build.hazel.org/js-library/", until the library ships with the game.
+// (ticket 658: Hazel's builds moved to build.hazel.org; hazel.org/build/... answers 301 to there, so a frame from the old URL is
+// from build.hazel.org's origin, not hazel.org's, and its messages were dropped: the tiles stayed at "loading")
+const SCRIPT_BUILD = "https://build.hazel.org/js-library-embed/";
 const SCRIPT_LIB_URL = SCRIPT_BUILD + "hazel-lib.js";
-// (the frame's messages are taken from this origin only, and posted to it only: SCRIPT_BUILD's)
+// (the frame's messages are taken from this origin only, and posted to it only: SCRIPT_BUILD's, which must be SCRIPT_FRAME_URL's too)
 const SCRIPT_HAZEL_ORIGIN = SCRIPT_BUILD.split("/").slice(0, 3).join("/");
 // (ticket 578) the tiles from embed-editable (stacked on embed-selectable, on #2719's branch): the frame that takes edits; the
 // library stays SCRIPT_BUILD's, the same Hazel otherwise
-const SCRIPT_FRAME_URL = "https://hazel.org/build/embed-editable/index.html#embed";
+const SCRIPT_FRAME_URL = "https://build.hazel.org/embed-editable/index.html#embed";
 
 // the rooms that have logic so far, each a module of the program; module names must be unique (scriptNames checks it)
 const SCRIPT_ROOMS = [

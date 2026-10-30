@@ -70,7 +70,7 @@ Object.assign(ctx, {
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(here, "../dress-up/js/25-scripting.js"), "utf8"), ctx, { filename: "25-scripting.js" });
 const run = x => vm.runInContext(x, ctx);
-const msg = (data, { origin = "https://hazel.org", source } = {}) => { for (const f of winOn.message || []) f({ data, origin, source: source === undefined ? run("scriptFrame").iframe.win : source }); };
+const msg = (data, { origin = "https://build.hazel.org", source } = {}) => { for (const f of winOn.message || []) f({ data, origin, source: source === undefined ? run("scriptFrame").iframe.win : source }); };
 
 // ---- the program, from the editors ----
 const panel = new FakeEl("div"); body.append(panel);
@@ -87,14 +87,14 @@ ok("the shipped program: the preamble, Common and each room's text as shipped, t
 ok("the frame is made once the tab is laid out, not before", !panel.querySelector("iframe") && (advance(20), !!panel.querySelector("iframe.script-frame")), panel.querySelectorAll("iframe").length);
 const frame = run("scriptFrame").iframe;
 ok("the frame is Hazel's embed mode on the embed branch's build, out of the keyboard's Tab order",
-  frame.getAttribute("src") === "https://hazel.org/build/js-library-embed/index.html#embed" && frame.getAttribute("tabindex") === "-1", frame.attrs);
+  frame.getAttribute("src") === "https://build.hazel.org/js-library-embed/index.html#embed" && frame.getAttribute("tabindex") === "-1", frame.attrs);
 ok("nothing is posted before the frame says ready", posts.length === 0, posts);
 msg({ type: "ready", protocol: 1, build: "abc" }, { origin: "https://evil.example" });
 msg({ type: "ready", protocol: 1, build: "abc" }, { source: {} });
 ok("a ready from another origin, or from another window, is ignored", posts.length === 0 && run("scriptFrame.phase") === "loading", posts);
 advance(1500);
 msg({ type: "ready", protocol: 1, build: "abc" });
-ok("ready: the program posted once, to Hazel's origin, as {type: set, preamble, modules, tail}", posts.length === 1 && posts[0].origin === "https://hazel.org"
+ok("ready: the program posted once, to Hazel's origin, as {type: set, preamble, modules, tail}", posts.length === 1 && posts[0].origin === "https://build.hazel.org"
   && posts[0].data.type === "set" && JSON.stringify({ ...posts[0].data, type: undefined }) === JSON.stringify({ ...run("scriptSpec()"), type: undefined }), posts);
 ok("its ready time is kept", run("scriptFrame.readyMs") >= 1500, run("scriptFrame.readyMs"));
 const trap = boxes[1];

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.467 (2026-10-29)
+
+Everything in 0.0.466, plus:
+
+- **📜 Scripting's Hazel tiles work again.** Hazel's builds moved to build.hazel.org, and the tiles under each editor were still asked for at the old address, so they stayed at "loading". The game now asks build.hazel.org for them.
+
 ## 0.0.466 (2026-10-29)
 
 Everything in 0.0.465, plus:
