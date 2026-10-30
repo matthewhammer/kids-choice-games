@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.469 (2026-10-29)
+
+Everything in 0.0.468, plus:
+
+- A place is drawn exactly the same each time it is shown. Measuring where a thing stands (to know what the friend can walk into) left a tiny mark in the drawing of a glow or fumes, so the witch's room, with its glowing cave mushroom, was not always drawn the same.
+
 ## 0.0.468 (2026-10-29)
 
 Everything in 0.0.467, plus:

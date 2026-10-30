@@ -294,7 +294,11 @@ function standingHere(B, seats) {
     // (a faint black ellipse under it)
     const fumes = [...o.node.querySelectorAll('.fumes, .flat, ellipse[fill="#000"], ellipse[fill="#000000"]')]
       .filter(el => !el.matches("ellipse") || el.closest(".fumes, .flat") || +(el.getAttribute("opacity") ?? el.getAttribute("fill-opacity") ?? 1) < 0.45);
-    for (const f of fumes) f.style.display = "none";
+    // (0.0.469: hidden and shown by the style attribute itself, each given back its own, or none: by .style.display, Chrome wrote an
+    // empty style="" back later, so the drawing's markup differed by whether it had been measured, and still274's two loads of the
+    // witch room's glowing cave mushroom differed so)
+    const styles = fumes.map(f => f.getAttribute("style"));
+    fumes.forEach((f, i) => f.setAttribute("style", (styles[i] ? styles[i] + ";" : "") + "display:none"));
     try {   // (Firefox throws for a drawing not shown)
       const r = root.getBBox(), E = root.getScreenCTM(), m = Pinv && E ? Pinv.multiply(E) : null;
       if (m && r.width > 0 && r.height > 0) {
@@ -305,7 +309,7 @@ function standingHere(B, seats) {
         if (trunk && marked) { const E2 = o.node.getScreenCTM(), m2 = E2 && Pinv.multiply(E2), q2 = m2 && boxThrough(o.node.getBBox(), m2); if (q2) b.bottom = q2.y + q2.height; }
       }
     } catch (e) { return; }
-    finally { for (const f of fumes) f.style.display = ""; }
+    finally { fumes.forEach((f, i) => { if (styles[i] === null) f.removeAttribute("style"); else f.setAttribute("style", styles[i]); }); }
     if (!b || !(b.width > 0) || !(b.height > 0)) return;
     // (ticket 441, Matthew: "collision box for fountain in the castle greenhouse looks off --- I should say -- collision oval")
     // A drawing that marks its footprint ([data-footprint]: an unseen shape where it meets the floor) is that wide and that
