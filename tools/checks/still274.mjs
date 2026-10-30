@@ -28,7 +28,7 @@ const DRAW_ALL = `(async () => {
   for (const [kind] of PLACES) {
     if (kind === "none" || kind === "castleroom") continue;
     reset(); state.background.kind = kind; for (const g of VISIBLE_PARTS) state.visible[g] = 100;
-    holdStill(0); changed(); await tick(250); grab(kind); if (kind === "witchroom") out.__witch = pic.innerHTML + "\n@@ things " + JSON.stringify(state.background.things) + " seeded " + JSON.stringify(state.world.carrySeeded || null) + " home " + worldHome;
+    holdStill(0); changed(); await tick(250); grab(kind); if (kind === "witchroom") out.__witch = pic.innerHTML + " @@THINGS@@ things " + JSON.stringify(state.background.things) + " seeded " + JSON.stringify(state.world.carrySeeded || null) + " home " + worldHome;
   }
   reset(); Object.assign(state.background, { kind: "castleroom", castle: "N", castleRoomsN: 6, castleRoom6N: "dungeon1", castleRoom: 6 }); for (const g of VISIBLE_PARTS) state.visible[g] = 100;
   state.body.anim = "climbup"; state.body.facing = "back"; climb = null; climbAnywhere = true; holdStill(0); changed(); await tick(200); if (!climb) startClimb();
@@ -54,7 +54,7 @@ try {
   await ev(`localStorage.removeItem("dress-up-slow"); 1`);
   { const A = first.__witch || "", B = second.__witch || ""; let i = 0; while (i < A.length && A[i] === B[i]) i++;
     console.log("  DIAG witchroom same:", A === B, "at", i, "of", A.length, B.length); console.log("  A:", A.slice(Math.max(0, i - 300), i + 300)); console.log("  B:", B.slice(Math.max(0, i - 300), i + 300));
-    console.log("  A tail:", A.slice(A.indexOf("\n@@")).slice(0, 1500)); console.log("  B tail:", B.slice(B.indexOf("\n@@")).slice(0, 1500)); delete first.__witch; delete second.__witch; }
+    console.log("  A tail:", A.slice(A.indexOf(" @@THINGS@@")).slice(0, 1500)); console.log("  B tail:", B.slice(B.indexOf(" @@THINGS@@")).slice(0, 1500)); delete first.__witch; delete second.__witch; }
   const keys = Object.keys(first).filter(k => k !== "clipped"), differ = keys.filter(k => first[k] !== second[k]), blobs = keys.filter(k => first[k].includes("BLOB") || second[k].includes("BLOB"));
   say(keys.length >= 25, `${keys.length} pictures drawn held still`);
   say(!differ.length, differ.length ? `${differ.length} differ between the two loads: ${differ.join(", ")}` : "all the same in both loads, the second on a computer marked slow");
