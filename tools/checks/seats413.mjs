@@ -1,7 +1,8 @@
 // (ticket 413) Things with a top to sit on are seats wherever they stand, when the top is a seat's height for the friend:
 // in the empty room a rock, a bench and a barrel at 25% are seats, a cauldron and a bush are not; the friend sat on each
-// has their hips on it; a click on the rock (a press let go where it is, 👆 on) walks there and sits; a press moved on
-// drags it instead; and the fairy forest's toadstools are seats beyond its own three. Exits 1 on a failure.
+// has their hips on it; a click on the barrel (a press let go where it is, 👆 on) walks there and sits; a click on the rock,
+// a thing to carry since ticket 639, takes it; a press moved on drags it instead; and the fairy forest's toadstools are seats
+// beyond its own three. Exits 1 on a failure.
 //   node seats413.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -35,18 +36,30 @@ try {
   console.log(`  the empty room's things: ${JSON.stringify(r)}`);
   ok("a rock, a bench and a barrel at 25% are seats; a cauldron and a bush are not", JSON.stringify(r.seats) === JSON.stringify(["barrel", "bench", "rock"]), r.seats);
   ok("sat on each, the friend's hips are on it, and it is the seat they are on", r.sat.length === 3 && r.sat.every(s => s.sit && s.now === s.seat && Math.abs(s.off) <= 3), r.sat);
-  // a real click on the rock: pressed and let go where it is
+  // a real click on a thing: pressed and let go where it is, on its middle
+  const centreOf = i => ev(`(() => { const el = bgShown.node.querySelector('[data-drag="thing:${i}"]'), r = el.getBoundingClientRect(); return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height * 0.4 }); })()`).then(JSON.parse);
+  const clickAt = async p => { await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: p.x, y: p.y });
+    await send("Input.dispatchMouseEvent", { type: "mousePressed", x: p.x, y: p.y, button: "left", buttons: 1, clickCount: 1 });
+    await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: p.x, y: p.y, button: "left", buttons: 0, clickCount: 1 }); };
+  // a click on the barrel walks there and sits (0.0.468: the rock was clicked here, but since 0.0.463, ticket 639, a rock is a thing
+  // to carry too, to hold a floor switch down, and a click on one takes it: below)
   await ev(setUp);
-  const at = JSON.parse(await ev(`(() => { const el = bgShown.node.querySelector('[data-drag="thing:0"]'), r = el.getBoundingClientRect(); return JSON.stringify({ x: r.left + r.width / 2, y: r.top + r.height * 0.4 }); })()`));
-  await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at.x, y: at.y });
-  await send("Input.dispatchMouseEvent", { type: "mousePressed", x: at.x, y: at.y, button: "left", buttons: 1, clickCount: 1 });
-  await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: at.x, y: at.y, button: "left", buttons: 0, clickCount: 1 });
+  await clickAt(await centreOf(2));
   const c = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), t0 = performance.now();
     while (performance.now() - t0 < 9000 && !(state.body.sit && state.background.seat)) await w(100);
-    return JSON.stringify({ sit: state.body.sit, seat: state.background.seat, ms: Math.round(performance.now() - t0), rockX: state.background.things[0].x }); })()`));
-  console.log(`  a click on the rock: ${JSON.stringify(c)}`);
-  ok("a click on the rock walks there and sits on it", c.sit && /^rock/.test(c.seat || ""), c);
-  ok("and the rock stays where it was", c.rockX === -220, c);
+    return JSON.stringify({ sit: state.body.sit, seat: state.background.seat, ms: Math.round(performance.now() - t0), barrelX: (state.background.things.find(t => t.kind === "barrel") || {}).x }); })()`));
+  console.log(`  a click on the barrel: ${JSON.stringify(c)}`);
+  ok("a click on the barrel walks there and sits on it", c.sit && /^barrel/.test(c.seat || ""), c);
+  ok("and the barrel stays where it was", c.barrelX === 200, c);
+  // a click on the rock: walked to, and taken (ticket 639)
+  await ev(setUp);
+  const at = await centreOf(0);
+  await clickAt(at);
+  const k = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), t0 = performance.now();
+    while (performance.now() - t0 < 9000 && state.background.things.some(t => t.kind === "rock")) await w(100);
+    return JSON.stringify({ rockHere: state.background.things.some(t => t.kind === "rock"), sit: state.body.sit, ms: Math.round(performance.now() - t0) }); })()`));
+  console.log(`  a click on the rock: ${JSON.stringify(k)}`);
+  ok("a click on the rock walks there and takes it (a thing to carry), and nobody sits", !k.rockHere && !k.sit, k);
   // a press moved on: a drag, as before
   await ev(setUp);
   await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: at.x, y: at.y });

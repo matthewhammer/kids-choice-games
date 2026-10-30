@@ -15,7 +15,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const withLogic = (u, m) => { const [base, hash] = u.split("#"); return base.split("?")[0] + "?logic=" + m + (hash ? "#" + hash : ""); };
 let bad = 0;
 const ok = (what, cond, got) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}${cond ? "" : ": " + JSON.stringify(got).slice(0, 900)}`); if (!cond) bad++; };
-const SCENARIO = `(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, out = { steps: [] };
+// (0.0.468) each mode from a new game: they share the browser's autosave, and since ticket 639 a room's things to carry are put
+// in it once (the tree room's net and chocolate), so for the mode run second the tree room was marked as given them already, and
+// this scenario's own start empties it
+const SCENARIO = `(async () => { state = clone(DEFAULTS); changed(); const w = ms => new Promise(r => setTimeout(r, ms)), B = state.background, out = { steps: [] };
   state.music.mute = true; state.world.at = null; climb = null;
   if (SCRIPT_FUMOLA) {
     try { await fumolaLoad(); } catch (e) { out.loadError = String(e && e.message || e); }

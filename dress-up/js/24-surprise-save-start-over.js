@@ -279,6 +279,8 @@ function loadSaved(data) {
   upgradeFoamMove(next.background, saved);
   upgradeThings(next, saved);
   upgradeWorld(next);
+  upgradeDungeonMade(next, saved);
+  dungeonDedupe(next);
   upgradeClickWalk(next, saved);
   upgradePitShapes(next, saved);
   upgradeFace(next.face, saved.face);

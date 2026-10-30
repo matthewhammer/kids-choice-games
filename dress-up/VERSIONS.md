@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.468 (2026-10-29)
+
+Everything in 0.0.467, plus:
+
+- **One dungeon, kept.** Since 0.0.463 the game was making another 🗝️ dungeon every time the page loaded, with two more holes down to it in the cemetery and the castle. A game that has them now keeps one: the one you are in, or the one you played most. The rest go, with their holes, and the save is much smaller.
+- **Every room gets its things.** After the first room with things to find (the witch's potions, the tree house's 🥅 net, the healer's bottle), the other rooms were left empty. Now each room has its own things the first time you go in, so the bug-catching puzzle works whichever room you visit first.
+
 ## 0.0.467 (2026-10-29)
 
 Everything in 0.0.466, plus:
