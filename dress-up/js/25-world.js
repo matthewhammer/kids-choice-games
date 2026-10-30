@@ -226,7 +226,9 @@ function worldProblems(W) {
 // things, any place's; and a forest crossing's paths and floor.
 const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW", "crossW", "crossNW", "crossFloor", "crossBack", "crossCave", "crossHole", "crossLedge", "crossOpen", "crossShade", "crossMoss", "crossMossKind", "crossShrooms", "crossShroomKind", "crossSeed", "crossStairs"];
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
-const cellKeys = kind => isCross(kind) ? ["things", "cut", ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", "cut", INSIDE_WHICH[kind]] : ["things", "cut"];   // (ticket 656: and the plants cut in it)
+// (ticket 656: and the plants cut in it; ticket 659: when each was cut, and the plants put in it that were cut, to grow back)
+const CUT_KEYS = ["cut", "cutWhen", "cutThings"];
+const cellKeys = kind => isCross(kind) ? ["things", ...CUT_KEYS, ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", ...CUT_KEYS, INSIDE_WHICH[kind]] : ["things", ...CUT_KEYS];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
 // figX and figY: across, and nearer or farther than the ground line)
@@ -1546,6 +1548,7 @@ function worldKeep() {
     worldHome = home;
     if (sq) for (const k of cellKeys(cell.kind)) { const v = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k])); if (JSON.stringify(v) !== JSON.stringify(B[k])) B[k] = v; }
     else if (home) { const v = structuredClone((W.off || {})[placeKey(B)] || []); if (JSON.stringify(v) !== JSON.stringify(B.things)) B.things = v; }
+    if (typeof regrowHere === "function") regrowHere(false);   // (ticket 659: what has grown back while the friend was away, there before it is drawn)
   } else if (sq) {
     for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
   } else if (home) {

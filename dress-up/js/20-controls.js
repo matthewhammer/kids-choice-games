@@ -2469,6 +2469,19 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                         syncs.push(() => { setPressed(b, !!D().on); setHidden(more, !D().on); const m = D().dayMinutes ?? 12;
                           if (len.value !== String(m)) len.value = String(m); setText(lenText, `${m} minutes`); setText(count, ` · 🛌 nights slept: ${D().nights || 0}`); });
                         return el("div", {}, [el("div", { class: "row" }, [b]), more]); })(),
+               // (ticket 659, M: the plants the sword cuts grow back) 🌱 cut plants grow back, saved with the friend (state.regrow), on
+               // to start: after regrow.minutes; with 🌗 night and day on, by the next morning (regrowHere)
+               (() => { const R = () => state.regrow || (state.regrow = clone(DEFAULTS.regrow));
+                        const b = el("button", { class: "regrow-toggle", "aria-pressed": String(!!R().on), onclick: () => { R().on = !R().on; b.setAttribute("aria-pressed", String(R().on)); changed(); } },
+                                    "🌱 cut plants grow back");
+                        const len = el("input", { type: "range", min: "1", max: "30", step: "1", value: String(R().minutes ?? 2), "aria-label": "minutes a cut plant takes to grow back",
+                                                  oninput: e => { R().minutes = Number(e.target.value); changed(); } });
+                        const lenText = el("span", { class: "hint" });
+                        const more = el("div", { class: "row regrow-more" }, [el("span", { class: "hint" }, "⏱️ they grow back after"), len, lenText]);
+                        const byMorning = el("div", { class: "row regrow-morning" }, [el("span", { class: "hint" }, "🌅 they grow back by the next morning: sleep in a bed, and they are all back")]);
+                        syncs.push(() => { const on = !!R().on, m = R().minutes ?? 2; setPressed(b, on); setHidden(more, !on || daysOn()); setHidden(byMorning, !on || !daysOn());
+                          if (len.value !== String(m)) len.value = String(m); setText(lenText, m === 1 ? "1 minute" : `${m} minutes`); });
+                        return el("div", {}, [el("div", { class: "row" }, [b]), more, byMorning]); })(),
                meter,
                el("div", { class: "hint" }, "🚀 Kept off until they are fast: 60 frames a second, for everything the controller does, comes first. Switched on, each says how many it draws in this place; 📏 walks the friend here with it off, then on, and says what it costs on this computer."));
     perfMeter.node = meter;

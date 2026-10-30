@@ -637,6 +637,9 @@ const DEFAULTS = {
   scripts: { on: false, common: null, rooms: {} },
   // (ticket 657) 🌗 night and day (⚙️ Advanced): on or off, how many minutes a whole day takes, and the nights slept in a bed
   days: { on: false, dayMinutes: 12, nights: 0 },
+  // (ticket 659) 🌱 the plants a 🗡️ sword cuts grow back (⚙️ Advanced): on or off, and after how many minutes (with 🌗 night and
+  // day on, by the next morning instead)
+  regrow: { on: true, minutes: 2 },
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: false, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
@@ -689,7 +692,7 @@ const DEFAULTS = {
             patternColor: "auto" },
   shoes: { style: "sneaker", different: false, size: 100, color: "#c0392b", toes: 5, alienToes: 3, talonCount: 4 },
   // the figure's size and place in a background scene (dragged there)
-  background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, cut: {}, chickenLegs: false, legSize: 100, hutNear: 0,
+  background: { kind: "none", figSize: 100, figUnit: "scene", figX: 0, figY: 0, objectsOff: {}, cut: {}, cutWhen: {}, cutThings: {}, chickenLegs: false, legSize: 100, hutNear: 0,
                 leverShine: 100, leverShineColor: "#ffd27a", leverFlicker: 60,   // (ticket 317: the levers' shine: its size, its colour, how much it flickers with the torches)
                 // (standing in water: how see-through below the waist, and how big a wake: ticket 122)
                 waterSee: 70, waterWake: 100, waterTread: 100, seat: null,   // (ticket 50: the seat the friend sits on here, by name)
