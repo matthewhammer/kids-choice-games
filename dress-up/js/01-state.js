@@ -629,6 +629,8 @@ const DEFAULTS = {
   backpack: [], pack: { drawn: false, tool: "" },
   // (ticket 406) the other worlds, by id (the one the friend is in is `world`), and the worlds kept as templates, by id
   worldsAway: {}, worldTemplates: {},
+  // (ticket 639) the 🗝️ dungeon world, made once a game (dungeonWorldEnsure): made or not, in an object so a save keeps it
+  dungeon: { made: false },
   // (ticket 439) the person being dressed (their look is the parts below), and the other people, by id
   person: { id: "p1", name: "", template: false, from: null }, peopleAway: {},
   // (ticket 482) 📜 Scripting: the rules on or off, and each module's text (null: the shipped one, scriptsState)
@@ -902,6 +904,11 @@ function upgradeWorld(next) {
   // (ticket 260: and the defaults before Matthew's world, untouched, to it: where they were is not where they are on it, so
   // from its start)
   else if (sameWorld(C, WORLD_DEFAULT_0103.cells) || sameWorld(C, WORLD_DEFAULT_0123.cells) || sameWorld(C, WORLD_DEFAULT_0183.cells)) next.world = clone(WORLD_DEFAULT);
+}
+// (ticket 639, 0.0.468) to 0.0.467 the dungeon's mark was state.dungeonMade, which no save kept back (only DEFAULTS' settings are
+// read): a save with it has its dungeon (and dungeonDedupe, 25-world.js, takes away the ones each reload and 📂 Load made since)
+function upgradeDungeonMade(next, saved) {
+  if (saved && saved.dungeonMade === true) next.dungeon.made = true;
 }
 // (ticket 185) the things put in a place: since 0.0.100 every place's, as
 // things; in 0.0.98 and 0.0.99 only a forest crossing had them, as crossThings
@@ -1436,6 +1443,7 @@ try {
   upgradeFoamMove(state.background, saved);
   upgradeThings(state, saved);
   upgradeWorld(state);
+  upgradeDungeonMade(state, saved);
   upgradeClickWalk(state, saved);
   upgradePitShapes(state, saved);
   if (INSPECT_ALL) Object.assign(state.access, INSPECT_ON);   // (ticket 236)

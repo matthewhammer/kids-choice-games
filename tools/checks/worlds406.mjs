@@ -21,6 +21,9 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = {};
     state.music.mute = true; worldsInit();
+    // (0.0.463, ticket 639: every game has the 🗝️ dungeon world as world 2, its holes in the start world; taken away first, by the
+    // game's own ✖, so this starts from the one world it was written for)
+    const dg = worldsAll().find(w => w.name === "dungeon"); if (dg) { worldSwitch(dg.id); await w(300); worldDrop(); await w(300); }
     out.first = { id: state.world.id, title: worldTitle(state.world), n: worldsAll().length, tpls: worldTemplatesAll().map(t => t.id) };
     out.badLinks = [worldLink(undefined, "w1", "0,0"), worldLink("Q", "w1", "0,0")];
     // the first world's first square with a way allowed off the grid that an empty room can come back by

@@ -1058,7 +1058,7 @@ function worldsInit(S = state) {
   if (W.id === WORLD_FIRST && W.name === undefined) W.name = "start";
   if (!S.worldsAway || typeof S.worldsAway !== "object" || Array.isArray(S.worldsAway)) S.worldsAway = {};
   if (!S.worldTemplates || typeof S.worldTemplates !== "object" || Array.isArray(S.worldTemplates)) S.worldTemplates = {};
-  if (S === state && !S.dungeonMade && S.background && typeof dungeonMazeWorld === "function") dungeonWorldEnsure(S);   // (ticket 639: once per game)
+  if (S === state && !(S.dungeon && S.dungeon.made) && S.background && typeof dungeonMazeWorld === "function") dungeonWorldEnsure(S);   // (ticket 639: once per game)
 }
 const worldNum = W => +String(W.id || "").replace(/\D/g, "") || 1;
 const worldTitle = W => String(W.name || "").trim() || "world " + worldNum(W);
@@ -1158,12 +1158,12 @@ function dungeonMazeWorld() {
   put(E, { kind: "passage", style: "ladder", x: 280, z: G - 110, uid: "dg-out", to: "castle", hidden: true });   // (in its own corner, clear of the chests)
   return { name: "dungeon", cols: N, rows: N, start: key(...start), at: key(...start), cells };
 }
-// (ticket 639) the dungeon world, once in every game (state.dungeonMade): made, and linked to the start world: a ⚫ hole in the cemetery
+// (ticket 639) the dungeon world, once in every game (state.dungeon.made): made, and linked to the start world: a ⚫ hole in the cemetery
 // down to the way in (its ladder back up), and the treasure room's ladder up to the castle (a hole there, hidden as the ladder is, till
 // its switch is pressed). Kept when the start world has no cemetery or castle: linked to its start square instead.
 function dungeonWorldEnsure(S = state) {
-  if (!S || !S.world || S.dungeonMade) return;
-  S.dungeonMade = true;   // (first: worldsInit calls this)
+  if (!S || !S.world || (S.dungeon && S.dungeon.made)) return;
+  (S.dungeon || (S.dungeon = {})).made = true;   // (first: worldsInit calls this)
   worldsInit(S);
   const all = [S.world, ...Object.values(S.worldsAway)], n = 1 + Math.max(0, ...all.map(worldNum)), D = Object.assign(dungeonMazeWorld(), { id: "w" + n });
   S.worldsAway[D.id] = D;
@@ -1183,6 +1183,30 @@ function dungeonWorldEnsure(S = state) {
   };
   link("dg-in", sq("cemetery"), W1.cells[sq("cemetery")].kind, "floorhole", false);
   link("dg-out", sq("castle"), W1.cells[sq("castle")].kind, "floorhole", true);
+}
+// (ticket 639, 0.0.468) to 0.0.467 the mark that a game's dungeon was made was not kept by its save, so every reload and every 📂
+// Load made another dungeon world, and two more holes into it in the start world (the dev save on 10-29 had 13 of each). One is
+// kept: the one the friend is in, else the one played most (the most rooms unlike a new one's), else the first made; the others go,
+// with the holes into them. Only dungeonWorldEnsure's are counted: a ⚫ hole in the start world, its seed 4000 and its dungeon's
+// number (a world made from the 🗝️ template and linked by hand is left alone). True when it took any away.
+function dungeonDedupe(S = state) {
+  const W1 = S && S.world && [S.world, ...Object.values(S.worldsAway || {})].find(w => w.id === WORLD_FIRST);
+  if (!W1) return false;
+  const lists = Object.values(W1.cells || {}).map(c => c.things).filter(Array.isArray);
+  if (S.world === W1 && S.background && Array.isArray(S.background.things)) lists.push(S.background.things);   // (the square shown's)
+  const byId = Object.fromEntries([S.world, ...Object.values(S.worldsAway || {})].map(w => [w.id, w]));
+  const made = t => t.kind === "passage" && t.style === "floorhole" && t.to === "dungeon" && t.dest && byId[t.dest.world] && t.seed === 4000 + worldNum(byId[t.dest.world]);
+  const ids = new Set(lists.flatMap(T => T.filter(made).map(t => t.dest.world)));
+  const dgs = [...ids].map(id => byId[id]).filter(W => W.name === "dungeon").sort((a, b) => worldNum(a) - worldNum(b));
+  if (dgs.length) (S.dungeon || (S.dungeon = {})).made = true;
+  if (dgs.length < 2) return false;
+  const fresh = dungeonMazeWorld(), bare = c => JSON.stringify(((c && c.things) || []).map(({ uid, dest, twin, shows, to, ...t }) => t));
+  const played = W => (W.at !== W.start ? 1 : 0) + Object.keys(W.cells || {}).filter(k => bare(W.cells[k]) !== bare(fresh.cells[k])).length;
+  const keep = dgs.find(W => W === S.world) || dgs.reduce((a, b) => played(b) > played(a) ? b : a);   // (the first on a tie)
+  const gone = new Set(dgs.filter(W => W !== keep).map(W => W.id));
+  for (const T of lists) for (let i = T.length - 1; i >= 0; i--) if (made(T[i]) && gone.has(T[i].dest.world)) T.splice(i, 1);
+  for (const id of gone) delete S.worldsAway[id];
+  return true;
 }
 function worldTemplatesAll() {
   worldsInit();
@@ -2080,3 +2104,5 @@ function peoplePathsKeepDepth() {
     if (ahead && ahead !== kept.node.nextSibling) ahead.parentNode.insertBefore(kept.node, ahead);
   }
 }
+// (ticket 639, 0.0.468) the save just read back: the extra dungeons each reload made to 0.0.467 taken away, and the save kept so
+if (dungeonDedupe(state)) persist();

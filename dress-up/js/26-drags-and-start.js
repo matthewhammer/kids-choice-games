@@ -1791,15 +1791,21 @@ const ROOM_CARRY = {
   treeroom: [["net", -200, -60, {}], ["chocolate", 190, -80, {}]],
   clearing: [["bee", -150, -120, {}], ["bee", 180, -60, {}]], fairyforest: [["bee", 120, -100, {}]], forest: [["bee", -120, -90, {}]],
 };
+// (0.0.468) once a room, not once a game: B.carrySeeded was one mark for every place, so after the witch's room the tree room never had
+// its net (the bug-catching puzzle stuck). Each room's own mark, by the place it is (worldHome: its square, or an inside off the grid),
+// in its world's W.carrySeeded. A save from 0.0.463 to 0.0.467 (B.carrySeeded) whose room has its things already: not put again.
 function roomCarrySeed() {
-  const B = state.background, list = ROOM_CARRY[B.kind];
-  if (!list || B.carrySeeded) return;
-  B.carrySeeded = true;
-  B.things = [...(B.things || []), ...list.map(([kind, x, dz, o], i) => {
+  const B = state.background, list = ROOM_CARRY[B.kind], W = state.world;
+  if (!list || !W) return;
+  const at = worldHome || "off:" + W.id + ":" + placeKey(B), marks = W.carrySeeded || (W.carrySeeded = {});
+  if (marks[at]) return;
+  marks[at] = true;
+  const T = list.map(([kind, x, dz, o], i) => {
     const t = { ...(THING_DEFAULTS[kind] || {}), ...o, kind, x, z: SCENE.ground + dz, seed: 301 + i };
     if (kind === "potion") t.color = POTION_COLORS[o.color % POTION_COLORS.length];
     return t;
-  })];
+  });
+  if (!(B.carrySeeded && (B.things || []).some(t => T.some(s => s.kind === t.kind && s.seed === t.seed)))) B.things = [...(B.things || []), ...T];
   queueMicrotask(() => { changed(); draw(); });
 }
 // (ticket 639, Matthew: "let's have some small puzzles --- my one about the bug catching, and yours about plates") the plate puzzle:

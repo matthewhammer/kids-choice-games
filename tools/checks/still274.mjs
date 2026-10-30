@@ -21,7 +21,8 @@ const say = (ok, line) => { if (!ok) fails++; console.log(`${ok ? "ok  " : "FAIL
 const DRAW_ALL = `(async () => {
   const tick = ms => new Promise(r => setTimeout(r, ms));
   const h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 16777619); return (x >>> 0).toString(16); };
-  const reset = () => { for (const [p, v] of Object.entries(DEFAULTS)) if (state[p] && typeof v === "object") { for (const key of Object.keys(state[p])) delete state[p][key]; Object.assign(state[p], structuredClone(v)); } state.music.mute = true; };
+  const reset = () => { for (const [p, v] of Object.entries(DEFAULTS)) if (state[p] && typeof v === "object") { for (const key of Object.keys(state[p])) delete state[p][key]; Object.assign(state[p], structuredClone(v)); } state.music.mute = true;
+    state.dungeon.made = true; };   // (0.0.468: the game's dungeon made already, as in any game, or each reset makes it again: a hole with a new name)
   const pic = document.getElementById("pic"), out = {};
   const grab = k => { out[k] = h(pic.innerHTML) + (pic.innerHTML.includes("blob:") ? " BLOB" : ""); };
   for (const [kind] of PLACES) {

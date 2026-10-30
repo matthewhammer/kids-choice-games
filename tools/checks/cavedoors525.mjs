@@ -83,9 +83,9 @@ try {
     const r = { J, key: t.dest && t.dest.key, twin: !!tw, back: !!tw && passageTwin(tw) === t, probs: worldProblems(W).map(p => p.text).filter(x => /cave passage/.test(x)) };
     worldMove(J, K); r.again = (state.background.things.find(t => t.kind === "passage").dest || {}).key === K; return JSON.stringify(r); })()`));
   ok("(e2) a linked square moved: the door's dest follows it, its twin found both ways, no warning", e2.key === e2.J && e2.twin && e2.back && !e2.probs.length && e2.again, e2);
-  // (f) ✖ on its card takes both
+  // (f) ✖ on its card takes both (there: its twin only; since 0.0.463, ticket 639, the castle's square has the dungeon's hidden hole too)
   await click(`#panel .thingcard .tdel`); await sleep(600);
-  const f = JSON.parse(await ev(`JSON.stringify({ here: (state.background.things || []).filter(t => t.kind === "passage").length, there: (state.world.cells[${JSON.stringify(K)}].things || []).filter(t => t.kind === "passage").length })`));
+  const f = JSON.parse(await ev(`JSON.stringify({ here: (state.background.things || []).filter(t => t.kind === "passage").length, there: (state.world.cells[${JSON.stringify(K)}].things || []).filter(t => t.kind === "passage" && t.uid === ${JSON.stringify(b.twin)}).length })`));
   ok("(f) ✖ takes both away", f.here === 0 && f.there === 0, f);
   // (g) linked into another world, then that world taken away: unlinked, no warning
   const g = JSON.parse(await ev(`(async () => { const W = state.world, wid = W.id, B = state.background;
