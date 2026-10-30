@@ -25,7 +25,7 @@ const under = (x, y) => `(() => { const out = []; for (let e = document.elementF
 const doorAt = async to => JSON.parse(await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="${to}"]'); if (!d) return "null";
   const s = d.querySelector("rect, path") || d, r = s.getBoundingClientRect(); return JSON.stringify([r.left + r.width / 2, r.top + r.height / 2]); })()`));
 const until = async (cond, ms = 8000) => { for (let t = 0; t < ms; t += 100) { if (await ev(cond)) return true; await sleep(100); } return false; };
-const where = async () => JSON.parse(await ev(`JSON.stringify({ kind: state.background.kind, at: state.world.at, things: (state.background.things || []).map(t => t.kind), off: Object.fromEntries(Object.entries(state.world.off || {}).map(([k, v]) => [k, v.map(t => t.kind)])) })`));
+const where = async () => JSON.parse(await ev(`JSON.stringify({ kind: state.background.kind, at: state.world.at, things: (state.background.things || []).map(t => t.kind), seeds: (state.background.things || []).map(t => t.seed), off: Object.fromEntries(Object.entries(state.world.off || {}).map(([k, v]) => [k, v.map(t => t.kind)])) })`));
 try {
   await send("Runtime.enable");
   await send("Emulation.setDeviceMetricsOverride", { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
@@ -37,7 +37,10 @@ try {
   await ev(`(() => { const d = document.querySelector('#bg .portal[data-to="healerroom"]'); d.dispatchEvent(new MouseEvent("click", { bubbles: true })); return 1; })()`);
   await until(`state.background.kind === "healerroom" && !entering`);
   let W = await where();
-  ok("through the clearing's own doorway into the healer's hut: the potion stays in the clearing", W.kind === "healerroom" && W.things.length === 0 && W.at === "3,3", W);
+  // (ticket 639: the healer's hut has its own things to carry, put on its floor the first time (ROOM_CARRY, seeds from 301); the
+  // clearing's potion, seed 1, is not among them)
+  ok("through the clearing's own doorway into the healer's hut: the potion stays in the clearing, the hut has its own things", W.kind === "healerroom" && W.at === "3,3"
+    && W.things.join() === "potion,potion,bottle,chocolate,item" && W.seeds.every(s => s >= 301), W);
   await ev(`(async () => { state.background.things = [{ kind: "bush", x: -100, z: 380, seed: 2, size: 100 }]; changed(); await new Promise(r => setTimeout(r, 300)); return 1; })()`);
   W = await where();
   ok("a bush put in the hut is kept as the hut's, off the grid", W.off.healerroom && W.off.healerroom.join() === "bush", W);
