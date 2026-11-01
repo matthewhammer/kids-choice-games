@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night, Day and the Garden in Messed Up Dress Up (print)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  @page { size: 5.5in 8.5in; margin: 0.42in 0.38in 0.5in; }
+  * { box-sizing: border-box; color: #000 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  html, body { background: #fff !important; }
+  body { margin: 0; font: 10pt/1.42 "Literata", Georgia, serif; }
+  main { max-width: none; padding: 0; }
+  a { text-decoration: none; } a.ref code b { font-weight: normal; }
+  .series { font: 7.5pt/1.35 system-ui, sans-serif; }
+  .cover { border: 2.5pt double #000; padding: 0.25in 0.18in; margin: 0 0 0.12in; text-align: center; break-after: page; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 12pt; letter-spacing: 0.15em; }
+  h1 { font-family: "Press Start 2P", monospace; font-size: 15pt; line-height: 1.5; margin: 10pt 0; }
+  .cover .edition { font-family: "VT323", monospace; font-size: 12pt; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 8.5pt; line-height: 1.6; margin: 0 0 8pt; padding: 5pt 6pt; border: 1.5pt solid #000; break-before: page; break-after: avoid; }
+  h2 .ch { margin-right: 6pt; }
+  h3 { font-family: "VT323", monospace; font-size: 13pt; margin: 10pt 0 3pt; border-bottom: 1pt dotted #000; break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .box { border: 1.2pt solid #000; padding: 5pt 7pt; margin: 7pt 0; break-inside: avoid; }
+  .box.warn { border-style: dashed; border-width: 1.5pt; }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 6pt; margin-bottom: 3pt; }
+  pre.code { border: none; border-left: 2pt solid #000; padding: 3pt 7pt; margin: 6pt 0; font: 8.5pt/1.3 "VT323", ui-monospace, monospace; white-space: pre-wrap; break-inside: avoid; }
+  code { font-size: 0.86em; }
+  figure.shot { border: 0.8pt solid #000; padding: 3pt; margin: 7pt 0; break-inside: avoid; }
+  figure.shot img { display: block; width: 100%; max-height: 4.1in; object-fit: contain; filter: grayscale(1) contrast(1.05); }
+  figure.shot figcaption { font: 7pt/1.3 system-ui, sans-serif; padding: 3pt 1pt 0; }
+  figure.half { max-width: none; }
+  .toc { columns: 1; font-family: "VT323", monospace; font-size: 11.5pt; border: 1pt dashed #000; padding: 6pt 10pt; break-after: page; }
+  table.feat { font: 6.8pt/1.3 system-ui, sans-serif; border-collapse: collapse; width: 100%; }
+  table.feat th, table.feat td { border: 0.5pt solid #000; padding: 2pt 3pt; }
+  table.feat th { font-family: "VT323", monospace; font-size: 9pt; border-bottom-width: 1.2pt; }
+  table.feat tr { break-inside: avoid; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 4.6pt; }
+  .scroll { overflow: visible; }
+  .key { border: 0.7pt solid #000; border-radius: 6pt; padding: 0 5pt; font: 600 0.85em/1.4 system-ui, sans-serif; }
+  button.theme, script { display: none !important; }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../024/"><code><b>^du_report(</b>24<b>)</b></code></a> · 2026-11-01 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a></p>
+<div class="cover">
+  <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
+  <h1>NIGHT, DAY<br>AND THE GARDEN</h1>
+  <div class="edition">a young player's guide to what is new since <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> · the sword, night and day, plants that grow back, the garden and the spring · version 0.0.471</div>
+  <figure class="shot half"><img src="pictures/01-garden.webp" alt="The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed."><figcaption>The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed.</figcaption></figure>
+</div>
+<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.471.</p>
+
+<div class="toc">
+<a href="#ch1">1 · WHAT'S NEW</a><br>
+<a href="#ch2">2 · A SWORD THAT CUTS</a><br>
+<a href="#ch3">3 · WHAT IS CUT STAYS CUT</a><br>
+<a href="#ch4">4 · NIGHT AND DAY 🌗</a><br>
+<a href="#ch5">5 · TIME FOR BED 🛌</a><br>
+<a href="#ch6">6 · PLANTS GROW BACK 🌱</a><br>
+<a href="#ch7">7 · THE GARDEN 🌻</a><br>
+<a href="#ch8">8 · THE SPRING 💧</a><br>
+<a href="#ch9">9 · COMING SOON</a><br>
+<a href="#ch10">10 · FIXED</a><br>
+<a href="#ch11">11 · MAKE UP A STORY</a><br>
+<a href="#ch12">12 · THE QUICK CARD</a><br>
+<a href="#about">ABOUT THIS GUIDE</a><br>
+</div>
+
+<h2 id="ch1"><span class="ch">1</span>WHAT'S NEW</h2>
+<p>Since the last guide, Messed Up Dress Up has grown. Most of it was <b>M's idea</b>:</p>
+<div class="scroll"><table class="feat"><thead><tr><th>version</th><th>what is new</th><th>chapter</th></tr></thead><tbody>
+<tr><td>0.0.465</td><td>🗡️ A sword that <b>cuts plants</b>. <i>Chop!</i></td><td><a href="#ch2">2</a>, <a href="#ch3">3</a></td></tr>
+<tr><td>0.0.466</td><td>🌗 <b>Night and day</b>, and 🛌 <b>sleeping</b> in a bed</td><td><a href="#ch4">4</a>, <a href="#ch5">5</a></td></tr>
+<tr><td>0.0.470</td><td>🌱 Cut plants <b>grow back</b></td><td><a href="#ch6">6</a></td></tr>
+<tr><td>0.0.471</td><td>Two new places: the 🌻 <b>garden</b> and the 💧 <b>spring</b></td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
+<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch10">10</a></td></tr>
+</tbody></table></div>
+<p>The version number is under the game's name, at the top of the controls. If yours is older, reload the page.</p>
+
+<h2 id="ch2"><span class="ch">2</span>A SWORD THAT CUTS</h2>
+<p>A sword can cut down plants. First, your friend needs a sword in their hand. There are three ways:</p>
+<ul>
+<li>Dress up as a <b>knight</b> or as the <b>Time Wanderer</b> in <span class="key">🐯 Costume</span>. They have their own sword.</li>
+<li>Find the 🗡️ sword in the castle's <b>smithy</b>, pick it up, then press <span class="key">✋ hold it</span> on its card in the <span class="key">🎒 Backpack</span> tab.</li>
+<li>In <span class="key">🧍 Body</span>, tap <b>🫱 right hand holds</b> (or 🫲 left) and choose <span class="key">🗡️ sword</span>.</li>
+</ul>
+<figure class="shot half"><img src="pictures/02-sword-held.webp" alt="A sword in hand, facing a bush in the garden."><figcaption>A sword in hand, facing a bush in the garden.</figcaption></figure>
+<p>Now walk up to a plant, <b>face it</b>, and swing: press <span class="key">U</span> on a keyboard, or the controller's 🥅 button (the one that swings the bug net).</p>
+<figure class="shot half"><img src="pictures/03-chop.webp" alt="Chop! The sword swings, and the bush goes in a puff of leaves."><figcaption>Chop! The sword swings, and the bush goes in a puff of leaves.</figcaption></figure>
+<p>The nearest plant in front of your friend goes in a <b>puff of leaves</b>. One plant each swing. A sword cuts trees, bushes, vines, cactuses, clumps of flowers and mushrooms.</p>
+<figure class="shot half"><img src="pictures/04-cut.webp" alt="The bush is gone. Now there is room to walk where it stood."><figcaption>The bush is gone. Now there is room to walk where it stood.</figcaption></figure>
+<aside class="box tip"><div class="box-h">GOOD TO KNOW</div><p>Rows of flowers and grass that go all the way across a place are not cut. They are there to walk through.</p></aside>
+
+<h2 id="ch3"><span class="ch">3</span>WHAT IS CUT STAYS CUT</h2>
+<p>A plant you cut is gone, and it is not in your way any more. In the 🌍 world, every square remembers its own cut plants: cut a tree in one forest, and the forest next door still has all of its trees.</p>
+<p><b>Want one back right now?</b> Open <span class="key">🏞️ Background</span> and look at <b>👁️ default background objects</b>: everything the place draws itself, a chip each. A cut plant's chip shows 🙈. Tap it, and the plant grows back.</p>
+<figure class="shot "><img src="pictures/05-grow-by-hand.webp" alt="👁️ default background objects in the forest clearing: a tree that was cut (tree, left, inner) shows 🙈. Tap it to bring it back."><figcaption>👁️ default background objects in the forest clearing: a tree that was cut (tree, left, inner) shows 🙈. Tap it to bring it back.</figcaption></figure>
+<p>Plants can also grow back by themselves. See <a href="#ch6">chapter 6</a>.</p>
+
+<h2 id="ch4"><span class="ch">4</span>NIGHT AND DAY 🌗</h2>
+<p>Now the game can have <b>time</b>. It is off to start. To turn it on:</p>
+<ol class="steps">
+<li>Open the <span class="key">⚙️ Advanced</span> tab.</li>
+<li>Press <span class="key">🌗 night and day: night falls, and you sleep in a bed till morning</span>.</li>
+</ol>
+<figure class="shot "><img src="pictures/06-days-on.webp" alt="🌗 night and day, on, in ⚙️ Advanced. ⏱️ a whole day takes 12 minutes, and 🛌 counts the nights slept."><figcaption>🌗 night and day, on, in ⚙️ Advanced. ⏱️ a whole day takes 12 minutes, and 🛌 counts the nights slept.</figcaption></figure>
+<p>Now the hour shows at the top of the picture: ☀️ in the daytime, 🌙 at night. A whole day takes 12 minutes to start. Change it with ⏱️.</p>
+<figure class="shot "><img src="pictures/07-noon.webp" alt="Noon in the forest clearing: ☀️ 12:00 pm at the top."><figcaption>Noon in the forest clearing: ☀️ 12:00 pm at the top.</figcaption></figure>
+<p>After sunset, every place grows <b>dark</b> (less so inside). The game tells you it is bedtime:</p>
+<pre class="code">🌙 Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket.</pre>
+<figure class="shot "><img src="pictures/08-nightfall.webp" alt="9 at night: dark, the moon at the top, and time to find a bed."><figcaption>9 at night: dark, the moon at the top, and time to find a bed.</figcaption></figure>
+<p>Some places have <b>their own night</b>, with the moon and the stars: the jungle waterfall, the cave, the camp site, the tent and the fairy forest.</p>
+<figure class="shot "><img src="pictures/09-campsite-night.webp" alt="The camp site at night, under the stars."><figcaption>The camp site at night, under the stars.</figcaption></figure>
+<aside class="box tip"><div class="box-h">GOOD TO KNOW</div><p>The hour and the date come from <b>🌍 where and when</b>, so the sun and the moon are where they really would be.</p></aside>
+
+<h2 id="ch5"><span class="ch">5</span>TIME FOR BED 🛌</h2>
+<p>When it is dark, find a bed: the bed in the grass hut's bedroom, a bunk, the sleeping bags in a tent, or a blanket. <b>Tap the bed</b> (or click it), and your friend walks over and lies down.</p>
+<figure class="shot "><img src="pictures/10-asleep.webp" alt="Asleep in the grass hut&#x27;s bed. Everything goes dark..."><figcaption>Asleep in the grass hut's bed. Everything goes dark...</figcaption></figure>
+<p>Your friend falls asleep. It goes dark, and then it is <b>7 in the morning</b>, the next day:</p>
+<pre class="code">🌅 Good morning! Nights slept: 1.</pre>
+<figure class="shot "><img src="pictures/11-morning.webp" alt="Good morning! It is 7 o&#x27;clock, and 🛌 counts one night slept."><figcaption>Good morning! It is 7 o'clock, and 🛌 counts one night slept.</figcaption></figure>
+<ul>
+<li>🛌 counts the nights you have slept. It shows at the top of the picture, and in <span class="key">⚙️ Advanced</span>.</li>
+<li>Lying down in the <b>daytime</b> is only a rest: “It's still daytime. Come back to bed when it's dark.”</li>
+<li>Stay up all night if you like. Morning comes anyway!</li>
+</ul>
+
+<h2 id="ch6"><span class="ch">6</span>PLANTS GROW BACK 🌱</h2>
+<p>This was M's idea too. Plants you cut with the sword <b>come back by themselves</b>. It is on to start. You will find it in <span class="key">⚙️ Advanced</span>, under 🌗 night and day:</p>
+<figure class="shot "><img src="pictures/12-regrow-setting.webp" alt="🌱 cut plants grow back, and ⏱️ how long they take."><figcaption>🌱 cut plants grow back, and ⏱️ how long they take.</figcaption></figure>
+<ul>
+<li>A cut plant grows back after <b>2 minutes</b>. Change it with ⏱️, from 1 to 30 minutes.</li>
+<li>It comes back with a <b>puff of leaves</b> and a 🌱, even while you are somewhere else.</li>
+<li>With 🌗 <b>night and day</b> on, cut plants grow back <b>by the next morning</b> instead. Sleep in a bed, and everything you cut is back!</li>
+<li>A bush or a cactus that <i>you</i> put in a place grows back too, right where it was.</li>
+</ul>
+<figure class="shot half"><img src="pictures/13-regrow.webp" alt="Two minutes later: the bush is back, where it was."><figcaption>Two minutes later: the bush is back, where it was.</figcaption></figure>
+<p>Don't want them back? Press <span class="key">🌱 cut plants grow back</span> again to turn it off. Then what you cut stays cut.</p>
+
+<h2 id="ch7"><span class="ch">7</span>THE GARDEN 🌻</h2>
+<p>A brand new place, made for M's garden. It is one of the 🏠 <b>home</b> places. To go there, open <span class="key">🏞️ Background</span>, choose <span class="key">🏠 home</span>, then <span class="key">🌻 garden</span>:</p>
+<figure class="shot "><img src="pictures/14-place-menu.webp" alt="The place menu: 🏠 home, then 🌻 garden."><figcaption>The place menu: 🏠 home, then 🌻 garden.</figcaption></figure>
+<p>In the garden there is:</p>
+<ul>
+<li>a white <b>picket fence</b> with an arbor of climbing roses, and snowy Colorado mountains far away;</li>
+<li>tall flowers along the fence;</li>
+<li>a <b>garden shed</b> with a window box, and a <b>rain barrel</b>;</li>
+<li>an <b>apple tree</b>, a <b>bench</b>, and a red <b>wheelbarrow</b>;</li>
+<li>🐝 <b>bees</b> (catch one with the bug net: <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> shows how);</li>
+<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting.</li>
+</ul>
+<figure class="shot "><img src="pictures/15-garden-beds.webp" alt="The garden with all six beds of soil."><figcaption>The garden with all six beds of soil.</figcaption></figure>
+<p>How many beds? In <span class="key">🏞️ Background</span>, <b>🟫 beds of soil to plant in</b>: from none to six.</p>
+<aside class="box tip"><div class="box-h">PUT IT IN YOUR WORLD</div><p>In <span class='key'>🗺️ World design</span>, drag <span class='key'>🌻 garden</span> (or <span class='key'>💧 spring</span>) onto a square of the grid. Then you can walk to it from the squares next door.</p></aside>
+<figure class="shot "><img src="pictures/19-world-places.webp" alt="🗺️ World design: places to put in a square. The garden and the spring are there now."><figcaption>🗺️ World design: places to put in a square. The garden and the spring are there now.</figcaption></figure>
+
+<h2 id="ch8"><span class="ch">8</span>THE SPRING 💧</h2>
+<p>The other new place is the <b>spring</b>, one of the 💧 water places. It is like the lake, but small, with land all the way round: a little round pool, bubbling up in a meadow, with woods behind it.</p>
+<figure class="shot "><img src="pictures/16-spring.webp" alt="The spring: mossy stones round the pool, reeds, frogs, a rock and a fallen log."><figcaption>The spring: mossy stones round the pool, reeds, frogs, a rock and a fallen log.</figcaption></figure>
+<p>Walk right into it! Your friend wades in the water.</p>
+<figure class="shot half"><img src="pictures/17-wading.webp" alt="Wading in the spring."><figcaption>Wading in the spring.</figcaption></figure>
+<p>Look closely: there are <b>frogs</b> on the stones and lily pads, puffing their throats in and out, and bubbles coming up in the middle, where the water wells up from under the ground.</p>
+<figure class="shot "><img src="pictures/18-frogs.webp" alt="The spring&#x27;s frogs, and its bubbles."><figcaption>The spring's frogs, and its bubbles.</figcaption></figure>
+<p>To go there, open <span class="key">🏞️ Background</span> and choose <span class="key">💧 water</span>, then <span class="key">💧 spring</span>. Its settings are there too: <b>🐸 frogs</b> (none to three) and <b>🫧 how much it bubbles</b>.</p>
+<figure class="shot "><img src="pictures/14-place-menu-water.webp" alt="The 💧 water places, with the spring."><figcaption>The 💧 water places, with the spring.</figcaption></figure>
+
+<h2 id="ch9"><span class="ch">9</span>COMING SOON</h2>
+<p>The garden is not finished yet! Next:</p>
+<ul>
+<li><b>Flowers to plant:</b> eight kinds that grow wild in Colorado: 💙 Colorado blue columbine (Colorado's own flower), 🖌️ Indian paintbrush, 🔔 Rocky Mountain penstemon, 🌞 blanket flower, 🌻 sunflower, 💜 silvery lupine, 🎩 prairie coneflower and 🩵 wild blue flax.</li>
+<li><b>Vegetables to plant:</b> 🍅 tomatoes, 🌽 corn, 🥕 carrots, 🎃 pumpkins, 🥬 lettuce, 🫛 peas, 🫑 bell peppers and 🥦 broccoli.</li>
+<li>A <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant shows how much water it has, and grows when it is watered.</li>
+</ul>
+
+<h2 id="ch10"><span class="ch">10</span>FIXED</h2>
+<p>Some things were broken. Now they work:</p>
+<ul>
+<li><b>One dungeon.</b> The game was making a new 🗝️ dungeon every time the page loaded, with more and more holes down to it in the cemetery and the castle. Now a game keeps just one. <span class="ver">0.0.468</span></li>
+<li><b>Every room has its things.</b> After you went into one room with things to find, the other rooms were empty. Now every room has its own things the first time you go in, so the bug-catching puzzle works whichever room you visit first. <span class="ver">0.0.468</span></li>
+<li><b>📜 Scripting's Hazel tiles load again.</b> They were stuck at “loading”. <span class="ver">0.0.467</span></li>
+<li><b>Places look the same every time.</b> The witch's room, with its glowing mushroom, was sometimes drawn a tiny bit differently. <span class="ver">0.0.469</span></li>
+</ul>
+
+<h2 id="ch11"><span class="ch">11</span>MAKE UP A STORY</h2>
+<p>Some ideas:</p>
+<ul>
+<li>A knight cuts a path through the forest... and by morning the forest has grown back!</li>
+<li>Stay up late at the camp site, look at the stars, then sleep in the tent.</li>
+<li>Count how many nights your friend can sleep. Can you get to ten?</li>
+<li>The frogs of the spring are having a party. Who is invited?</li>
+<li>Catch a bee in the garden, then let it go again by the flowers.</li>
+</ul>
+
+<h2 id="ch12"><span class="ch">12</span>THE QUICK CARD</h2>
+<div class="card">
+<p><b>Hold a sword:</b> 🎒 its card, <span class="key">✋ hold it</span></p>
+<p><b>Cut a plant:</b> face it, <span class="key">U</span>, or 🥅</p>
+<p><b>Grow one back now:</b> 🏞️, 👁️, tap its 🙈</p>
+<p><b>Night and day:</b> ⚙️, <span class="key">🌗 night and day</span></p>
+<p><b>How long a day is:</b> ⚙️, ⏱️</p>
+<p><b>Sleep:</b> at night, tap a bed</p>
+<p><b>Plants grow back:</b> ⚙️, <span class="key">🌱 cut plants grow back</span></p>
+<p><b>Go to the garden:</b> 🏞️, <span class="key">🌻 garden</span></p>
+<p><b>Go to the spring:</b> 🏞️, <span class="key">💧 spring</span></p>
+<p><b>Put a place in your world:</b> 🗺️, drag it onto the grid</p>
+</div>
+
+<h2 id="about"><span class="ch">✎</span>ABOUT THIS GUIDE</h2>
+<p>Every picture is of <b>Messed Up Dress Up 0.0.471</b>, taken by this report's <code>drivers/shots024.mjs</code> on GitHub's computers, run <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/41336613420">41336613420</a>.</p>
+<p>The sword that cuts plants is <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-656"><code><b>^ticket(</b>656<b>)</b></code></a>, night and day and sleeping <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-657"><code><b>^ticket(</b>657<b>)</b></code></a>, the Hazel tiles <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-658"><code><b>^ticket(</b>658<b>)</b></code></a>, plants growing back <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-659"><code><b>^ticket(</b>659<b>)</b></code></a>, the garden and the spring <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-660"><code><b>^ticket(</b>660<b>)</b></code></a>, the dungeon and room fixes <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-639"><code><b>^ticket(</b>639<b>)</b></code></a>, and this guide <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-661"><code><b>^ticket(</b>661<b>)</b></code></a>. Made for M and N, who tried the garden first.</p>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- nav: begin --><meta name="theme-support" content="data-theme"><script src="https://matthewhammer.org/nav/nav.js"></script><!-- nav: end -->
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night, Day and the Garden in Messed Up Dress Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #f4ecd8; --paper: #fffaf0; --ink: #231f1a; --muted: #6b6052; --line: #c9b99a; --accent: #b4361d; --alt: #1d5fb4; --good: #2f7d32; --bad: #b4361d; --tip: #fff3c4; --warn: #ffe0d6; --code: #1d1b16; --codeink: #e8e2d0; --link: #1d5fb4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; } }
+  :root[data-theme="dark"] { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }
+  * { box-sizing: border-box; }
+  /* (Matthew, 2026-10-24: "This serif font choice ... is very close to actual manuals I read --- but I find it hard to read, and let's choose
+     a nicer looking one, that's a bit bigger") Literata, a serif made for long reading, larger */
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.62 "Literata", Georgia, serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  a { color: var(--link); }
+  .series { font: 15px/1.4 system-ui, sans-serif; color: var(--muted); }
+  .cover { border: 4px double var(--ink); background: var(--paper); padding: 28px 22px; margin: 18px 0 30px; text-align: center; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 1.3em; letter-spacing: 0.15em; color: var(--muted); }
+  h1 { font-family: "Press Start 2P", monospace; font-size: clamp(1.1em, 4.2vw, 1.9em); line-height: 1.5; margin: 14px 0; color: var(--accent); text-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+  .cover .edition { font-family: "VT323", monospace; font-size: 1.5em; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 1em; line-height: 1.6; margin: 48px 0 14px; padding: 10px 12px; background: var(--ink); color: var(--paper); }
+  h2 .ch { color: var(--accent); margin-right: 10px; }
+  h3 { font-family: "VT323", monospace; font-size: 1.6em; margin: 26px 0 6px; border-bottom: 2px dotted var(--line); }
+  .box { border: 3px solid var(--ink); padding: 10px 14px; margin: 16px 0; background: var(--paper); }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 0.7em; margin-bottom: 6px; }
+  .box.tip { background: var(--tip); } .box.warn { background: var(--warn); border-color: var(--bad); }
+  .box.warn .box-h { color: var(--bad); }
+  pre.code { background: var(--code); color: var(--codeink); padding: 10px 12px; overflow-x: auto; font: 14px/1.45 "VT323", ui-monospace, monospace; font-size: 1.05em; border-left: 6px solid var(--accent); white-space: pre-wrap; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+  figure.shot { margin: 18px 0; border: 3px solid var(--ink); background: var(--paper); padding: 6px; }
+  figure.shot img { display: block; width: 100%; height: auto; image-rendering: auto; }
+  figure.shot figcaption { font: 14px/1.4 system-ui, sans-serif; color: var(--muted); padding: 6px 4px 2px; }
+  figure.half { max-width: 520px; }
+  /* (Matthew, 2026-10-24: "center the screenshot, under title for report") */
+  .cover figure.shot { margin-left: auto; margin-right: auto; }
+  .toc { columns: 2; font-family: "VT323", monospace; font-size: 1.3em; border: 2px dashed var(--line); padding: 10px 16px; }
+  .toc a { text-decoration: none; display: inline-block; padding: 0 6px; margin: 1px 0; }
+  /* (Matthew, 2026-10-24: "invert colors of 'main menu' (report contents 1--12), when we do hover over") a menu line lit as a game's is */
+  .toc a:hover, .toc a:focus-visible { background: var(--link); color: var(--bg); outline: none; } @media (max-width: 560px) { .toc { columns: 1; } }
+  ol.steps li { margin: 6px 0; }
+  table.feat { width: 100%; border-collapse: collapse; font: 14px/1.4 system-ui, sans-serif; }
+  table.feat td.n { text-align: right; } table.feat th, table.feat td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  table.feat th { background: var(--ink); color: var(--paper); font-family: "VT323", monospace; font-size: 1.2em; font-weight: normal; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 0.6em; white-space: nowrap; }
+  td.st-done { color: var(--good); } td.st-check { color: var(--alt); } td.st-branch { color: #b8860b; } td.st-next { color: var(--bad); }
+  .scroll { overflow-x: auto; }
+  /* (Matthew, 2026-10-24: "the buttons shown in the text should be equally round to the buttons in the actual GUI") a button named in the
+     text drawn as the game draws its chips */
+  .key { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 1px 10px; font: 600 0.82em/1.5 system-ui, "Segoe UI", sans-serif; background: var(--paper); white-space: nowrap; vertical-align: 1px; }
+  .missing { color: var(--bad); font-family: "VT323", monospace; }
+  .wip { color: #b45309; font-weight: 600; }
+  .ver { font: 600 12px/1.4 system-ui, sans-serif; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; white-space: nowrap; }
+  button.theme { font: 13px system-ui; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 8px; right: 8px; }
+  .grid { position: relative; aspect-ratio: 16 / 9; max-width: 640px; margin: 16px auto; border: 3px solid var(--ink); background: linear-gradient(var(--paper), var(--tip)); font: 600 14px/1 system-ui, sans-serif; }
+  .grid .v { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); } .grid .v span { position: absolute; top: 4px; left: 3px; }
+  .grid .h { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--line); } .grid .h span { position: absolute; right: 4px; top: 3px; }
+  .grid .dot { position: absolute; transform: translate(-50%, -50%); background: var(--accent); color: var(--paper); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .card { border: 3px double var(--ink); background: var(--paper); padding: 8px 14px; columns: 2; } .card p { margin: 4px 0; break-inside: avoid; } @media (max-width: 560px) { .card { columns: 1; } }
+</style>
+</head>
+<body>
+<button class="theme" id="theme" title="Light or dark">◐ Auto</button>
+<main>
+<p class="series"><a href="../">Dress Up reports</a> · <a class="ref" href="../024/"><code><b>^du_report(</b>24<b>)</b></code></a> · 2026-11-01 · <span class="wip">work in progress</span> · about <a href="https://matthewhammer.org/kids-choice-games/dress-up/">Messed Up Dress Up</a></p>
+<!-- listen: begin -->
+<style>
+  .listen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 10px; font: 13px system-ui, sans-serif; color: var(--muted, GrayText); }
+  .listen[hidden] { display: none; }
+  .listen button { font: inherit; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line, #ccc); background: var(--paper, Canvas); color: var(--ink, CanvasText); cursor: pointer; }
+  .listen button[aria-pressed="true"] { border-color: var(--accent, #6d28d9); color: var(--accent, #6d28d9); }
+  .listen select { font: inherit; max-width: 16em; border-radius: 6px; border: 1px solid var(--line, #ccc); background: var(--paper, Canvas); color: var(--ink, CanvasText); }
+  .listen input[type=range] { width: 8em; vertical-align: middle; accent-color: var(--accent, #6d28d9); }
+  .listen .speed { min-width: 3.2em; display: inline-block; font-variant-numeric: tabular-nums; }
+  .listen-now { outline: 2px solid color-mix(in srgb, var(--accent, #6d28d9) 55%, transparent); outline-offset: 3px; border-radius: 4px;
+    background: color-mix(in srgb, var(--accent, #6d28d9) 8%, transparent); }
+  @media print { .listen { display: none; } }
+</style>
+<div class="listen" hidden role="group" aria-label="Listen to this report">
+  <button type="button" class="listen-play" aria-pressed="false">🔊 Listen</button>
+  <button type="button" class="listen-stop">⏹ Stop</button>
+  <label>speed <input type="range" class="listen-rate" min="0.5" max="2" step="0.1" value="1"> <span class="speed">1.0×</span></label>
+  <select class="listen-voice" aria-label="voice"></select>
+  <span class="listen-time"></span>
+</div>
+<script>
+/* (^ticket(573)) Listen: the report read aloud by this browser's own voices; nothing leaves the page. */
+// (once the whole page is parsed: this runs where the bar is, near the top, before the report's sections exist)
+document.addEventListener("DOMContentLoaded", () => {
+  const S = window.speechSynthesis, bar = document.querySelector(".listen");
+  if (!S || !bar || typeof SpeechSynthesisUtterance === "undefined") return;
+  bar.hidden = false;
+  const main = document.querySelector("main") || document.body;
+  const play = bar.querySelector(".listen-play"), stop = bar.querySelector(".listen-stop"), rate = bar.querySelector(".listen-rate"),
+        speed = bar.querySelector(".speed"), voiceSel = bar.querySelector(".listen-voice"), timeEl = bar.querySelector(".listen-time");
+  const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (_) { return null; } };
+  // the blocks to read, in order: prose only, each once (a point holding paragraphs is read as its paragraphs)
+  const SKIP = "table, pre, svg, script, style, .listen, .theme-toggle, details:not([open]), [aria-hidden=true], button, nav, #report-data";
+  const blocks = [...main.querySelectorAll("h1, .sub, h2, h3, h4, p, li, blockquote, figcaption, summary")]
+    .filter(el => !el.closest(SKIP) && !el.querySelector("p, li, blockquote") && !el.matches(".series"));
+  const textOf = el => { const c = el.cloneNode(true); c.querySelectorAll(".anchor, .copyanchor, button, sup").forEach(x => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+  const texts = blocks.map(textOf), words = texts.reduce((n, t) => n + (t ? t.split(" ").length : 0), 0);
+  const WPM = 160;
+  let i = 0, playing = false, voices = [];
+  const r = () => +rate.value;
+  const showTime = () => {
+    speed.textContent = r().toFixed(1) + "×";
+    const left = texts.slice(playing || i ? i : 0).reduce((n, t) => n + (t ? t.split(" ").length : 0), 0);
+    const min = Math.max(1, Math.round(left / (WPM * r())));
+    timeEl.textContent = (i && left < words ? "about " + min + " min left" : "about " + min + " min to listen") + " at " + r().toFixed(1) + "×";
+  };
+  const fill = () => {
+    voices = S.getVoices().filter(v => !document.documentElement.lang || v.lang.slice(0, 2) === document.documentElement.lang.slice(0, 2) || v.lang.startsWith("en"));
+    const want = store("listen-voice");
+    voiceSel.replaceChildren(...voices.map(v => { const o = document.createElement("option"); o.value = v.name; o.textContent = v.name + (v.localService ? "" : " (online)"); return o; }));
+    voiceSel.hidden = !voices.length;
+    if (want && voices.some(v => v.name === want)) voiceSel.value = want;
+    else { const d = voices.find(v => v.default) || voices[0]; if (d) voiceSel.value = d.name; }
+  };
+  fill(); if ("onvoiceschanged" in S) S.onvoiceschanged = fill;
+  const saved = parseFloat(store("listen-rate")); if (saved >= 0.5 && saved <= 2) rate.value = saved;
+  const mark = el => { document.querySelectorAll(".listen-now").forEach(x => x.classList.remove("listen-now")); if (el) { el.classList.add("listen-now"); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); } };
+  // one block at a time (a long utterance is cut short in some browsers); the next when it ends
+  const speak = () => {
+    while (i < blocks.length && !texts[i]) i++;
+    if (i >= blocks.length) { end(); return; }
+    const u = new SpeechSynthesisUtterance(texts[i]), v = voices.find(v => v.name === voiceSel.value);
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.rate = r();
+    u.onend = () => { if (!playing) return; i++; showTime(); speak(); };
+    u.onerror = e => { if (e.error === "interrupted" || e.error === "canceled") return; i++; if (playing) speak(); };
+    mark(blocks[i]); S.speak(u);
+  };
+  const end = () => { playing = false; S.cancel(); i = 0; mark(null); play.textContent = "🔊 Listen"; play.setAttribute("aria-pressed", "false"); showTime(); };
+  play.onclick = () => {
+    if (playing && !S.paused) { S.pause(); play.textContent = "▶ Resume"; return; }
+    if (playing && S.paused) { S.resume(); play.textContent = "⏸ Pause"; return; }
+    playing = true; play.textContent = "⏸ Pause"; play.setAttribute("aria-pressed", "true"); S.cancel(); speak();
+  };
+  stop.onclick = end;
+  // a new speed or voice takes effect from the block being read, said again from its start
+  const again = () => { if (playing) { S.cancel(); setTimeout(speak, 0); } };
+  rate.oninput = () => { store("listen-rate", rate.value); showTime(); };
+  rate.onchange = again;
+  voiceSel.onchange = () => { store("listen-voice", voiceSel.value); again(); };
+  addEventListener("pagehide", () => S.cancel());
+  showTime();
+});
+</script>
+<!-- listen: end -->
+<div class="cover">
+  <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
+  <h1>NIGHT, DAY<br>AND THE GARDEN</h1>
+  <div class="edition">a young player's guide to what is new since <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> · the sword, night and day, plants that grow back, the garden and the spring · version 0.0.471</div>
+  <figure class="shot half"><img src="pictures/01-garden.webp" alt="The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed." loading="lazy"><figcaption>The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed.</figcaption></figure>
+</div>
+<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.471.</p>
+
+<div class="toc">
+<a href="#ch1">1 · WHAT'S NEW</a><br>
+<a href="#ch2">2 · A SWORD THAT CUTS</a><br>
+<a href="#ch3">3 · WHAT IS CUT STAYS CUT</a><br>
+<a href="#ch4">4 · NIGHT AND DAY 🌗</a><br>
+<a href="#ch5">5 · TIME FOR BED 🛌</a><br>
+<a href="#ch6">6 · PLANTS GROW BACK 🌱</a><br>
+<a href="#ch7">7 · THE GARDEN 🌻</a><br>
+<a href="#ch8">8 · THE SPRING 💧</a><br>
+<a href="#ch9">9 · COMING SOON</a><br>
+<a href="#ch10">10 · FIXED</a><br>
+<a href="#ch11">11 · MAKE UP A STORY</a><br>
+<a href="#ch12">12 · THE QUICK CARD</a><br>
+<a href="#about">ABOUT THIS GUIDE</a><br>
+</div>
+
+<h2 id="ch1"><span class="ch">1</span>WHAT'S NEW</h2>
+<p>Since the last guide, Messed Up Dress Up has grown. Most of it was <b>M's idea</b>:</p>
+<div class="scroll"><table class="feat"><thead><tr><th>version</th><th>what is new</th><th>chapter</th></tr></thead><tbody>
+<tr><td>0.0.465</td><td>🗡️ A sword that <b>cuts plants</b>. <i>Chop!</i></td><td><a href="#ch2">2</a>, <a href="#ch3">3</a></td></tr>
+<tr><td>0.0.466</td><td>🌗 <b>Night and day</b>, and 🛌 <b>sleeping</b> in a bed</td><td><a href="#ch4">4</a>, <a href="#ch5">5</a></td></tr>
+<tr><td>0.0.470</td><td>🌱 Cut plants <b>grow back</b></td><td><a href="#ch6">6</a></td></tr>
+<tr><td>0.0.471</td><td>Two new places: the 🌻 <b>garden</b> and the 💧 <b>spring</b></td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
+<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch10">10</a></td></tr>
+</tbody></table></div>
+<p>The version number is under the game's name, at the top of the controls. If yours is older, reload the page.</p>
+
+<h2 id="ch2"><span class="ch">2</span>A SWORD THAT CUTS</h2>
+<p>A sword can cut down plants. First, your friend needs a sword in their hand. There are three ways:</p>
+<ul>
+<li>Dress up as a <b>knight</b> or as the <b>Time Wanderer</b> in <span class="key">🐯 Costume</span>. They have their own sword.</li>
+<li>Find the 🗡️ sword in the castle's <b>smithy</b>, pick it up, then press <span class="key">✋ hold it</span> on its card in the <span class="key">🎒 Backpack</span> tab.</li>
+<li>In <span class="key">🧍 Body</span>, tap <b>🫱 right hand holds</b> (or 🫲 left) and choose <span class="key">🗡️ sword</span>.</li>
+</ul>
+<figure class="shot half"><img src="pictures/02-sword-held.webp" alt="A sword in hand, facing a bush in the garden." loading="lazy"><figcaption>A sword in hand, facing a bush in the garden.</figcaption></figure>
+<p>Now walk up to a plant, <b>face it</b>, and swing: press <span class="key">U</span> on a keyboard, or the controller's 🥅 button (the one that swings the bug net).</p>
+<figure class="shot half"><img src="pictures/03-chop.webp" alt="Chop! The sword swings, and the bush goes in a puff of leaves." loading="lazy"><figcaption>Chop! The sword swings, and the bush goes in a puff of leaves.</figcaption></figure>
+<p>The nearest plant in front of your friend goes in a <b>puff of leaves</b>. One plant each swing. A sword cuts trees, bushes, vines, cactuses, clumps of flowers and mushrooms.</p>
+<figure class="shot half"><img src="pictures/04-cut.webp" alt="The bush is gone. Now there is room to walk where it stood." loading="lazy"><figcaption>The bush is gone. Now there is room to walk where it stood.</figcaption></figure>
+<aside class="box tip"><div class="box-h">GOOD TO KNOW</div><p>Rows of flowers and grass that go all the way across a place are not cut. They are there to walk through.</p></aside>
+
+<h2 id="ch3"><span class="ch">3</span>WHAT IS CUT STAYS CUT</h2>
+<p>A plant you cut is gone, and it is not in your way any more. In the 🌍 world, every square remembers its own cut plants: cut a tree in one forest, and the forest next door still has all of its trees.</p>
+<p><b>Want one back right now?</b> Open <span class="key">🏞️ Background</span> and look at <b>👁️ default background objects</b>: everything the place draws itself, a chip each. A cut plant's chip shows 🙈. Tap it, and the plant grows back.</p>
+<figure class="shot "><img src="pictures/05-grow-by-hand.webp" alt="👁️ default background objects in the forest clearing: a tree that was cut (tree, left, inner) shows 🙈. Tap it to bring it back." loading="lazy"><figcaption>👁️ default background objects in the forest clearing: a tree that was cut (tree, left, inner) shows 🙈. Tap it to bring it back.</figcaption></figure>
+<p>Plants can also grow back by themselves. See <a href="#ch6">chapter 6</a>.</p>
+
+<h2 id="ch4"><span class="ch">4</span>NIGHT AND DAY 🌗</h2>
+<p>Now the game can have <b>time</b>. It is off to start. To turn it on:</p>
+<ol class="steps">
+<li>Open the <span class="key">⚙️ Advanced</span> tab.</li>
+<li>Press <span class="key">🌗 night and day: night falls, and you sleep in a bed till morning</span>.</li>
+</ol>
+<figure class="shot "><img src="pictures/06-days-on.webp" alt="🌗 night and day, on, in ⚙️ Advanced. ⏱️ a whole day takes 12 minutes, and 🛌 counts the nights slept." loading="lazy"><figcaption>🌗 night and day, on, in ⚙️ Advanced. ⏱️ a whole day takes 12 minutes, and 🛌 counts the nights slept.</figcaption></figure>
+<p>Now the hour shows at the top of the picture: ☀️ in the daytime, 🌙 at night. A whole day takes 12 minutes to start. Change it with ⏱️.</p>
+<figure class="shot "><img src="pictures/07-noon.webp" alt="Noon in the forest clearing: ☀️ 12:00 pm at the top." loading="lazy"><figcaption>Noon in the forest clearing: ☀️ 12:00 pm at the top.</figcaption></figure>
+<p>After sunset, every place grows <b>dark</b> (less so inside). The game tells you it is bedtime:</p>
+<pre class="code">🌙 Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket.</pre>
+<figure class="shot "><img src="pictures/08-nightfall.webp" alt="9 at night: dark, the moon at the top, and time to find a bed." loading="lazy"><figcaption>9 at night: dark, the moon at the top, and time to find a bed.</figcaption></figure>
+<p>Some places have <b>their own night</b>, with the moon and the stars: the jungle waterfall, the cave, the camp site, the tent and the fairy forest.</p>
+<figure class="shot "><img src="pictures/09-campsite-night.webp" alt="The camp site at night, under the stars." loading="lazy"><figcaption>The camp site at night, under the stars.</figcaption></figure>
+<aside class="box tip"><div class="box-h">GOOD TO KNOW</div><p>The hour and the date come from <b>🌍 where and when</b>, so the sun and the moon are where they really would be.</p></aside>
+
+<h2 id="ch5"><span class="ch">5</span>TIME FOR BED 🛌</h2>
+<p>When it is dark, find a bed: the bed in the grass hut's bedroom, a bunk, the sleeping bags in a tent, or a blanket. <b>Tap the bed</b> (or click it), and your friend walks over and lies down.</p>
+<figure class="shot "><img src="pictures/10-asleep.webp" alt="Asleep in the grass hut&#x27;s bed. Everything goes dark..." loading="lazy"><figcaption>Asleep in the grass hut's bed. Everything goes dark...</figcaption></figure>
+<p>Your friend falls asleep. It goes dark, and then it is <b>7 in the morning</b>, the next day:</p>
+<pre class="code">🌅 Good morning! Nights slept: 1.</pre>
+<figure class="shot "><img src="pictures/11-morning.webp" alt="Good morning! It is 7 o&#x27;clock, and 🛌 counts one night slept." loading="lazy"><figcaption>Good morning! It is 7 o'clock, and 🛌 counts one night slept.</figcaption></figure>
+<ul>
+<li>🛌 counts the nights you have slept. It shows at the top of the picture, and in <span class="key">⚙️ Advanced</span>.</li>
+<li>Lying down in the <b>daytime</b> is only a rest: “It's still daytime. Come back to bed when it's dark.”</li>
+<li>Stay up all night if you like. Morning comes anyway!</li>
+</ul>
+
+<h2 id="ch6"><span class="ch">6</span>PLANTS GROW BACK 🌱</h2>
+<p>This was M's idea too. Plants you cut with the sword <b>come back by themselves</b>. It is on to start. You will find it in <span class="key">⚙️ Advanced</span>, under 🌗 night and day:</p>
+<figure class="shot "><img src="pictures/12-regrow-setting.webp" alt="🌱 cut plants grow back, and ⏱️ how long they take." loading="lazy"><figcaption>🌱 cut plants grow back, and ⏱️ how long they take.</figcaption></figure>
+<ul>
+<li>A cut plant grows back after <b>2 minutes</b>. Change it with ⏱️, from 1 to 30 minutes.</li>
+<li>It comes back with a <b>puff of leaves</b> and a 🌱, even while you are somewhere else.</li>
+<li>With 🌗 <b>night and day</b> on, cut plants grow back <b>by the next morning</b> instead. Sleep in a bed, and everything you cut is back!</li>
+<li>A bush or a cactus that <i>you</i> put in a place grows back too, right where it was.</li>
+</ul>
+<figure class="shot half"><img src="pictures/13-regrow.webp" alt="Two minutes later: the bush is back, where it was." loading="lazy"><figcaption>Two minutes later: the bush is back, where it was.</figcaption></figure>
+<p>Don't want them back? Press <span class="key">🌱 cut plants grow back</span> again to turn it off. Then what you cut stays cut.</p>
+
+<h2 id="ch7"><span class="ch">7</span>THE GARDEN 🌻</h2>
+<p>A brand new place, made for M's garden. It is one of the 🏠 <b>home</b> places. To go there, open <span class="key">🏞️ Background</span>, choose <span class="key">🏠 home</span>, then <span class="key">🌻 garden</span>:</p>
+<figure class="shot "><img src="pictures/14-place-menu.webp" alt="The place menu: 🏠 home, then 🌻 garden." loading="lazy"><figcaption>The place menu: 🏠 home, then 🌻 garden.</figcaption></figure>
+<p>In the garden there is:</p>
+<ul>
+<li>a white <b>picket fence</b> with an arbor of climbing roses, and snowy Colorado mountains far away;</li>
+<li>tall flowers along the fence;</li>
+<li>a <b>garden shed</b> with a window box, and a <b>rain barrel</b>;</li>
+<li>an <b>apple tree</b>, a <b>bench</b>, and a red <b>wheelbarrow</b>;</li>
+<li>🐝 <b>bees</b> (catch one with the bug net: <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> shows how);</li>
+<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting.</li>
+</ul>
+<figure class="shot "><img src="pictures/15-garden-beds.webp" alt="The garden with all six beds of soil." loading="lazy"><figcaption>The garden with all six beds of soil.</figcaption></figure>
+<p>How many beds? In <span class="key">🏞️ Background</span>, <b>🟫 beds of soil to plant in</b>: from none to six.</p>
+<aside class="box tip"><div class="box-h">PUT IT IN YOUR WORLD</div><p>In <span class='key'>🗺️ World design</span>, drag <span class='key'>🌻 garden</span> (or <span class='key'>💧 spring</span>) onto a square of the grid. Then you can walk to it from the squares next door.</p></aside>
+<figure class="shot "><img src="pictures/19-world-places.webp" alt="🗺️ World design: places to put in a square. The garden and the spring are there now." loading="lazy"><figcaption>🗺️ World design: places to put in a square. The garden and the spring are there now.</figcaption></figure>
+
+<h2 id="ch8"><span class="ch">8</span>THE SPRING 💧</h2>
+<p>The other new place is the <b>spring</b>, one of the 💧 water places. It is like the lake, but small, with land all the way round: a little round pool, bubbling up in a meadow, with woods behind it.</p>
+<figure class="shot "><img src="pictures/16-spring.webp" alt="The spring: mossy stones round the pool, reeds, frogs, a rock and a fallen log." loading="lazy"><figcaption>The spring: mossy stones round the pool, reeds, frogs, a rock and a fallen log.</figcaption></figure>
+<p>Walk right into it! Your friend wades in the water.</p>
+<figure class="shot half"><img src="pictures/17-wading.webp" alt="Wading in the spring." loading="lazy"><figcaption>Wading in the spring.</figcaption></figure>
+<p>Look closely: there are <b>frogs</b> on the stones and lily pads, puffing their throats in and out, and bubbles coming up in the middle, where the water wells up from under the ground.</p>
+<figure class="shot "><img src="pictures/18-frogs.webp" alt="The spring&#x27;s frogs, and its bubbles." loading="lazy"><figcaption>The spring's frogs, and its bubbles.</figcaption></figure>
+<p>To go there, open <span class="key">🏞️ Background</span> and choose <span class="key">💧 water</span>, then <span class="key">💧 spring</span>. Its settings are there too: <b>🐸 frogs</b> (none to three) and <b>🫧 how much it bubbles</b>.</p>
+<figure class="shot "><img src="pictures/14-place-menu-water.webp" alt="The 💧 water places, with the spring." loading="lazy"><figcaption>The 💧 water places, with the spring.</figcaption></figure>
+
+<h2 id="ch9"><span class="ch">9</span>COMING SOON</h2>
+<p>The garden is not finished yet! Next:</p>
+<ul>
+<li><b>Flowers to plant:</b> eight kinds that grow wild in Colorado: 💙 Colorado blue columbine (Colorado's own flower), 🖌️ Indian paintbrush, 🔔 Rocky Mountain penstemon, 🌞 blanket flower, 🌻 sunflower, 💜 silvery lupine, 🎩 prairie coneflower and 🩵 wild blue flax.</li>
+<li><b>Vegetables to plant:</b> 🍅 tomatoes, 🌽 corn, 🥕 carrots, 🎃 pumpkins, 🥬 lettuce, 🫛 peas, 🫑 bell peppers and 🥦 broccoli.</li>
+<li>A <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant shows how much water it has, and grows when it is watered.</li>
+</ul>
+
+<h2 id="ch10"><span class="ch">10</span>FIXED</h2>
+<p>Some things were broken. Now they work:</p>
+<ul>
+<li><b>One dungeon.</b> The game was making a new 🗝️ dungeon every time the page loaded, with more and more holes down to it in the cemetery and the castle. Now a game keeps just one. <span class="ver">0.0.468</span></li>
+<li><b>Every room has its things.</b> After you went into one room with things to find, the other rooms were empty. Now every room has its own things the first time you go in, so the bug-catching puzzle works whichever room you visit first. <span class="ver">0.0.468</span></li>
+<li><b>📜 Scripting's Hazel tiles load again.</b> They were stuck at “loading”. <span class="ver">0.0.467</span></li>
+<li><b>Places look the same every time.</b> The witch's room, with its glowing mushroom, was sometimes drawn a tiny bit differently. <span class="ver">0.0.469</span></li>
+</ul>
+
+<h2 id="ch11"><span class="ch">11</span>MAKE UP A STORY</h2>
+<p>Some ideas:</p>
+<ul>
+<li>A knight cuts a path through the forest... and by morning the forest has grown back!</li>
+<li>Stay up late at the camp site, look at the stars, then sleep in the tent.</li>
+<li>Count how many nights your friend can sleep. Can you get to ten?</li>
+<li>The frogs of the spring are having a party. Who is invited?</li>
+<li>Catch a bee in the garden, then let it go again by the flowers.</li>
+</ul>
+
+<h2 id="ch12"><span class="ch">12</span>THE QUICK CARD</h2>
+<div class="card">
+<p><b>Hold a sword:</b> 🎒 its card, <span class="key">✋ hold it</span></p>
+<p><b>Cut a plant:</b> face it, <span class="key">U</span>, or 🥅</p>
+<p><b>Grow one back now:</b> 🏞️, 👁️, tap its 🙈</p>
+<p><b>Night and day:</b> ⚙️, <span class="key">🌗 night and day</span></p>
+<p><b>How long a day is:</b> ⚙️, ⏱️</p>
+<p><b>Sleep:</b> at night, tap a bed</p>
+<p><b>Plants grow back:</b> ⚙️, <span class="key">🌱 cut plants grow back</span></p>
+<p><b>Go to the garden:</b> 🏞️, <span class="key">🌻 garden</span></p>
+<p><b>Go to the spring:</b> 🏞️, <span class="key">💧 spring</span></p>
+<p><b>Put a place in your world:</b> 🗺️, drag it onto the grid</p>
+</div>
+
+<h2 id="about"><span class="ch">✎</span>ABOUT THIS GUIDE</h2>
+<p>Every picture is of <b>Messed Up Dress Up 0.0.471</b>, taken by this report's <code>drivers/shots024.mjs</code> on GitHub's computers, run <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/41336613420">41336613420</a>.</p>
+<p>The sword that cuts plants is <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-656"><code><b>^ticket(</b>656<b>)</b></code></a>, night and day and sleeping <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-657"><code><b>^ticket(</b>657<b>)</b></code></a>, the Hazel tiles <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-658"><code><b>^ticket(</b>658<b>)</b></code></a>, plants growing back <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-659"><code><b>^ticket(</b>659<b>)</b></code></a>, the garden and the spring <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-660"><code><b>^ticket(</b>660<b>)</b></code></a>, the dungeon and room fixes <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-639"><code><b>^ticket(</b>639<b>)</b></code></a>, and this guide <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-661"><code><b>^ticket(</b>661<b>)</b></code></a>. Made for M and N, who tried the garden first.</p>
+</main>
+<script>
+(function () { var b = document.getElementById("theme"), modes = ["auto", "light", "dark"], labels = { auto: "◐ Auto", light: "☀ Light", dark: "☾ Dark" };
+  var cur = "auto"; try { cur = localStorage.getItem("theme") || "auto"; } catch (e) {}
+  function set(m) { cur = m; if (m === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", m); b.textContent = labels[m]; try { localStorage.setItem("theme", m); } catch (e) {} }
+  set(cur); b.onclick = function () { set(modes[(modes.indexOf(cur) + 1) % 3]); }; })();
+</script>
+</body>
+</html>

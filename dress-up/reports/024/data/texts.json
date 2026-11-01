@@ -1,0 +1,76 @@
+{
+ "garden": [
+  "far mountains",
+  "far forest",
+  "stepping stones",
+  "soil bed 1",
+  "soil bed 2",
+  "soil bed 3",
+  "soil bed 4",
+  "picket fence and arbor",
+  "flower border",
+  "grass 1",
+  "bee 1",
+  "apple tree",
+  "grass 2",
+  "garden shed",
+  "water barrel",
+  "grass 3",
+  "bee 2",
+  "grass 4",
+  "bench",
+  "butterflies",
+  "grass 5",
+  "grass 6",
+  "wheelbarrow",
+  "grass 7",
+  "grass 8"
+ ],
+ "chop": true,
+ "cut": {
+  "things": [],
+  "kept": 1
+ },
+ "regrow": [
+  "bush"
+ ],
+ "tree": [
+  "tree, left, inner"
+ ],
+ "nightfall": "🌙 Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket.",
+ "bed": {
+  "pose": "lie",
+  "said": "🌙 Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket."
+ },
+ "morning": {
+  "hour": 7,
+  "nights": 1,
+  "said": "🌅 Good morning! Nights slept: 1."
+ },
+ "spring": [
+  "far mountains",
+  "far forest",
+  "woods behind the spring",
+  "grass 1",
+  "grass 2",
+  "grass 3",
+  "frog 3",
+  "grass 4",
+  "reeds, left",
+  "reeds, right",
+  "frog 2",
+  "frog 1",
+  "grass 5",
+  "stones at the spring's edge, right",
+  "stones at the spring's edge, left",
+  "stones at the spring's edge, front",
+  "butterflies",
+  "grass 6",
+  "rock, mossy",
+  "grass 7",
+  "log",
+  "grass 8"
+ ],
+ "wade": true,
+ "version": "0.0.471"
+}
