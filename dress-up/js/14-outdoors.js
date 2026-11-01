@@ -3199,6 +3199,142 @@ function bloomsSvg(pts, r, col, mid = mix(col, "#7c2d12", 0.5)) {
   }
   return `<path d="${d}" fill="${col}" stroke="${mix(col, "#000000", 0.3)}" stroke-width="${f1(r * 0.12)}"/><path d="${m}" fill="${mid}"/>`;
 }
+// (ticket 660, part 2, for M's garden) Things to plant: a 🌷 flower bed of one of eight Colorado wildflowers (Matthew: "Chose 8
+// actual types, from Colorado"), and a 🥕 vegetable patch of one of eight vegetables grown in the United States ("Choose 8 types
+// that grow in the United States"). Each is a low mound of dug soil with its plants in it, in the things' units (the friend
+// about 216 tall at the front). 🌱 how grown (0 to 100) draws them in four stages: sprouts (under 25), young plants (to 50),
+// in bud with their fruit still green (to 75), then in flower and ripe; a stage, not every step, so growing redraws a plant
+// only now and then (the 💧 watering can, the next release, is what makes them grow).
+const GARDEN_FLOWERS = [["columbine", "💙 Colorado blue columbine"], ["paintbrush", "🖌️ Indian paintbrush"], ["penstemon", "🔔 Rocky Mountain penstemon"],
+  ["blanketflower", "🌞 blanket flower"], ["sunflower", "🌻 sunflower"], ["lupine", "💜 silvery lupine"], ["coneflower", "🎩 prairie coneflower"], ["flax", "🩵 wild blue flax"]];
+const GARDEN_VEGETABLES = [["tomato", "🍅 tomatoes"], ["corn", "🌽 corn"], ["carrot", "🥕 carrots"], ["pumpkin", "🎃 pumpkins"], ["lettuce", "🥬 lettuce"],
+  ["peas", "🫛 peas"], ["pepper", "🫑 bell peppers"], ["broccoli", "🥦 broccoli"]];
+const gardenStage = t => { const v = Math.max(0, Math.min(100, t.grown ?? 100)); return v < 25 ? 0 : v < 50 ? 1 : v < 75 ? 2 : 3; };
+// (the mound of dug soil a bed or a patch grows in, w wide, its foot at 0)
+const gardenMound = w => `<ellipse class="flat" cx="0" cy="3" rx="${f1(w * 0.56)}" ry="${f1(w * 0.1)}" fill="#3f2816" opacity="0.3"/>` +
+  `<path d="M${f1(-w / 2)} 3 Q${f1(-w * 0.4)} ${f1(-w * 0.1)} 0 ${f1(-w * 0.1)} Q${f1(w * 0.4)} ${f1(-w * 0.1)} ${f1(w / 2)} 3 Z" fill="#6b4528"/>` +
+  `<path d="M${f1(-w * 0.4)} -1 Q0 ${f1(-w * 0.09)} ${f1(w * 0.4)} -1" fill="none" stroke="#4a2f1a" stroke-width="2.5" opacity="0.6"/>`;
+// (a seedling: a stem and its first two leaves)
+const sproutSvg = (x, y, h) => `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(y - h)}" stroke="#4f9a3a" stroke-width="2.4" stroke-linecap="round"/>` +
+  [-1, 1].map(sd => `<ellipse cx="${f1(x + sd * 5)}" cy="${f1(y - h - 1)}" rx="6" ry="3" fill="#6abf4b" transform="rotate(${sd * 25} ${f1(x + sd * 5)} ${f1(y - h - 1)})"/>`).join("");
+// (petals round a middle: n ellipses rx by ry, their middles r from it, turned by a)
+const petalRing = (x, y, n, r, rx, ry, col, a = 0, more = "") => [...Array(n)].map((_, i) => { const deg = a + i * 360 / n, q = deg * Math.PI / 180;
+  return `<ellipse cx="${f1(x + Math.sin(q) * r)}" cy="${f1(y - Math.cos(q) * r)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${col}"${more} transform="rotate(${f1(deg)} ${f1(x + Math.sin(q) * r)} ${f1(y - Math.cos(q) * r)})"/>`; }).join("");
+// one flower plant of a kind, its foot at (x, y), at a stage (1 young, 2 in bud, 3 in flower)
+const FLOWER_LOOK = { columbine: { h: 72, leaf: "#6f9a7a", bud: "#4d6fd1" }, paintbrush: { h: 62, leaf: "#6b8f4a", bud: "#e2492f" },
+  penstemon: { h: 92, leaf: "#5f8f5a", bud: "#6a5acd" }, blanketflower: { h: 60, leaf: "#6f9a52", bud: "#c0392b" }, sunflower: { h: 235, leaf: "#4f8a35", bud: "#7fae4a" },
+  lupine: { h: 95, leaf: "#8fae8f", bud: "#7b5bd6" }, coneflower: { h: 82, leaf: "#6f9a52", bud: "#4a2a14" }, flax: { h: 62, leaf: "#7fa35a", bud: "#8ab4f8" } };
+function flowerPlantSvg(kind, x, y, st, R, i) {
+  const L = FLOWER_LOOK[kind], h = L.h * [0.15, 0.55, 0.85, 1][st], lean = (R(i, 1) - 0.5) * 0.16 * h, tx = x + lean, ty = y - h;
+  const stem = (w = 2.6) => `<path d="M${f1(x)} ${f1(y)} Q${f1(x + lean * 0.2)} ${f1(y - h * 0.6)} ${f1(tx)} ${f1(ty)}" fill="none" stroke="#4f8a35" stroke-width="${w}" stroke-linecap="round"/>`;
+  const leaves = (n, rx, ry) => [...Array(n)].map((_, j) => { const v = 0.2 + 0.5 * j / Math.max(1, n - 1), lx = x + lean * v * v, ly = y - h * v, sd = j % 2 ? -1 : 1;
+    return `<ellipse cx="${f1(lx + sd * rx * 0.8)}" cy="${f1(ly)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${L.leaf}" transform="rotate(${sd * -30} ${f1(lx + sd * rx * 0.8)} ${f1(ly)})"/>`; }).join("");
+  if (kind === "flax") {   // (thin stems, three from one root, each a pale blue flower)
+    return [-1, 0, 1].map(b => { const ex = x + b * h * 0.22 + lean, ey = y - h * (b ? 0.88 : 1);
+      return `<path d="M${f1(x)} ${f1(y)} Q${f1(x + b * h * 0.05)} ${f1(y - h * 0.5)} ${f1(ex)} ${f1(ey)}" fill="none" stroke="#5f8f45" stroke-width="1.6"/>` +
+        (st === 3 ? petalRing(ex, ey, 5, 4.5, 4.2, 5, "#8ab4f8") + `<circle cx="${f1(ex)}" cy="${f1(ey)}" r="2" fill="#f4f1d0"/>` : st === 2 ? `<ellipse cx="${f1(ex)}" cy="${f1(ey)}" rx="2.4" ry="4" fill="${L.bud}"/>` : ""); }).join("");
+  }
+  let s = "";
+  if (kind === "lupine") s += [...Array(7)].map((_, j) => { const q = (j / 6 - 0.5) * 2.4; return `<ellipse cx="${f1(x + Math.sin(q) * 8)}" cy="${f1(y - 6 - Math.cos(q) * 6)}" rx="2.6" ry="8" fill="${L.leaf}" transform="rotate(${f1(q * 57)} ${f1(x + Math.sin(q) * 8)} ${f1(y - 6 - Math.cos(q) * 6)})"/>`; }).join("");
+  s += stem(kind === "sunflower" ? 6 : 2.6) + (kind === "sunflower" ? leaves(st < 2 ? 2 : 6, 15, 9) : kind === "lupine" ? "" : leaves(kind === "columbine" ? 3 : 4, 6, 3));
+  if (st === 1) return s;
+  if (st === 2) {   // (in bud: a closed bud, or a spike still green, coloured at its tip)
+    if (kind === "sunflower") return s + `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="11" fill="#7fae4a"/>` + petalRing(tx, ty, 8, 9, 2.5, 5, "#5f8f35");
+    if (kind === "lupine" || kind === "penstemon" || kind === "paintbrush")
+      return s + `<ellipse cx="${f1(tx)}" cy="${f1(ty + 8)}" rx="4.5" ry="12" fill="#7fae4a"/><ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="3" ry="5" fill="${L.bud}"/>`;
+    return s + `<ellipse cx="${f1(tx)}" cy="${f1(ty)}" rx="3.6" ry="6" fill="${L.bud}"/><path d="M${f1(tx - 4)} ${f1(ty + 4)} L${f1(tx)} ${f1(ty + 1)} L${f1(tx + 4)} ${f1(ty + 4)}" fill="#4f8a35"/>`;
+  }
+  // (in flower)
+  if (kind === "columbine") return s + petalRing(tx, ty, 5, 9, 3.6, 10, "#4d6fd1") + petalRing(tx, ty, 5, 5, 3.2, 6, "#ffffff", 36) + `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="2.6" fill="#f4d35e"/>`;
+  if (kind === "paintbrush") return s + [...Array(8)].map((_, j) => { const v = j / 7, bx = tx + (j % 2 ? -1 : 1) * 3.5 * (1 - v * 0.6), by = ty + 14 - 24 * v;
+    return `<ellipse cx="${f1(bx)}" cy="${f1(by)}" rx="${f1(4.2 - v * 1.4)}" ry="7" fill="${j % 3 === 2 ? "#f6a04a" : j % 2 ? "#e2492f" : "#ef6a35"}" transform="rotate(${(j % 2 ? -1 : 1) * 20} ${f1(bx)} ${f1(by)})"/>`; }).join("");
+  if (kind === "penstemon") return s + [...Array(8)].map((_, j) => { const v = j / 7, sd = j % 2 ? -1 : 1, px = x + lean * (0.5 + 0.5 * v) + sd * 5, py = y - h * (0.55 + 0.45 * v);
+    return `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="6.5" ry="3.3" fill="#6a5acd" transform="rotate(${sd * 28} ${f1(px)} ${f1(py)})"/><circle cx="${f1(px + sd * 5)}" cy="${f1(py + 1.5)}" r="1.8" fill="#b9aef0"/>`; }).join("");
+  if (kind === "blanketflower") return s + petalRing(tx, ty, 12, 9.5, 3.4, 6.5, "#f4c430") + petalRing(tx, ty, 12, 6.5, 3, 4.2, "#c0392b") + `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="4.6" fill="#7a2a14"/>`;
+  if (kind === "sunflower") { let seeds = ""; for (let j = 0; j < 14; j++) { const q = j * 2.4, r = 3 + 10 * Math.sqrt(j / 14); seeds += `<circle cx="${f1(tx + Math.cos(q) * r)}" cy="${f1(ty + Math.sin(q) * r)}" r="1.5" fill="#2e1c0c"/>`; }
+    return s + petalRing(tx, ty, 18, 24, 5, 12, "#f5c518", R(i, 2) * 20) + petalRing(tx, ty, 18, 19, 4, 9, "#f0a818", 10 + R(i, 2) * 20) + `<circle cx="${f1(tx)}" cy="${f1(ty)}" r="16" fill="#5a3a1a"/>` + seeds; }
+  if (kind === "lupine") return s + [...Array(10)].map((_, j) => { const v = j / 9, py = y - h * (0.45 + 0.55 * v), wd = 7.5 * (1 - v * 0.75), px = x + lean * (0.4 + 0.6 * v);
+    return [-1, 1].map(sd => `<circle cx="${f1(px + sd * wd * 0.6)}" cy="${f1(py)}" r="${f1(3.6 - v * 1.3)}" fill="${v > 0.75 ? "#a58ef0" : "#7b5bd6"}"/>`).join("") + `<circle cx="${f1(px)}" cy="${f1(py - 1.5)}" r="${f1(3 - v)}" fill="${j % 3 ? "#8f73e0" : "#efeafd"}"/>`; }).join("");
+  if (kind === "coneflower") return s + [...Array(6)].map((_, j) => { const q = ((j - 2.5) / 2.5) * 62, rad = q * Math.PI / 180, px = tx + Math.sin(rad) * 7, py = ty + 4 + Math.abs(Math.sin(rad)) * 2 + 7;
+    return `<ellipse cx="${f1(px)}" cy="${f1(py)}" rx="3.4" ry="8.5" fill="#c0392b" stroke="#f4d35e" stroke-width="1.4" transform="rotate(${f1(-q * 0.6)} ${f1(px)} ${f1(py)})"/>`; }).join("") +
+    `<ellipse cx="${f1(tx)}" cy="${f1(ty - 4)}" rx="4.6" ry="11" fill="#4a2a14"/>`;
+  return s;
+}
+// (a thing's seeded() takes one number; the plants' draws take two, an index and which draw: each pair its own number)
+const seeded2 = seed => { const r = seeded(seed); return (i, k = 0) => r(i * 37 + k * 101); };
+// 🌷 a flower bed: six plants of one kind on a mound of soil (three of the tall sunflowers), the far ones first
+function flowerBedSvg(t, seed) {
+  const R = seeded2(seed), kind = FLOWER_LOOK[t.flower] ? t.flower : "columbine", st = gardenStage(t), n = kind === "sunflower" ? 3 : 6, w = 150;
+  const spots = [...Array(n)].map((_, i) => ({ i, x: (i - (n - 1) / 2) * (w * 0.78 / n) + (R(i, 3) - 0.5) * 6, y: -9 + (i % 2) * 6 + (R(i, 4) - 0.5) * 3 })).sort((a, b) => a.y - b.y);
+  return gardenMound(w) + drawnBy("wildflowers", spots.map(({ i, x, y }) => st === 0 ? sproutSvg(x, y, 8 + 4 * R(i, 5)) : flowerPlantSvg(kind, x, y, st, R, i)).join(""));
+}
+// 🥕 a vegetable patch: its plants on a mound of soil, as many as each grows to in a patch (one tomato in its cage, three
+// stalks of corn, five carrots, a pumpkin vine, three lettuces, peas up two stakes, two peppers, two broccoli plants)
+function vegetablePatchSvg(t, seed) {
+  const R = seeded2(seed), kind = GARDEN_VEGETABLES.some(v => v[0] === t.veg) ? t.veg : "tomato", st = gardenStage(t), w = 160;
+  const leaf = (x, y, rx, ry, deg, col = "#3f8f3a") => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${col}" transform="rotate(${f1(deg)} ${f1(x)} ${f1(y)})"/>`;
+  const at = xs => xs.map(x => [x + (R(x + 9, 6) - 0.5) * 6, -8]);
+  let s = "";
+  if (st === 0) { const xs = { tomato: [0], corn: [-40, 0, 40], carrot: [-56, -28, 0, 28, 56], pumpkin: [-20, 20], lettuce: [-45, 0, 45], peas: [-35, 0, 35], pepper: [-35, 35], broccoli: [-35, 35] }[kind];
+    return gardenMound(w) + at(xs).map(([x, y], i) => sproutSvg(x, y, 8 + 4 * R(i, 5))).join(""); }
+  const g = [0, 0.55, 0.85, 1][st];
+  if (kind === "tomato") { const h = 130 * g;
+    s += [-1, 1].map(sd => `<path d="M${sd * 22} -6 L${f1(sd * 24)} ${f1(-6 - h)}" stroke="#9aa0a6" stroke-width="2.2"/>`).join("") + `<path d="M0 -6 V${f1(-6 - h * 0.6)}" stroke="#4f8a35" stroke-width="4"/>`;
+    for (let j = 0; j < 18; j++) s += leaf((R(j, 7) - 0.5) * 42, -6 - h * (0.1 + 0.85 * R(j, 8)), 11, 6.5, R(j, 9) * 180, j % 3 ? "#3f8f3a" : "#4caf50");
+    s += [0.3, 0.6, 0.9].map(v => `<ellipse cx="0" cy="${f1(-6 - h * v)}" rx="25" ry="5" fill="none" stroke="#9aa0a6" stroke-width="2"/>`).join("");
+    if (st >= 2) for (let j = 0; j < 6; j++) { const fx = (R(j, 10) - 0.5) * 36, fy = -6 - h * (0.25 + 0.6 * R(j, 11));
+      s += st === 2 && j % 2 ? `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="3" fill="#f4d35e"/>` : `<circle cx="${f1(fx)}" cy="${f1(fy)}" r="${st === 3 ? 7.5 : 5}" fill="${st === 3 ? "#e53935" : "#7cb342"}"/><path d="M${f1(fx - 3)} ${f1(fy - 6)} L${f1(fx)} ${f1(fy - 4)} L${f1(fx + 3)} ${f1(fy - 6)}" stroke="#2e7d32" stroke-width="1.6" fill="none"/>`; }
+  } else if (kind === "corn") { const h = 230 * g;
+    for (const [x, y] of at([-40, 0, 40])) { const hh = h * (0.9 + 0.1 * R(x + 40, 12));
+      s += `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(y - hh)}" stroke="#6aa84f" stroke-width="5"/>`;
+      for (let j = 0; j < 5; j++) { const v = 0.18 + 0.15 * j, sd = j % 2 ? -1 : 1, ly = y - hh * v;
+        s += `<path d="M${f1(x)} ${f1(ly)} Q${f1(x + sd * 30)} ${f1(ly - 26)} ${f1(x + sd * 46)} ${f1(ly + 4)}" fill="none" stroke="#5fae3c" stroke-width="5" stroke-linecap="round"/>`; }
+      if (st >= 2) s += `<g transform="rotate(18 ${f1(x + 5)} ${f1(y - hh * 0.5)})"><ellipse cx="${f1(x + 5)}" cy="${f1(y - hh * 0.5)}" rx="6.5" ry="17" fill="#9ccc65"/>` +
+        (st === 3 ? `<ellipse cx="${f1(x + 5)}" cy="${f1(y - hh * 0.5 - 6)}" rx="3.6" ry="9" fill="#f4d35e"/>` : "") + `<path d="M${f1(x + 5)} ${f1(y - hh * 0.5 - 16)} l-3 -9 M${f1(x + 5)} ${f1(y - hh * 0.5 - 16)} l3 -8" stroke="#8d5524" stroke-width="1.5"/></g>` +
+        [-8, -4, 0, 4, 8].map(d => `<path d="M${f1(x)} ${f1(y - hh)} l${d} -14" stroke="#c9a66b" stroke-width="1.6"/>`).join(""); }
+  } else if (kind === "carrot") { const h = 55 * g;
+    for (const [x, y] of at([-56, -28, 0, 28, 56])) {
+      for (let j = 0; j < 5; j++) { const q = (j / 4 - 0.5) * 1.1, ex = x + Math.sin(q) * h * 0.6, ey = y - Math.cos(q) * h;
+        s += `<path d="M${f1(x)} ${f1(y)} Q${f1(x + Math.sin(q) * h * 0.2)} ${f1(y - h * 0.6)} ${f1(ex)} ${f1(ey)}" fill="none" stroke="#4f9a3a" stroke-width="1.8"/>` +
+          [0.5, 0.75, 1].map(v => `<circle cx="${f1(x + (ex - x) * v)}" cy="${f1(y + (ey - y) * v)}" r="2.6" fill="#5fae3c"/>`).join(""); }
+      if (st === 3) s += `<path d="M${f1(x - 6)} ${f1(y + 1)} Q${f1(x)} ${f1(y - 9)} ${f1(x + 6)} ${f1(y + 1)} Z" fill="#e67e22"/>`; }
+  } else if (kind === "pumpkin") {
+    s += `<path d="M-70 -6 Q-40 -16 -10 -8 T50 -10 T75 -6" fill="none" stroke="#4f8a35" stroke-width="4" stroke-linecap="round"/>`;
+    for (const [x, y, r] of [[-52, -14, 13], [-14, -16, 15], [30, -18, 14], [64, -12, 11]]) { const rr = r * (0.6 + 0.4 * g);
+      s += [[-0.5, 0], [0.5, 0], [0, -0.55]].map(([u, v]) => `<circle cx="${f1(x + u * rr)}" cy="${f1(y - rr * 0.5 + v * rr)}" r="${f1(rr * 0.62)}" fill="#3f8f3a"/>`).join("") +
+        `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(y - rr)}" stroke="#2e6b2a" stroke-width="1.2"/>`; }
+    if (st === 2) s += `<ellipse cx="10" cy="-12" rx="11" ry="8" fill="#7cb342"/><path d="M-36 -26 l-5 -8 l5 3 l5 -3 Z" fill="#f4c430"/>`;
+    if (st === 3) s += `<ellipse cx="6" cy="-20" rx="32" ry="22" fill="#e67e22"/>` + [-18, -6, 6, 18].map(d => `<path d="M${f1(6 + d * 0.4)} -41 Q${f1(6 + d * 1.3)} -20 ${f1(6 + d * 0.4)} 1" fill="none" stroke="#c0661a" stroke-width="2"/>`).join("") +
+      `<path d="M6 -41 q-2 -8 4 -12" fill="none" stroke="#6b4423" stroke-width="4" stroke-linecap="round"/><ellipse cx="-46" cy="-10" rx="12" ry="9" fill="#ef8a2a"/>`;
+  } else if (kind === "lettuce") { const r = 22 * g;
+    for (const [x, y] of at([-45, 0, 45])) s += [...Array(8)].map((_, j) => { const q = j * 45 + (j > 3 ? 22 : 0), inner = j > 3;
+      return leaf(x + Math.sin(q * Math.PI / 180) * r * (inner ? 0.3 : 0.55), y - r * 0.55 - Math.cos(q * Math.PI / 180) * r * (inner ? 0.2 : 0.35), r * (inner ? 0.45 : 0.6), r * 0.42, q, inner ? "#9ccc65" : "#7cb342"); }).join("") +
+      `<ellipse cx="${f1(x)}" cy="${f1(y - r * 0.6)}" rx="${f1(r * 0.35)}" ry="${f1(r * 0.3)}" fill="#c5e1a5"/>`;
+  } else if (kind === "peas") { const h = 150 * g;
+    s += [-35, 35].map(x => `<path d="M${x} -4 L${x} ${f1(-6 - 150 * Math.max(g, 0.55))}" stroke="#8a6440" stroke-width="4"/>`).join("") +
+      [0.3, 0.55, 0.8].map(v => `<path d="M-35 ${f1(-6 - 150 * Math.max(g, 0.55) * v)} L35 ${f1(-6 - 150 * Math.max(g, 0.55) * v)}" stroke="#e8e1cf" stroke-width="1.2"/>`).join("");
+    for (const x0 of [-22, 0, 22]) { let d = `M${x0} -6`; for (let j = 1; j <= 6; j++) d += ` Q${f1(x0 + (j % 2 ? 9 : -9))} ${f1(-6 - h * (j - 0.5) / 6)} ${f1(x0)} ${f1(-6 - h * j / 6)}`;
+      s += `<path d="${d}" fill="none" stroke="#5fae3c" stroke-width="2.4"/>`;
+      for (let j = 1; j < 6; j++) { const ly = -6 - h * j / 6; s += leaf(x0 - 6, ly, 5, 3, -20, "#6abf4b") + leaf(x0 + 6, ly, 5, 3, 20, "#6abf4b");
+        if (st === 2 && j % 2) s += `<circle cx="${f1(x0 + 4)}" cy="${f1(ly - 4)}" r="3" fill="#ffffff"/><circle cx="${f1(x0 + 6)}" cy="${f1(ly - 2)}" r="2.4" fill="#f3e5f5"/>`;
+        if (st === 3 && j % 2) s += leaf(x0 + 7, ly + 9, 3.6, 11, -12, "#8bc34a") + `<path d="M${f1(x0 + 6)} ${f1(ly + 2)} l0 14" stroke="#689f38" stroke-width="1"/>`; } }
+  } else if (kind === "pepper") { const h = 80 * g;
+    for (const [p, [x, y]] of at([-35, 35]).entries()) {
+      s += `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(y - h * 0.7)}" stroke="#4f8a35" stroke-width="3.5"/>`;
+      for (let j = 0; j < 14; j++) s += leaf(x + (R(p * 20 + j, 13) - 0.5) * 38, y - h * (0.3 + 0.65 * R(p * 20 + j, 14)), 9, 5.5, R(p * 20 + j, 15) * 180, j % 2 ? "#3f8f3a" : "#4caf50");
+      if (st >= 2) for (const [u, v, j] of [[-0.3, 0.45, 0], [0.25, 0.4, 1], [0.05, 0.62, 2]]) { const px = x + u * 30, py = y - h * v, col = st === 2 ? "#4caf50" : j === 1 ? "#43a047" : "#d32f2f";
+        s += `<path d="M${f1(px - 6)} ${f1(py)} Q${f1(px - 7)} ${f1(py + 14)} ${f1(px)} ${f1(py + 15)} Q${f1(px + 7)} ${f1(py + 14)} ${f1(px + 6)} ${f1(py)} Z" fill="${col}"/>` +
+          `<path d="M${f1(px)} ${f1(py)} l0 -4" stroke="#2e7d32" stroke-width="2"/>`; } }
+  } else if (kind === "broccoli") { const h = 75 * g;
+    for (const [x, y] of at([-35, 35])) {
+      for (let j = 0; j < 5; j++) { const q = (j / 4 - 0.5) * 100; s += leaf(x + Math.sin(q * Math.PI / 180) * h * 0.3, y - h * 0.38, 9, h * 0.36, q, j % 2 ? "#5b8f7a" : "#4f8070"); }
+      if (st >= 2) { const r = st === 3 ? 8 : 4.5, hy = y - h * 0.62;
+        s += `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(hy)}" stroke="#7fae8a" stroke-width="5"/>` +
+          [[0, 0], [-1, 0.3], [1, 0.3], [-0.6, -0.5], [0.6, -0.5], [0, -0.85]].map(([u, v]) => `<circle cx="${f1(x + u * r * 1.2)}" cy="${f1(hy + v * r * 1.1)}" r="${f1(r)}" fill="#2e7d32"/>`).join("") +
+          [[-0.4, -0.2], [0.5, 0.1], [0, -0.6]].map(([u, v]) => `<circle cx="${f1(x + u * r * 1.3)}" cy="${f1(hy + v * r * 1.3)}" r="${f1(r * 0.25)}" fill="#1b5e20"/>`).join(""); } }
+  }
+  return gardenMound(w) + s;
+}
 // 🌵 a saguaro: a tall ribbed column, rounded on top, and its arms (none on a young one): the first two low on either side,
 // reaching out a little and up; the next two higher and farther out, nearer us (drawn over the low ones); spines in rows
 // down its ribs; a woodpecker's hole now and then; its white flowers on the tops (flowers)
@@ -3711,6 +3847,10 @@ const THING_PARAMS = {
   agave: [["stalk", "🌾 its tall flower stalk", "toggle"], ["tone", "🎨 its leaves", "color", AGAVE_TONES]],
   joshuatree: [["flowers", "🌼 in bloom", "toggle"]],
   ocotillo: [["leaves", "🍃 leafed out (after rain)", "toggle"], ["flowers", "🔥 red flowers at the tips", "toggle"]],
+  // (ticket 660, part 2, for M's garden) a flower bed's flower and a vegetable patch's vegetable; how grown each is (a range, so
+  // moving it does not rebuild the cards: their signature leaves ranges out)
+  flowerbed: [["flower", "🌼 which flower", "choice", GARDEN_FLOWERS], ["grown", "🌱 how grown", "range", [0, 100, 5]]],
+  veggies: [["veg", "🥕 which vegetable", "choice", GARDEN_VEGETABLES], ["grown", "🌱 how grown", "range", [0, 100, 5]]],
   // (ticket 502) the farm things' own: a barn's kind and its walls' colour (∅ its kind's own); a fence piece's kind
   barn: [["style", "🏚️ kind", "choice", BARN_STYLES], ["color", "🎨", "color", BARN_COLORS]],
   fencepiece: [["style", "🪵 kind", "choice", FENCE_STYLES]],
@@ -3729,6 +3869,7 @@ const THING_DEFAULTS = { item: { id: "gold" }, plate: { switch: "hold", wants: "
                          cow: { pose: "stand", coat: "holstein" }, pig: { pose: "stand", coat: "pink" }, chicken: { pose: "peck", coat: "brown" },   // (ticket 504)
                          saguaro: { arms: 2, flowers: true }, pricklypear: { bloom: "flowers", color: DESERT_FLOWERS[0] }, barrelcactus: { flowers: true, color: DESERT_FLOWERS[1] },
                          agave: { stalk: false, tone: AGAVE_TONES[0] }, joshuatree: { flowers: false }, ocotillo: { leaves: true, flowers: true },   // (ticket 501)
+                         flowerbed: { flower: "columbine", grown: 100 }, veggies: { veg: "tomato", grown: 100 },   // (ticket 660)
                          barn: { style: "gambrel", color: "none" }, fencepiece: { style: "wood" } };   // (ticket 502)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,
@@ -3907,7 +4048,7 @@ function seaPlantSvg(kind, color, seed, o) {
 // drawings lifted out of the places for it, each place's markup the same
 // as before, which the safety net checks: the camp site's log and campfire,
 // the picnic's bench, the castle kitchen's barrel, the witch's cauldron.
-const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["farm", "🚜 farm"], ["desert", "🌵 desert"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["carry", "🎒 to carry"], ["places", "📦 from the places"]];
+const THING_GROUPS = [["nature", "🌲 nature"], ["camp", "🏕️ camp"], ["magic", "🧪 magic"], ["spooky", "💀 spooky"], ["signs", "🪧 signs"], ["sea", "🐚 sea"], ["cave", "🦇 cave"], ["farm", "🚜 farm"], ["desert", "🌵 desert"], ["garden", "🌻 garden"], ["animals", "🐄 farm animals"], ["works", "🎚️ switches and traps"], ["bubbles", "🫧 bubbles"], ["castle", "🏰 castle"], ["carry", "🎒 to carry"], ["places", "📦 from the places"]];
 // (ticket 639) things to carry: their own group; "item" (a thing put down from the backpack) has none, so
 // it is not in the menu (THING_KINDS[k].group)
 const THING_KINDS_639 = { chocolate: { label: "🍫 chocolate bar", size: 1, group: "carry" }, bottle: { label: "🍾 glass bottle", size: 1, group: "carry" },
@@ -3937,6 +4078,9 @@ const THING_KINDS = { ...THING_KINDS_639, rock: { label: "🪨 rock", size: 1, g
                       saguaro: { label: "🌵 saguaro", size: 1, group: "desert" }, pricklypear: { label: "🍐 prickly pear", size: 1, group: "desert" },
                       barrelcactus: { label: "🛢️ barrel cactus", size: 1, group: "desert" }, agave: { label: "🪴 agave", size: 1, group: "desert" },
                       joshuatree: { label: "🌴 Joshua tree", size: 1, group: "desert" }, ocotillo: { label: "🔥 ocotillo", size: 1, group: "desert" },
+                      // (ticket 660, part 2, for M's garden) things to plant: walked through (none stands in the way), and not cut by the
+                      // 🗡️ sword (not in PLANT_KINDS): a garden is for growing
+                      flowerbed: { label: "🌷 flower bed", size: 1, group: "garden" }, veggies: { label: "🥕 vegetable patch", size: 1, group: "garden" },
                       // (ticket 502, for M) the 🚜 farm things: a barn (its weather vane, a coop's hens, move), a piece of fence (it
                       // snaps to the floor's tiles: tiles, tileSnap)
                       barn: { label: "🏚️ barn", size: 1, group: "farm", moving: true }, fencepiece: { label: "🪵 fence", size: 1, group: "farm", tiles: true },
@@ -4127,6 +4271,8 @@ function thingSvg(o, t, i) {
                t.kind === "saguaro" ? at(saguaroSvg(t, seed)) : t.kind === "pricklypear" ? at(pricklyPearSvg(t, seed)) :
                t.kind === "barrelcactus" ? at(barrelCactusSvg(t, seed)) : t.kind === "agave" ? at(agaveSvg(t, seed)) :
                t.kind === "joshuatree" ? at(joshuaTreeSvg(t, seed)) : t.kind === "ocotillo" ? at(ocotilloSvg(t, seed)) :
+               // (ticket 660) the garden's things to plant
+               t.kind === "flowerbed" ? at(flowerBedSvg(t, seed)) : t.kind === "veggies" ? at(vegetablePatchSvg(t, seed)) :
                // (ticket 502) the farm things: a fence piece's rails reach the piece beside it (fencePieceSvg)
                t.kind === "barn" ? at(barnThingSvg(t, seed, o)) :
                t.kind === "fencepiece" ? at(fencePieceSvg(o, t, i, s)) :

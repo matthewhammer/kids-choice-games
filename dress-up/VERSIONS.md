@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.472 (2026-11-01)
+
+Everything in 0.0.471, plus:
+
+- **🌷 Flower beds and 🥕 vegetable patches to plant** (for M's garden; ticket 660, part 2 of 3). A new 🌻 garden group in the things you can put anywhere. A flower bed grows one of eight Colorado wildflowers: 💙 Colorado blue columbine (the state flower), 🖌️ Indian paintbrush, 🔔 Rocky Mountain penstemon, 🌞 blanket flower, 🌻 sunflowers, 💜 silvery lupine, 🎩 prairie coneflower (Mexican hat) and 🩵 wild blue flax. A vegetable patch grows one of eight vegetables grown in the United States: 🍅 tomatoes in their cage, 🌽 corn, 🥕 carrots, 🎃 pumpkins, 🥬 lettuce, 🫛 peas up their stakes, 🫑 bell peppers and 🥦 broccoli. 🌱 How grown sets each one's stage: sprouts, young plants, in bud with green fruit, then in flower and ripe. You can walk through them, and the 🗡️ sword does not cut them. Next: a 💧 watering can, so they grow as you water them.
+
 ## 0.0.471 (2026-11-01)
 
 Everything in 0.0.470, plus:
