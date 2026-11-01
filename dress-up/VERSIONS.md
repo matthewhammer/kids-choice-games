@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.470 (2026-11-01)
+
+Everything in 0.0.469, plus:
+
+- **🌱 Cut plants grow back** (M's idea; in ⚙️ Advanced, under 🌗 night and day, on to start). A tree, a bush or vines the 🗡️ sword cut come back by themselves 2 minutes later, with a puff of leaves and a 🌱, even while you are somewhere else. ⏱️ sets how many minutes they take (1 to 30). With 🌗 night and day on, they grow back by the next morning instead: sleep in a bed, and everything you cut is back. A bush or a cactus someone put in a place now grows back too, where it was, instead of being gone for good.
+
 ## 0.0.469 (2026-10-29)
 
 Everything in 0.0.468, plus:

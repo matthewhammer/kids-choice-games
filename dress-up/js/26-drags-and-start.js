@@ -1644,13 +1644,17 @@ function swordCut(side) {
   }
   const c = cands.sort((a, b) => a.d - b.d)[0];
   if (!c) return;
-  if (c.thing) B.things = B.things.filter(t => t !== c.thing);
-  else { const at = objPlace(B), cut = { ...(B.cut || {}) }; cut[at] = [...new Set([...(cut[at] || []), c.obj.name])]; B.cut = cut; }
+  // (ticket 659: each cut stamped, to grow back (regrowHere); a plant put in the place is kept, by where it was in the list, not lost)
+  const at = objPlace(B), when = regrowStamp();
+  if (c.thing) { B.cutThings = { ...(B.cutThings || {}), [at]: [...((B.cutThings || {})[at] || []), { thing: c.thing, i: B.things.indexOf(c.thing), when }] };
+                 B.things = B.things.filter(t => t !== c.thing); }
+  else { const cut = { ...(B.cut || {}) }; cut[at] = [...new Set([...(cut[at] || []), c.obj.name])]; B.cut = cut;
+         B.cutWhen = { ...(B.cutWhen || {}), [at]: { ...((B.cutWhen || {})[at] || {}), [c.obj.name]: when } }; }
   changed(); draw();
   leafPuffs([c.at]);
 }
-// (ticket 656) a puff of leaves at each [x, y] (the scene's units), flying out and fading, with a "chop!"
-function leafPuffs(at) {
+// (ticket 656) a puff of leaves at each [x, y] (the scene's units), flying out and fading, with a "chop!" (ticket 659: or a 🌱, grown back)
+function leafPuffs(at, word = "chop!") {
   const O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g"), k = figureT.k || 1, t0 = performance.now();
   g.setAttribute("data-chop", ""); O.append(g);
   const leaves = at.flatMap(([x, y], j) => [...Array(7)].map((_, i) => ({ x, y, a: (i / 7) * 2 * Math.PI + j, v: 60 + 40 * ((i * 37 + j * 11) % 5) / 4, c: ["#4f8a3c", "#7bb35a", "#3c6e2e"][i % 3] })));
@@ -1658,7 +1662,7 @@ function leafPuffs(at) {
     const u = Math.min(1, (now - t0) / 450);
     g.innerHTML = leaves.map(l => { const cx = l.x + Math.cos(l.a) * l.v * u * k, cy = l.y + (Math.sin(l.a) * l.v * u + 60 * u * u) * k;
       return `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(7 * k)}" ry="${f1(3.5 * k)}" fill="${l.c}" opacity="${(1 - u).toFixed(2)}" transform="rotate(${(l.a * 57 + 300 * u).toFixed(0)} ${f1(cx)} ${f1(cy)})"/>`; }).join("") +
-      `<text x="${f1(at[0][0])}" y="${f1(at[0][1] - 40 * k)}" font-size="${f1(26 * k)}" font-weight="700" fill="#2f5d22" font-family="sans-serif" text-anchor="middle" opacity="${(1 - u).toFixed(2)}">chop!</text>`;
+      `<text x="${f1(at[0][0])}" y="${f1(at[0][1] - 40 * k)}" font-size="${f1(26 * k)}" font-weight="700" fill="#2f5d22" font-family="sans-serif" text-anchor="middle" opacity="${(1 - u).toFixed(2)}">${word}</text>`;
     if (u < 1) { requestAnimationFrame(frame); return; }
     g.remove();
   };
@@ -1749,6 +1753,47 @@ function sleepTillMorning(h) {
     setTimeout(() => fade(0.95, dayTint(WAKE_HOUR), 1400, () => { sleeping = false; nightShow(); scriptSay(`Good morning! Nights slept: ${state.days.nights}.`, "🌅"); }), 400);
   });
 }
+// (ticket 659, M: a way for the plants that are cut to regrow; Matthew: "build it. good plan.") With 🌱 cut plants grow back on
+// (⚙️ Advanced, state.regrow: on to start), a plant the 🗡️ sword cut comes back by itself regrow.minutes after it was cut; with
+// 🌗 night and day on, by the next morning (7 o'clock, WAKE_HOUR) on the game's clock, so a night slept grows back all of them.
+// Each cut is stamped with both (regrowStamp: the time, and the game's hour counted from 1970); a cut from before, with none, is
+// stamped when first seen here. Checked each second in the place shown, a puff and a 🌱 at each plant come back; and on coming to
+// a place (worldKeep), quietly, before it is drawn: what grew while the friend was away is simply there. Only the place's own (by
+// objPlace, as the cut lists are kept). (No let or const of this file is read here: worldKeep may call it while this file loads.)
+function regrowStamp(B = state.background) {
+  return { t: Date.now(), g: Date.UTC(Math.round(B.skyYear ?? 2026), Math.round(B.skyMonth ?? 10) - 1, Math.round(B.skyDay ?? 20)) / 36e5 + Number(B.skyHour ?? 12) };
+}
+function regrowDue(s, now) {
+  if (daysOn()) return now.g >= (Math.floor((s.g - 7) / 24) + 1) * 24 + 7;   // (the first 7 o'clock after it was cut)
+  return now.t - s.t >= Math.max(1, Number(state.regrow.minutes) || 2) * 60000;
+}
+function regrowHere(show) {
+  const B = state.background;
+  if (!state.regrow || !state.regrow.on || !B || B.kind === "none") return;
+  const at = objPlace(B), names = ((B.cut || {})[at]) || [], kept = ((B.cutThings || {})[at]) || [];
+  if (!names.length && !kept.length) return;
+  const now = regrowStamp(B), when = { ...(((B.cutWhen || {})[at]) || {}) };
+  for (const n of names) if (!when[n]) when[n] = now;
+  const grown = names.filter(n => regrowDue(when[n], now)), back = kept.filter(k => regrowDue(k.when || now, now));
+  for (const n of Object.keys(when)) if (!names.includes(n) || grown.includes(n)) delete when[n];
+  B.cutWhen = { ...(B.cutWhen || {}), [at]: when };
+  if (!grown.length && !back.length) return;
+  const cut = { ...B.cut }, still = names.filter(n => !grown.includes(n));
+  if (still.length) cut[at] = still; else delete cut[at];
+  B.cut = cut;
+  const things = [...(B.things || [])];
+  for (const k of [...back].sort((a, b) => a.i - b.i)) things.splice(Math.max(0, Math.min(things.length, k.i ?? things.length)), 0, k.thing);
+  B.things = things;
+  const left = kept.filter(k => !back.includes(k)), cutThings = { ...B.cutThings };
+  if (left.length) cutThings[at] = left; else delete cutThings[at];
+  B.cutThings = cutThings;
+  if (!show) return;
+  changed();
+  const pts = back.map(k => [k.thing.x ?? 0, (k.thing.z ?? SCENE.ground) - 60]);
+  for (const o of bgShown.objs) if (grown.includes(o.name)) { let bb; try { bb = o.node.getBBox(); } catch (e) { continue; } if (bb.width) pts.push([bb.x + bb.width / 2, bb.y + bb.height * 0.4]); }
+  if (pts.length) leafPuffs(pts, "🌱");
+}
+setInterval(() => { if (!document.hidden) regrowHere(true); }, 1000);
 function netCatch() {
   const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
   let bee = -1, bd = Infinity;
