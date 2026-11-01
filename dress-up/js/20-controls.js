@@ -78,7 +78,9 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   // (ticket 278, for M) the grass hut, and its three rooms
   ["hut", "🛖 grass hut"], ["hutroom", "🛋️ inside the grass hut"], ["hutbed", "🛏️ the grass hut's bedroom"], ["hutpotion", "🧪 the grass hut's potion room"], ["hutcenter", "🔥 the grass hut's center"],
   // (ticket 501, for M) the desert
-  ["desert", "🏜️ desert"]];
+  ["desert", "🏜️ desert"],
+  // (ticket 660, M's garden) the garden, to plant in, and the spring, to fill a watering can at
+  ["garden", "🌻 garden"], ["spring", "💧 spring"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
@@ -86,9 +88,9 @@ const PLACE_GROUPS = [
   // (ticket 290, for N: bubbles, a kind of place of its own: bubble space, moved here, and the bubble room)
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
-  ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall"]],
+  ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall", "spring"]],   // (spring: ticket 660)
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
-  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard)
+  ["home", "🏠 home", ["house", "livingroom", "treehouse", "treeroom", "treetop", "farmyard", "garden"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard; ticket 660: the 🌻 garden)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],
@@ -606,6 +608,10 @@ const TABS = [
     // (ticket 503, for M) the pasture: how many horses graze in it, and how many patches of wildflowers grow in its grass
     ["range", "pastureHorses", "🐴 horses grazing", 0, 3, 0, 3],
     ["range", "pastureFlowers", "🌼 patches of wildflowers in the grass", 0, 24, 4, 16],
+    // (ticket 660, M's garden) the garden: how many beds of soil to plant in; the spring: its frogs, and how much it bubbles
+    ["range", "gardenBeds", "🟫 beds of soil to plant in", 0, 6, 2, 6],
+    ["range", "springFrogs", "🐸 frogs", 0, 3, 0, 3],
+    ["range", "springBubbles", "🫧 how much it bubbles", 0, 10, 2, 10],
     // the jungle waterfall
     ["range", "fallWidth", "💦 waterfall width", 40, 250, 70, 160],
     ["range", "vines", "🌿 vines", 0, 20, 4, 14],
@@ -1287,6 +1293,7 @@ const SHOWN_WHEN = {
   "background.inside": b => b.kind === "treeroom",
   ...Object.fromEntries(["peakHeight", "mtClouds", "birds", "farLake"].map(key => ["background." + key, b => b.kind === "mountains"])),
   ...Object.fromEntries(["pastureHorses", "pastureFlowers"].map(key => ["background." + key, b => b.kind === "pasture"])),   // (ticket 503)
+  "background.gardenBeds": b => b.kind === "garden", ...Object.fromEntries(["springFrogs", "springBubbles"].map(key => ["background." + key, b => b.kind === "spring"])),   // (ticket 660)
   ...Object.fromEntries(["vines", "parrots"].map(key => ["background." + key, b => b.kind === "waterfall"])),
   // (the cave sees the falls from behind: their width and mist)
   ...Object.fromEntries(["fallWidth", "mist", "fallRate", "fallTime"].map(key => ["background." + key, b => b.kind === "waterfall" || b.kind === "cave"])),

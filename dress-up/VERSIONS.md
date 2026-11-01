@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.471 (2026-11-01)
+
+Everything in 0.0.470, plus:
+
+- **🌻 The garden and 💧 the spring, two new places** (for M's garden; ticket 660, part 1 of 3). The garden is out with the 🏠 home places: a lawn behind a white picket fence with snowy Colorado peaks past it, an arbor of climbing roses in the fence, tall flowers along its foot, a garden shed with a window box and a rain barrel, an apple tree, a bench, a wheelbarrow, bees, and beds of dug soil either side of a path of stepping stones, ready to plant in (🟫 how many beds, 0 to 6). The spring is with the 💧 water places: a small round pool welling up in a meadow with land on every side, woods behind it, mossy stones round its edge, reeds, lily pads and frogs (🐸 0 to 3, their throats puffing), bubbles coming up in its middle (🫧 how much it bubbles), a mossy rock and a fallen log. You can wade into the spring. Next: flowers and vegetables to plant, then a 💧 watering can to fill at the spring.
+
 ## 0.0.470 (2026-11-01)
 
 Everything in 0.0.469, plus:

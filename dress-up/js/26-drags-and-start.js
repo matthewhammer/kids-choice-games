@@ -1834,7 +1834,8 @@ const ROOM_CARRY = {
   // (Matthew: "except for one, for now --- need bug catcher's net to catch a bug; find it in tree house; also need glass bottle to keep
   // bug; find at healer's house") the net in the tree house, the bottle only at the healer's, and bees where the flowers are
   treeroom: [["net", -200, -60, {}], ["chocolate", 190, -80, {}]],
-  clearing: [["bee", -150, -120, {}], ["bee", 180, -60, {}]], fairyforest: [["bee", 120, -100, {}]], forest: [["bee", -120, -90, {}]],
+  clearing: [["bee", -150, -120, {}], ["bee", 180, -60, {}]], garden: [["bee", -90, -95, {}], ["bee", 120, -30, {}]],   // (garden: ticket 660)
+  fairyforest: [["bee", 120, -100, {}]], forest: [["bee", -120, -90, {}]],
 };
 // (0.0.468) once a room, not once a game: B.carrySeeded was one mark for every place, so after the witch's room the tree room never had
 // its net (the bug-catching puzzle stuck). Each room's own mark, by the place it is (worldHome: its square, or an inside off the grid),

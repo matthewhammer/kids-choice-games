@@ -40,7 +40,7 @@ const FUMOLA_COMMON = `module Common {
     #NoPlace; #Emptyroom; #Bubblespace; #Bubbleroom; #Imagination; #Forest; #Underwater; #Deepsea; #Beach; #Sea;
     #Witch; #Cemetery; #Lake; #House; #Farmyard; #Treehouse; #Treeroom; #Treetop; #Livingroom; #Witchroom;
     #Clearing; #Healerroom; #Fairyforest; #Mountains; #Waterfall; #Campsite; #Tent; #Cave; #Caveroom; #Woodpath;
-    #Pasture; #Crossing; #Castle; #Castleroom; #Hut; #Hutroom; #Hutbed; #Hutpotion; #Hutcenter; #Desert
+    #Pasture; #Crossing; #Castle; #Castleroom; #Hut; #Hutroom; #Hutbed; #Hutpotion; #Hutcenter; #Desert; #Garden; #Spring
   };
   public type Room = {#King; #Greenhouse; #Trap; #Dungeon1; #Dungeon2; #Hallway; #Catroom; #Stable; #Dining; #Kitchen; #Smithy; #Spiral};
   public type Exit = {#ExitSide; #ExitLong; #ExitSpiral; #ExitTrap; #ExitLadder; #ExitAll; #ExitHall};

@@ -1579,6 +1579,262 @@ function pastureScene(c) {
     obj("butterflies", at(10), butterfliesSvg(c, [[-0.24 * W, at(10), 0.9], [0.16 * W, at(60), 0.8]])));
   return s;
 }
+// (ticket 660, Matthew: "a new background: garden area") The 🌻 garden: a lawn behind a white picket fence, snowy peaks and
+// pines far off past it (a Colorado garden), an arbor in the fence's middle with roses climbing it, its gate shut; tall
+// flowers along the fence's foot; the garden shed on the left, its rain barrel by its corner, the apple tree on the right, a
+// bench in front of it; beds of dug soil either side of a path of stepping stones, ready to plant (gardenBeds, 0 to 6); a
+// wheelbarrow, tufts of grass, butterflies. Its depths are the pasture's (pastureDepth: the same 🔭, the friend arriving at
+// the ground line). The beds and the stones are floor, walked on; the shed, the barrel, the tree, the bench and the
+// wheelbarrow stand in the way, each clear of the ways in (WORLD_IN) and LANE_MIN or more in front of the back line.
+const GARDEN_BED_ROWS = [[72, 46], [36, 10], [0, -26]];   // (each row of beds, its far and near edges, in k above the ground line)
+function gardenScene(c) {
+  const { x0, y0, x1, W, H, g, k, pad, R, P, grad, all, land, o } = c;
+  const beds = Math.max(0, Math.min(6, Math.round(o.gardenBeds ?? 4)));
+  const at = up => g - up * k, d = pastureDepth, horizon = at(172), fenceUp = 150, fenceY = at(fenceUp);
+  // the sky, the sun, clouds drifting with the slow LFO
+  let s = SEP + part("garden-sky", [c.F, sceneLfoKey(o, "slow")], () => `<defs>${grad("bg-sky", "#6fb6ee", "#e3f4ff", y0, horizon)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
+    sunSvg(x0 + W * 0.15, y0 + H * 0.12, 34 * k) +
+    [[0.38, 0.08, 0.7], [0.64, 0.15, 0.9], [0.88, 0.05, 0.6]].map(([u, v, z], i) => driftingCloud(x0 + W * u, y0 + H * v, k * z, i, o)).join(""));
+  // far off: snowy peaks and pines on the horizon (the shared layers, ticket 212)
+  s += SEP + part("garden-far", c.F, () => farLayers(c, horizon, { mountains: "snowy", forest: "pines", beach: false, size: 140 }));
+  // the lawn, in bands paler farther off
+  s += SEP + part("garden-lawn", c.F, () => land(at(171), 2, "#b9dc93", 0.4) + land(at(120), 5, "#a6d07a", 1.3) + land(at(50), 6, "#97c86a", 2.2) + land(at(-30), 7, "#8bc060", 0.9));
+  // the stepping stones, from the arbor to us, bigger and farther apart nearer; and the beds of dug soil, each its wooden
+  // edging, its soil, its furrows running away from us, in perspective (an x across shrinks with its depth, as everything's)
+  s += SEP + part("garden-ground", [c.F, beds], () => {
+    let st = "";
+    for (let up = 142, i = 0; up > -105; i++) { const f = d(up), x = (R(i, 6601) - 0.5) * 12 * k * f, y = at(up);
+      st += `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(24 * k * f)}" ry="${f1(7.5 * k * f)}" fill="#bdb6a8" stroke="#8f887c" stroke-width="${f1(1.2 * k * f)}"/>`;
+      up -= 11 + 21 * f; }
+    let t = floorObj("stepping stones", st);
+    for (let i = 0; i < beds; i++) {
+      const [a, b] = GARDEN_BED_ROWS[i >> 1], sd = i % 2 ? 1 : -1, xi = 0.08 * W, xo = 0.3 * W, ii = 0.014 * W, q = (X, up) => P(sd * X * d(up), at(up));
+      let rows = "";
+      for (let j = 1; j < 5; j++) { const X = xi + ii + (xo - xi - 2 * ii) * j / 5; rows += `M${q(X, a - 3)} L${q(X, b + 3)} `; }
+      t += floorObj(`soil bed ${i + 1}`, `<path d="M${q(xi, a)} L${q(xo, a)} L${q(xo, b)} L${q(xi, b)} Z" fill="#8a6440" stroke="#5e4128" stroke-width="${f1(1.5 * k * d(b))}"/>` +
+        `<path d="M${q(xi + ii, a - 3)} L${q(xo - ii, a - 3)} L${q(xo - ii, b + 3)} L${q(xi + ii, b + 3)} Z" fill="#5a3a22"/>` +
+        `<path d="${rows}" fill="none" stroke="#3f2816" stroke-width="${f1(2.2 * k * d(b))}" stroke-linecap="round" opacity="0.8"/>`);
+    }
+    return t;
+  });
+  // the picket fence along the back (its pickets a pattern, two rails behind them), the arbor in its middle, an arch on two
+  // posts, roses climbing it, and the gate under it, shut; drawnBy "fence" (🔬's 🪵 fences), the roses "vine"
+  s += SEP + part("garden-fence", c.F, () => {
+    const u = k * d(fenceUp), ph = 150 * u, pw = 13 * u, sp = 22 * u, L = x0 - pad, Rt = x1 + pad, aw = 230 * u, ah = 480 * u, post = 16 * u;
+    const pat = `<defs><pattern id="bg-pickets" patternUnits="userSpaceOnUse" x="0" y="${f1(fenceY - ph)}" width="${f1(sp)}" height="${f1(ph + 2 * u)}">` +
+      `<path d="M${f1(sp * 0.2)} ${f1(ph + 2 * u)} L${f1(sp * 0.2)} ${f1(pw * 0.7)} L${f1(sp * 0.2 + pw / 2)} 0 L${f1(sp * 0.2 + pw)} ${f1(pw * 0.7)} L${f1(sp * 0.2 + pw)} ${f1(ph + 2 * u)} Z" ` +
+      `fill="#f7f5ee" stroke="#c9c4b5" stroke-width="${f1(1.2 * u)}"/></pattern></defs>`;
+    const rails = [0.28, 0.72].map(h => `<rect x="${f1(L)}" y="${f1(fenceY - h * ph - 5 * u)}" width="${f1(Rt - L)}" height="${f1(10 * u)}" fill="#e6e1d3"/>`).join("");
+    const pickets = `<rect x="${f1(L)}" y="${f1(fenceY - ph)}" width="${f1(-aw / 2 - L)}" height="${f1(ph)}" fill="url(#bg-pickets)"/>` +
+      `<rect x="${f1(aw / 2)}" y="${f1(fenceY - ph)}" width="${f1(Rt - aw / 2)}" height="${f1(ph)}" fill="url(#bg-pickets)"/>`;
+    const gx = -aw / 2 + post, gw = aw - 2 * post, gh = ph * 0.86;
+    const gate = `<rect x="${f1(gx)}" y="${f1(fenceY - gh)}" width="${f1(gw)}" height="${f1(gh)}" fill="url(#bg-pickets)"/>` +
+      `<path d="M${P(gx, fenceY - 0.2 * gh)} L${P(gx + gw, fenceY - 0.2 * gh)} M${P(gx, fenceY - 0.75 * gh)} L${P(gx + gw, fenceY - 0.75 * gh)} M${P(gx + 4 * u, fenceY - 0.22 * gh)} L${P(gx + gw - 4 * u, fenceY - 0.73 * gh)}" ` +
+      `stroke="#ddd7c6" stroke-width="${f1(8 * u)}" stroke-linecap="round"/><circle cx="${f1(gx + gw - 10 * u)}" cy="${f1(fenceY - 0.5 * gh)}" r="${f1(5 * u)}" fill="#4a4a4a"/>`;
+    const arch = `<path d="M${P(-aw / 2 + post / 2, fenceY)} L${P(-aw / 2 + post / 2, fenceY - ah + 40 * u)} Q${P(0, fenceY - ah - 50 * u)} ${P(aw / 2 - post / 2, fenceY - ah + 40 * u)} L${P(aw / 2 - post / 2, fenceY)}" ` +
+      `fill="none" stroke="#f3f0e6" stroke-width="${f1(post)}" stroke-linejoin="round"/>` +
+      `<path d="M${P(-aw / 2 + post / 2, fenceY - ah + 40 * u)} Q${P(0, fenceY - ah - 50 * u)} ${P(aw / 2 - post / 2, fenceY - ah + 40 * u)}" fill="none" stroke="#c9c4b5" stroke-width="${f1(2 * u)}" transform="translate(0 ${f1(10 * u)})"/>`;
+    // (the roses: leaves and flowers up each post and over the arch, at points along its line)
+    let leaves = "", roses = "";
+    const along = v => { if (v < 0.35) { const w = v / 0.35; return [-aw / 2 + post / 2, fenceY - w * (ah - 40 * u)]; }
+      if (v > 0.65) { const w = (1 - v) / 0.35; return [aw / 2 - post / 2, fenceY - w * (ah - 40 * u)]; }
+      const w = (v - 0.35) / 0.3, a = [-aw / 2 + post / 2, fenceY - ah + 40 * u], b = [aw / 2 - post / 2, fenceY - ah + 40 * u], m = [0, fenceY - ah - 50 * u];
+      return [(1 - w) * (1 - w) * a[0] + 2 * w * (1 - w) * m[0] + w * w * b[0], (1 - w) * (1 - w) * a[1] + 2 * w * (1 - w) * m[1] + w * w * b[1]]; };
+    for (let i = 0; i < 34; i++) { const v = 0.06 + 0.88 * i / 33, [x, y] = along(v), ox = (R(i, 6602) - 0.5) * 18 * u, oy = (R(i, 6603) - 0.5) * 14 * u;
+      leaves += `<ellipse cx="${f1(x + ox)}" cy="${f1(y + oy)}" rx="${f1(9 * u)}" ry="${f1(5 * u)}" fill="${i % 2 ? "#3f7f35" : "#4f9442"}" transform="rotate(${Math.round(R(i, 6604) * 180)} ${f1(x + ox)} ${f1(y + oy)})"/>`;
+      if (i % 3 === 1) roses += `<circle cx="${f1(x - ox * 0.6)}" cy="${f1(y - oy * 0.6)}" r="${f1(6.5 * u)}" fill="${["#e5486b", "#f28fb0", "#c9183e"][i % 3]}"/>` +
+        `<circle cx="${f1(x - ox * 0.6)}" cy="${f1(y - oy * 0.6)}" r="${f1(2.6 * u)}" fill="#8f1030" opacity="0.5"/>`; }
+    return obj("picket fence and arbor", fenceY, pat + drawnBy("fence", rails + pickets + gate + arch) + drawnBy("vine", leaves + roses));
+  });
+  // tall flowers along the fence's foot, either side of the arbor (hollyhocks and spikes of blue, each a stem and its
+  // blossoms up its top half): one object, just in front of the fence (behind the back line, so behind anyone)
+  s += SEP + part("garden-border", c.F, () => {
+    const u = k * d(fenceUp - 4), y = at(fenceUp - 4), aw = 230 * k * d(fenceUp);
+    let stems = "", blooms = "";
+    for (let i = 0; i < 44; i++) {
+      const x = x0 - 10 * k + (W + 20 * k) * (i + R(i, 6605) * 0.6) / 44;
+      if (Math.abs(x) < aw * 0.62) continue;
+      const h = (110 + 70 * R(i, 6606)) * u, col = ["#d6457a", "#f3a6c8", "#6b7fd6", "#f4d35e", "#b05cc9"][Math.floor(R(i, 6607) * 5)];
+      stems += `M${P(x, y)} L${P(x + (R(i, 6608) - 0.5) * 8 * u, y - h)} `;
+      for (let j = 0; j < 5; j++) blooms += `<circle cx="${f1(x + (R(i * 7 + j, 6609) - 0.5) * 8 * u)}" cy="${f1(y - h * (0.55 + 0.45 * j / 4))}" r="${f1((9 - j) * u)}" fill="${col}"/>`;
+    }
+    return obj("flower border", y, drawnBy("wildflowers", `<path d="${stems}" fill="none" stroke="#4f8a35" stroke-width="${f1(3 * u)}" stroke-linecap="round"/>` + blooms));
+  });
+  // the garden shed (boards, a green shingled roof, its door shut, a window with a box of flowers under it), its downpipe
+  // into the rain barrel by its corner; each by its foot (the shed's footprint its own: as wide as its walls, shallow)
+  s += SEP + part("garden-shed", c.F, () => {
+    const up = 85, u = k * d(up), x = -0.33 * W, y = at(up), w = 340, h = 300, rf = 130, ev = 22;
+    let boards = "";
+    for (let bx = -w / 2 + 28; bx < w / 2; bx += 28) boards += `M${bx} ${-h} L${bx} 0 `;
+    let shingles = "";
+    for (let j = 1; j < 4; j++) { const yy = -h - rf * j / 4, hw = (w / 2 + ev) * (1 - j / 4); shingles += `M${f1(-hw)} ${f1(yy)} L${f1(hw)} ${f1(yy)} `; }
+    const shed = `<ellipse cx="0" cy="4" rx="${w * 0.62}" ry="18" fill="#000000" opacity="0.15"/>` +
+      `<rect x="${-w / 2}" y="${-h}" width="${w}" height="${h}" fill="#b07a4f"/><path d="${boards}" stroke="#8a5a36" stroke-width="3"/>` +
+      `<path d="M${-w / 2 - ev} ${-h + 4} L0 ${-h - rf} L${w / 2 + ev} ${-h + 4} Z" fill="#4f6b3a" stroke="#3a5229" stroke-width="5" stroke-linejoin="round"/>` +
+      `<path d="${shingles}" stroke="#3a5229" stroke-width="3"/>` +
+      `<rect x="-120" y="-215" width="96" height="215" fill="#7a4f2e" stroke="#5a3a20" stroke-width="5"/><path d="M-112 -20 L-32 -195 M-112 -195 L-32 -195 M-112 -20 L-32 -20" stroke="#5a3a20" stroke-width="7"/>` +
+      `<circle cx="-40" cy="-110" r="7" fill="#d9b44a"/>` +
+      `<rect x="30" y="-215" width="90" height="74" fill="#cfe9f7" stroke="#f3f0e6" stroke-width="9"/><path d="M75 -215 V-141 M30 -178 H120" stroke="#f3f0e6" stroke-width="6"/>` +
+      `<rect x="22" y="-138" width="106" height="24" fill="#8a5a36"/>` +
+      [0, 1, 2, 3, 4].map(i => `<circle cx="${34 + i * 21}" cy="-142" r="9" fill="#3f8a3a"/><circle cx="${34 + i * 21}" cy="-148" r="7" fill="${["#e53935", "#f4d35e", "#f28fb0", "#ff8c42", "#e53935"][i]}"/>`).join("") +
+      // (the gutter along the roof's edge, the downpipe down the corner to the barrel)
+      `<path d="M${w / 2 + ev - 6} ${-h + 6} L${w / 2 + 6} ${-h + 6} L${w / 2 + 6} -120 L${w / 2 + 40} -98" fill="none" stroke="#8a8f94" stroke-width="10" stroke-linejoin="round"/>` +
+      `<rect data-footprint="1" x="${-w / 2}" y="-44" width="${w}" height="44" fill="none" stroke="none"/>`;
+    const bu = k * d(up - 6), bx = x + (w / 2 + 62) * u, by = at(up - 6), bw = 64, bh = 96;
+    const barrel = `<ellipse cx="0" cy="3" rx="${bw * 0.7}" ry="9" fill="#000000" opacity="0.18"/>` +
+      `<path d="M${-bw / 2} 0 Q${-bw / 2 - 7} ${-bh / 2} ${-bw / 2} ${-bh} L${bw / 2} ${-bh} Q${bw / 2 + 7} ${-bh / 2} ${bw / 2} 0 Z" fill="#7a5233"/>` +
+      [0.15, 0.5, 0.85].map(v => `<path d="M${-bw / 2 - 3} ${f1(-bh * v)} L${bw / 2 + 3} ${f1(-bh * v)}" stroke="#3f3f3f" stroke-width="6"/>`).join("") +
+      `<ellipse cx="0" cy="${-bh}" rx="${bw / 2}" ry="9" fill="#5b8fb8" stroke="#5a3a20" stroke-width="4"/>`;
+    return obj("garden shed", y, `<g ${tf(x, y, u)}>${shed}</g>`) + obj("water barrel", by, `<g ${tf(bx, by, bu)}>${barrel}</g>`);
+  });
+  // the apple tree (the shared leafy tree, apples in it and two fallen under it) and the bench in front of it
+  s += SEP + part("garden-tree", c.F, () => {
+    const up = 105, u = k * d(up), x = 0.31 * W, y = at(up);
+    let apples = "";
+    for (let i = 0; i < 14; i++) { const ax = (R(i, 6610) - 0.5) * 170, ay = -170 - 120 * R(i, 6611);
+      apples += `<circle cx="${f1(ax)}" cy="${f1(ay)}" r="8" fill="#d62f2f"/><circle cx="${f1(ax - 2.5)}" cy="${f1(ay - 2.5)}" r="2.4" fill="#ffffff" opacity="0.6"/>`; }
+    apples += `<circle cx="34" cy="-4" r="8" fill="#c22a2a"/><circle cx="-46" cy="-2" r="8" fill="#d62f2f"/>`;
+    return obj("apple tree", y, `<g ${tf(x, y, 1.6 * u)}>${leafyTree(41, { wide: 1.05, h: 320, greens: ["#2f6e2c", "#3a8a3c", "#47a047", "#58b050", "#68bf5c"] })}${apples}</g>`);
+  });
+  s += SEP + part("garden-bench", c.F, () => {
+    const up = 23, u = k * d(up), x = 0.4 * W, y = at(up);
+    const bench = `<ellipse cx="0" cy="3" rx="96" ry="10" fill="#000000" opacity="0.15"/>` +
+      `<path d="M-70 0 L-70 -52 M70 0 L70 -52 M-62 -52 L-62 -120 M62 -52 L62 -120" stroke="#5e4128" stroke-width="10" stroke-linecap="round"/>` +
+      `<rect x="-88" y="-60" width="176" height="14" rx="4" fill="#9a6d43"/><rect x="-88" y="-118" width="176" height="14" rx="4" fill="#9a6d43"/>` +
+      `<rect x="-88" y="-96" width="176" height="14" rx="4" fill="#a87a4e"/>`;
+    return obj("bench", y, `<g ${tf(x, y, u)}>${bench}</g>`);
+  });
+  // the wheelbarrow, a trowel in it, its wheel toward the beds
+  s += SEP + part("garden-barrow", c.F, () => {
+    const up = -58, u = 0.75 * k * d(up), x = -0.16 * W, y = at(up);
+    const barrow = `<ellipse cx="0" cy="3" rx="64" ry="8" fill="#000000" opacity="0.15"/>` +
+      `<path d="M-58 -38 L-82 -52 M-40 -30 L-44 0 M10 -30 L14 0" stroke="#4a4a4a" stroke-width="6" stroke-linecap="round"/>` +
+      `<path d="M-56 -62 L44 -62 L30 -26 L-44 -26 Z" fill="#c0392b" stroke="#8e2a20" stroke-width="4" stroke-linejoin="round"/>` +
+      `<path d="M-50 -60 Q-6 -74 38 -60 Z" fill="#5a3a22"/><path d="M-6 -66 L-20 -92" stroke="#8a8f94" stroke-width="6"/><path d="M-20 -92 L-26 -104" stroke="#7a4f2e" stroke-width="7" stroke-linecap="round"/>` +
+      `<path d="M30 -30 L46 -14" stroke="#4a4a4a" stroke-width="6"/><circle cx="48" cy="-14" r="14" fill="#2e2e2e"/><circle cx="48" cy="-14" r="5" fill="#9a9a9a"/>` +
+      `<rect data-footprint="1" x="-48" y="-16" width="110" height="16" fill="none" stroke="none"/>`;
+    return obj("wheelbarrow", y, `<g ${tf(x, y, u)}>${barrow}</g>`);
+  });
+  // tufts of grass and daisies, at the sides and in front of the beds, never on them or the path (rows by depth)
+  s += SEP + part("garden-grass", c.F, () => {
+    const items = [];
+    for (let i = 0; i < 36; i++) {
+      const up = 140 - 240 * R(i, 6613), f = d(up), front = up < -30, v = R(i, 6614), sd = R(i, 6615) < 0.5 ? -1 : 1;
+      const x = front ? sd * (0.05 + 0.45 * v) * W : sd * (0.32 + 0.2 * v) * W * f, y = at(up);
+      items.push({ y, svg: i % 4 === 3 ? use("bg-daisy", x, y, k * f * 0.9, k * f * 0.9, ` color="${FLOWER_COLORS[i % FLOWER_COLORS.length]}"`)
+                                       : grassTuft(x, y, (22 + 12 * R(i, 6616)) * f * k, 6617 + i, "#5e9a3c", 1.7 * f * k) });
+    }
+    return `<defs>${FLOWER_DEFS}</defs>` + depthRows("grass", items, 30 * k);
+  });
+  // butterflies over the beds (an object at the depth of the ground under the nearer one)
+  s += SEP + part("garden-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
+    obj("butterflies", at(10), butterfliesSvg(c, [[-0.12 * W, at(40), 0.8], [0.2 * W, at(85), 0.7]])));
+  return s;
+}
+// (ticket 660, Matthew: "Add a spring background (like pond, but contained so that land is on all sides of the screen)") The
+// 💧 spring: a small round pool welling up in a meadow, woods all round the back of it and blue hills far off; mossy stones
+// round its edge (the far ones on the ground behind the water, the near ones objects in front of a friend wading in); its
+// water welling up in the middle, rings spreading and bubbles (springBubbles, 0 to 10); lily pads, reeds at either end, frogs
+// sitting at its edge, their throats puffing (springFrogs, 0 to 3); a mossy rock and a fallen log in front, grass, daisies,
+// butterflies. Its water is WATER's (springPool): wade in it, and (ticket 660's last release) fill the watering can at it.
+// The pool lies between the ways in: just in front of the north one (70 back), 20 behind the ground line (ARRIVE's).
+const springPool = ({ g, k, W }) => ({ cx: 0, cy: g - 50 * k, rx: W * 0.19, ry: 27 * k });
+function springScene(c) {
+  const { x0, y0, x1, W, H, g, k, pad, R, P, grad, all, land, o } = c;
+  const frogs = Math.max(0, Math.min(3, Math.round(o.springFrogs ?? 2))), bub = Math.max(0, Math.min(10, Math.round(o.springBubbles ?? 5)));
+  const at = up => g - up * k, d = pastureDepth, upOf = y => (g - y) / k, horizon = at(176), pl = springPool(c);
+  let s = SEP + part("spring-sky", [c.F, sceneLfoKey(o, "slow")], () => `<defs>${grad("bg-sky", "#7cc0f0", "#eaf7ff", y0, horizon)}${cloudDef("bg-cloud", 1)}</defs>` + all("url(#bg-sky)") +
+    sunSvg(x1 - W * 0.14, y0 + H * 0.1, 32 * k) +
+    [[0.12, 0.12, 0.8], [0.42, 0.05, 0.65], [0.68, 0.16, 0.85]].map(([u, v, z], i) => driftingCloud(x0 + W * u, y0 + H * v, k * z, i, o)).join(""));
+  s += SEP + part("spring-far", c.F, () => farLayers(c, horizon, { mountains: "blue", forest: "mixed", beach: false, size: 130 }));
+  s += SEP + part("spring-meadow", c.F, () => land(at(175), 2, "#b5d98d", 0.6) + land(at(125), 5, "#a3ce76", 1.6) + land(at(55), 6, "#94c568", 2.4) + land(at(-35), 7, "#88bd5c", 1.1));
+  // the woods round the back: round trees and pines, a bush or two in front of them (seenOnly leaves out the hidden ones)
+  s += SEP + part("spring-woods", c.F, () => {
+    const items = [];
+    for (let i = 0; i < 18; i++) { const up = 158 + 10 * R(i, 6620), f = d(up), x = x0 - 20 * k + (W + 40 * k) * (i + 0.5 * R(i, 6621)) / 17, y = at(up), sc = (1.5 + 0.9 * R(i, 6622)) * k * f * 2;
+      items.push(R(i, 6623) < 0.4 ? { svg: use("bg-spring-pine", x, y, sc * 1.6, sc * 1.6, ` color="${["#2f6e3a", "#356f33", "#2a5f2c"][i % 3]}"`), shape: useOutline("bg-spring-pine", x, y, sc * 1.6) }
+                                   : { svg: use("bg-spring-oak", x, y, sc * (R(i, 6624) < 0.5 ? -1 : 1), sc), shape: useOutline("bg-spring-oak", x, y, sc * (R(i, 6624) < 0.5 ? -1 : 1), sc) }); }
+    return `<defs>${leafyTreeDef("bg-spring-oak", 6625, { wide: 1.2 })}${pineDef("bg-spring-pine", 6626)}</defs>` + obj("woods behind the spring", at(158), seenOnly(items.reverse()));
+  });
+  // the pool: a damp ring of earth, its water, the light on it, the far stones of its edge (on the ground, behind the
+  // water), lily pads, and the spring welling up in its middle, rings spreading and bubbles coming up and bursting
+  s += SEP + part("spring-pool", [c.F, bub], () => {
+    const { cx, cy, rx, ry } = pl;
+    let t = `<defs><radialGradient id="bg-spring-water" cx="0.5" cy="0.45" r="0.6"><stop offset="0" stop-color="#9be2f4"/><stop offset="0.55" stop-color="#4aa9d8"/><stop offset="1" stop-color="#2f7fb8"/></radialGradient></defs>` +
+      `<ellipse cx="${f1(cx)}" cy="${f1(cy + 2 * k)}" rx="${f1(rx * 1.1)}" ry="${f1(ry * 1.3)}" fill="#6f8f4a"/>` +
+      `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="url(#bg-spring-water)"/>`;
+    for (let i = 0; i < 13; i++) { const a = Math.PI + Math.PI * (i + 0.5 * R(i, 6627)) / 12.5, x = cx + Math.cos(a) * rx * 1.02, y = cy + Math.sin(a) * ry * 1.05;
+      t += rockSvg(x, y, (8 + 5 * R(i, 6628)) * k * d(upOf(y)), 6629 + i, ["#9a9488", "#8a857a", "#a8a294"][i % 3]); }
+    for (let i = 0; i < 9; i++) { const x = cx + rx * (R(i, 6630) - 0.5) * 1.3, y = cy + ry * (R(i, 6631) - 0.5) * 1.2, l = (5 + 8 * R(i, 6632)) * k;
+      t += `<line x1="${f1(x - l)}" y1="${f1(y)}" x2="${f1(x + l)}" y2="${f1(y)}" stroke="#ffffff" stroke-width="${f1(1.6 * k)}" stroke-linecap="round" opacity="0.6"/>`; }
+    for (const [u, v, r] of [[-0.62, -0.1, 11], [0.5, 0.25, 9], [0.12, -0.62, 10], [-0.25, 0.48, 7]]) { const x = cx + u * rx, y = cy + v * ry, rr = r * k * d(upOf(y));
+      t += `<path d="M${P(x, y)} L${P(x + rr, y - rr * 0.12)} A${f1(rr)} ${f1(rr * 0.4)} 0 1 1 ${P(x + rr, y + rr * 0.12)} Z" fill="#4f9a3a" stroke="#3a7a2a" stroke-width="${f1(k * 0.8)}"/>`; }
+    if (bub > 0) {
+      t += [0, 1, 2].map(i => `<ellipse cx="${f1(cx)}" cy="${f1(cy - 2 * k)}" rx="${f1(10 * k)}" ry="${f1(3 * k)}" fill="none" stroke="#ffffff" stroke-width="${f1(1.4 * k)}">` +
+        `<animate attributeName="rx" values="${f1(8 * k)};${f1(rx * 0.55)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
+        `<animate attributeName="ry" values="${f1(2.5 * k)};${f1(ry * 0.55)}" dur="3s" begin="${i}s" repeatCount="indefinite"/>` +
+        `<animate attributeName="opacity" values="0.8;0" dur="3s" begin="${i}s" repeatCount="indefinite"/></ellipse>`).join("");
+      for (let i = 0; i < bub; i++) { const x = cx + (R(i, 6633) - 0.5) * 40 * k, y = cy - 2 * k + (R(i, 6634) - 0.5) * 9 * k, dur = (1.1 + 1.2 * R(i, 6635)).toFixed(1);
+        t += `<circle cx="${f1(x)}" cy="${f1(y)}" r="0" fill="#e8fbff" stroke="#ffffff" stroke-width="${f1(0.8 * k)}">` +
+          `<animate attributeName="r" values="0;${f1((1.6 + 1.6 * R(i, 6636)) * k)};0" keyTimes="0;0.85;1" dur="${dur}s" begin="-${(R(i, 6637) * 2).toFixed(1)}s" repeatCount="indefinite"/></circle>`; }
+    }
+    return t;
+  });
+  // the near stones of its edge, mossy, in three objects (left, front, right), each at the depth of its nearest stone
+  s += SEP + part("spring-edge", c.F, () => {
+    const { cx, cy, rx, ry } = pl, groups = [["right", 0, 0.32], ["front", 0.32, 0.68], ["left", 0.68, 1]];
+    return groups.map(([name, a0, a1], gi) => { let t = "", foot = cy;
+      for (let i = 0; i < 6; i++) { const a = Math.PI * (a0 + (a1 - a0) * (i + 0.5) / 6), x = cx + Math.cos(a) * rx * 1.04, y = cy + Math.sin(a) * ry * 1.08, r = (9 + 5 * R(gi * 6 + i, 6638)) * k * d(upOf(y));
+        foot = Math.max(foot, y);
+        t += rockSvg(x, y, r, 6640 + gi * 6 + i, ["#9a9488", "#8a857a", "#a8a294"][i % 3]) + (i % 2 ? `<ellipse cx="${f1(x - r * 0.2)}" cy="${f1(y - r * 0.55)}" rx="${f1(r * 0.6)}" ry="${f1(r * 0.22)}" fill="#5f9a3c" opacity="0.85"/>` : ""); }
+      return obj(`stones at the spring's edge, ${name}`, foot, t); }).join("");
+  });
+  // reeds at either end of the pool
+  s += SEP + part("spring-reeds", c.F, () => `<defs><g id="bg-spring-reed">` +
+      `<path d="M0 0 Q-12 -50 -26 -92 M2 0 Q14 -44 22 -80 M-2 0 Q-4 -60 -10 -118" fill="none" stroke="#5b8f35" stroke-width="4" stroke-linecap="round"/>` +
+      `<line x1="0" y1="0" x2="2" y2="-132" stroke="#6f8f3a" stroke-width="3"/><rect x="-4.5" y="-116" width="12" height="38" rx="6" fill="#6b3f1f"/></g></defs>` +
+    [-1, 1].map(sd => { const y = pl.cy + 6 * k, f = d(upOf(y));
+      return obj(sd < 0 ? "reeds, left" : "reeds, right", y, [0, 1, 2, 3].map(i => use("bg-spring-reed", sd * (pl.rx * 0.93 + (i - 1.5) * 9 * k * f), y - (i % 2) * 4 * k, k * f * (0.7 + 0.25 * R(i + (sd + 1) * 4, 6650)) * (i % 2 ? -1 : 1), k * f * (0.7 + 0.25 * R(i + (sd + 1) * 4, 6650)))).join("")); }).join(""));
+  // the frogs at its edge, each its throat puffing in and out
+  s += SEP + part("spring-frogs", [c.F, frogs], () => [[-0.56, 0.6, 1], [0.6, 0.5, -1], [0.12, -0.62, 1]].slice(0, frogs).map(([u, v, face], i) => {
+    const x = pl.cx + u * pl.rx, y = pl.cy + v * pl.ry, sc = 0.85 * k * d(upOf(y));
+    const frog = `<ellipse cx="0" cy="2" rx="24" ry="5" fill="#000000" opacity="0.18"/>` +
+      `<path d="M-22 0 Q-30 -8 -18 -12 L-6 -4 Z M22 0 Q30 -8 18 -12 L6 -4 Z" fill="#3f8f3a"/>` +
+      `<ellipse cx="0" cy="-14" rx="22" ry="15" fill="#4caf50"/><ellipse cx="2" cy="-9" rx="13" ry="8" fill="#c8e6a0"/>` +
+      `<ellipse cx="6" cy="-6" rx="8" ry="5" fill="#e6f2c8"><animate attributeName="ry" values="4;8;4" dur="${(1.4 + 0.5 * i).toFixed(1)}s" repeatCount="indefinite"/></ellipse>` +
+      `<circle cx="-6" cy="-28" r="7" fill="#4caf50"/><circle cx="12" cy="-28" r="7" fill="#4caf50"/>` +
+      `<circle cx="-5" cy="-29" r="4.2" fill="#ffffff"/><circle cx="13" cy="-29" r="4.2" fill="#ffffff"/><circle cx="-4" cy="-29" r="2.2" fill="#111111"/><circle cx="14" cy="-29" r="2.2" fill="#111111"/>` +
+      `<path d="M-4 -18 Q6 -13 16 -19" fill="none" stroke="#2f6b2a" stroke-width="1.8" stroke-linecap="round"/>` +
+      `<path d="M-8 -4 L-12 0 M10 -4 L14 0" stroke="#3f8f3a" stroke-width="4" stroke-linecap="round"/>`;
+    return obj(`frog ${i + 1}`, y, `<g ${tf(x, y, sc * face, sc)}>${frog}</g>`); }).join(""));
+  // a mossy rock on the left in front, a fallen log on the right, a mushroom by it
+  s += SEP + part("spring-front", c.F, () => {
+    const ry_ = at(-52), rf = d(-52), rx_ = -0.185 * W, lg = at(-64), lf = d(-64), lx = 0.185 * W, len = 50 * k * lf, th = 13 * k * lf;
+    const rock = rockSvg(rx_, ry_, 30 * k * rf, 6655, "#8f8a80") + `<path d="M${P(rx_ - 30 * k * rf, ry_ - 16 * k * rf)} Q${P(rx_ - 8 * k * rf, ry_ - 34 * k * rf)} ${P(rx_ + 18 * k * rf, ry_ - 22 * k * rf)}" fill="none" stroke="#5f9a3c" stroke-width="${f1(7 * k * rf)}" stroke-linecap="round" opacity="0.9"/>`;
+    const log = `<ellipse cx="${f1(lx)}" cy="${f1(lg + 2 * k)}" rx="${f1(len * 1.15)}" ry="${f1(th * 0.5)}" fill="#000000" opacity="0.16"/>` +
+      `<rect x="${f1(lx - len)}" y="${f1(lg - 2 * th)}" width="${f1(2 * len)}" height="${f1(2 * th)}" rx="${f1(th)}" fill="#7a5233"/>` +
+      `<path d="M${P(lx - len * 0.8, lg - th * 1.4)} L${P(lx + len * 0.6, lg - th * 1.5)} M${P(lx - len * 0.6, lg - th * 0.7)} L${P(lx + len * 0.7, lg - th * 0.8)}" stroke="#5a3a20" stroke-width="${f1(1.6 * k * lf)}" stroke-linecap="round"/>` +
+      `<ellipse cx="${f1(lx + len - th * 0.3)}" cy="${f1(lg - th)}" rx="${f1(th * 0.6)}" ry="${f1(th)}" fill="#c9a26b" stroke="#7a5233" stroke-width="${f1(1.4 * k * lf)}"/>` +
+      `<ellipse cx="${f1(lx + len - th * 0.3)}" cy="${f1(lg - th)}" rx="${f1(th * 0.3)}" ry="${f1(th * 0.5)}" fill="none" stroke="#9a7648" stroke-width="${f1(1.2 * k * lf)}"/>` +
+      `<ellipse cx="${f1(lx - len * 0.2)}" cy="${f1(lg - th * 1.9)}" rx="${f1(len * 0.35)}" ry="${f1(th * 0.35)}" fill="#5f9a3c"/>` +
+      `<path d="M${P(lx - len * 0.7, lg)} l0 ${f1(-8 * k * lf)}" stroke="#efe6d2" stroke-width="${f1(2.4 * k * lf)}"/><ellipse cx="${f1(lx - len * 0.7)}" cy="${f1(lg - 8 * k * lf)}" rx="${f1(6 * k * lf)}" ry="${f1(3.4 * k * lf)}" fill="#d9503f"/>`;
+    return obj("rock, mossy", ry_, rock) + obj("log", lg, log);
+  });
+  // tufts of grass and daisies round it, never on the water (rows by depth)
+  s += SEP + part("spring-grass", c.F, () => {
+    const items = [], { cx, cy, rx, ry } = pl;
+    for (let i = 0; i < 44; i++) {
+      const up = 150 - 250 * R(i, 6660), f = d(up), x = (R(i, 6661) - 0.5) * W * 1.02, y = at(up);
+      if (((x - cx) / (rx * 1.25)) ** 2 + ((y - cy) / (ry * 1.6)) ** 2 < 1) continue;
+      items.push({ y, svg: i % 4 === 3 ? use("bg-daisy", x, y, k * f * 0.9, k * f * 0.9, ` color="${FLOWER_COLORS[(i >> 2) % FLOWER_COLORS.length]}"`)
+                                       : grassTuft(x, y, (22 + 14 * R(i, 6662)) * f * k, 6663 + i, "#5e9a3c", 1.7 * f * k) });
+    }
+    return `<defs>${FLOWER_DEFS}</defs>` + depthRows("grass", items, 30 * k);
+  });
+  s += SEP + part("spring-butterflies", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "wings")], () =>
+    obj("butterflies", at(10), butterfliesSvg(c, [[-0.32 * W, at(30), 0.8], [0.3 * W, at(75), 0.7]])));
+  return s;
+}
 // Our imagination: a room of endless white, the empty white of a film's
 // training world, the floor only a soft grey toward us; and on its far
 // wall a big map of every place there is, each a framed picture of it to
@@ -4430,7 +4686,7 @@ function dungeonScene(c) {
 }
 const SCENES = { hut: hutScene, hutroom: hutroomScene, hutbed: hutbedScene, hutpotion: hutpotionScene, hutcenter: hutcenterScene, lake: lakeScene, house: houseScene, treehouse: treehouseScene, treetop: treetopScene, livingroom: livingroomScene, treeroom: treeroomScene,
                  witchroom: witchroomScene, healerroom: healerroomScene, fairyforest: fairyforestScene, clearing: clearingScene, mountains: mountainsScene, waterfall: waterfallScene, campsite: campsiteScene,
-                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, crossing: crossingScene, cavecross: cavecrossScene, dungeon: dungeonScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
+                 tent: tentScene, cave: caveScene, caveroom: caveroomScene, farmyard: farmyardScene, desert: desertScene, woodpath: woodpathScene, pasture: pastureScene, garden: gardenScene, spring: springScene, crossing: crossingScene, cavecross: cavecrossScene, dungeon: dungeonScene, castle: castleScene, castleroom: castleroomScene, imagination: imaginationScene, emptyroom: emptyroomScene, bubblespace: bubblespaceScene, bubbleroom: bubbleroomScene };
 // the beach's sea, from the horizon (sea) to the shore, where the foam and
 // then the sand begin; and the cemetery's brook, at t from 0 (on the hills)
 // to 1 (past the frame's foot): its middle, its height and half its width

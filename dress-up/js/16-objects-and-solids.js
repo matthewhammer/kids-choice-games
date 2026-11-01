@@ -173,7 +173,7 @@ for (const [kind, up] of [["livingroom", 120], ["treeroom", 110], ["bubbleroom",
 // its horses grazing (PASTURE_HORSES: a horse moved farther back must keep LANE_MIN behind its footprint)
 const SCENE_FAR = { forest: 60, underwater: 40, deepsea: 30, witch: 22, cemetery: 100, house: 200, treehouse: 118, clearing: 140,
                     fairyforest: 110, mountains: 110, waterfall: 90, campsite: 100, cave: 60, caveroom: 130, farmyard: 90, desert: 120, castle: 138,
-                    woodpath: 165, pasture: 157, crossing: 295, cavecross: 295, dungeon: 360, beach: 165, sea: 225, lake: 245, hut: 120 };
+                    woodpath: 165, pasture: 157, garden: 143, spring: 140, crossing: 295, cavecross: 295, dungeon: 360, beach: 165, sea: 225, lake: 245, hut: 120 };
 for (const [kind, up] of Object.entries(SCENE_FAR))
   SCENE_BACK[kind] = (top = SCENE.top, bottom = SCENE.bottom) => SCENE.ground - up * (bottom - top) / 700 + 3;
 // (ticket 176) The things that stand in a place and can't be walked
@@ -197,6 +197,7 @@ for (const [kind, up] of Object.entries(SCENE_FAR))
 const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", "small stalagmite", "stalagmite", "crystal cluster", "cascade", "cavemushroom",   // (the last four: the cave room's, the little waterfall, the cave mushroom: ticket 471)
    "cow", "pig", "chicken",
    "pricklypear", "prickly pear", "barrelcactus", "barrel cactus", "agave",   // (ticket 501: the low desert plants, as things and in the desert)
+   "garden shed", "wheelbarrow",   // (ticket 660: the garden's; its rain barrel is a "water barrel", its bench a "bench")
    "grazing horse",   // (ticket 503: the pasture's horses, big as a hay cart: walked round, not through, by their footprints)
    "barn", "fencepiece", "haystack", "tractor", "windpump",
    "ledge", "dungeon wall",   // (ticket 623: a dungeon room's ledge's face, by its footprint: up and down only by its stairs; its side walls)   // (ticket 502: the farm things, each by its foot (data-footprint), and the farm yard's)
@@ -207,6 +208,7 @@ const STANDING = new Set(["headstone", "cross", "stag stone", "big stalagmite", 
   "water barrel", "water trough", "well", "white bush", "worktable", "yellow bush"]);
 const TRUNKED = new Set(["big tree", "giant tree", "deadtree", "skullstake", "tree",   // (big tree, giant tree: ticket 358)
    "saguaro", "joshuatree", "joshua tree", "ocotillo",   // (ticket 501: the tall desert plants, in the way by their columns, trunks and stems, not their arms)
+   "apple tree",   // (ticket 660: the garden's)
    "great tree", "jungle tree", "palm tree", "palm", "pine", "willow", "lamp", "umbrella", "sign", "signpost"]);
 // (ticket 214's audit: the living room's plant had a box as wide as its leaves) a pot's plant stands on its pot: its foot,
 // as a trunk's is found, but however short
@@ -894,6 +896,8 @@ const WATER = {
   // the tree house's stream and the cemetery's brook, as their outlines are drawn
   treehouse: c => { const pts = sampled(streamAt(c), 30); return (x, y) => inRibbon(pts, x, y); },
   cemetery: c => { const pts = sampled(brookAt(c), 20); return (x, y) => inRibbon(pts, x, y); },
+  // (ticket 660) the spring's pool, inside its ring of stones
+  spring: c => { const p = springPool(c); return (x, y) => ((x - p.cx) / p.rx) ** 2 + ((y - p.cy) / p.ry) ** 2 < 0.9; },
 };
 // a place's test, or null where there is no water to stand in
 const waterHere = B => WATER[B.kind]?.(stageC(), B) ?? null;

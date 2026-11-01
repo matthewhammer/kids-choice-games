@@ -23,7 +23,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, garden: 0.45, spring: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
 // for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
@@ -48,7 +48,7 @@ const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: 
 // of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
-                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard"];   // (desert: ticket 501)
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard", "garden", "spring"];   // (desert: ticket 501; garden, spring: ticket 660)
 const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => kind === "dungeon" ? 1 : NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
@@ -748,6 +748,7 @@ const DEFAULTS = {
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
                 pastureHorses: 3, pastureFlowers: 10,   // (ticket 503: the pasture's horses grazing and its patches of wildflowers)
+                gardenBeds: 4, springFrogs: 2, springBubbles: 5,   // (ticket 660: the garden's beds of soil, the spring's frogs and how much it bubbles)
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
                 caveGems: 16, gemShape: "four", gemSize: 100, gemBright: 90, gemTwinkle: 60,
                 caveFloor: "stalagmites", caveCeiling: "stalactites",   // (ticket 471: the cave room's formations)
@@ -1519,7 +1520,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.470", released: "2026-11-01" };
+const VERSION = { number: "0.0.471", released: "2026-11-01" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
