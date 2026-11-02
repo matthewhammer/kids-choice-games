@@ -25,10 +25,10 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <div class="cover">
   <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
   <h1>NIGHT, DAY<br>AND THE GARDEN</h1>
-  <div class="edition">a young player's guide to what is new since {du(23)} · the sword, night and day, plants that grow back, the garden and what grows in it, and the spring{(" · version " + esc(VER)) if VER else ""}</div>
+  <div class="edition">a young player's guide to what is new since {du(23)} · the sword, night and day, plants that grow back, the garden, its plants and the watering can, and the spring{(" · version " + esc(VER)) if VER else ""}</div>
   {pic("01-garden.png", "The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed.", "half")}
 </div>
-<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. {du(23)} showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.472.</p>
+<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. {du(23)} showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.473.</p>
 
 <div class="toc">
 <a href="#ch1">1 · WHAT'S NEW</a><br>
@@ -40,7 +40,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <a href="#ch7">7 · THE GARDEN 🌻</a><br>
 <a href="#ch8">8 · THE SPRING 💧</a><br>
 <a href="#ch9">9 · PLANT A GARDEN 🌷</a><br>
-<a href="#ch10">10 · COMING SOON</a><br>
+<a href="#ch10">10 · THE WATERING CAN 💧</a><br>
 <a href="#ch11">11 · FIXED</a><br>
 <a href="#ch12">12 · MAKE UP A STORY</a><br>
 <a href="#ch13">13 · THE QUICK CARD</a><br>
@@ -55,6 +55,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <tr><td>0.0.470</td><td>🌱 Cut plants <b>grow back</b></td><td><a href="#ch6">6</a></td></tr>
 <tr><td>0.0.471</td><td>Two new places: the 🌻 <b>garden</b> and the 💧 <b>spring</b></td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
 <tr><td>0.0.472</td><td>🌷 <b>Flowers</b> and 🥕 <b>vegetables</b> to plant in the garden</td><td><a href="#ch9">9</a></td></tr>
+<tr><td>0.0.473</td><td>A 💧 <b>watering can</b>, so the plants grow</td><td><a href="#ch10">10</a></td></tr>
 <tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch11">11</a></td></tr>
 </tbody></table></div>
 <p>The version number is under the game's name, at the top of the controls. If yours is older, reload the page.</p>
@@ -176,7 +177,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li>🥦 broccoli</li>
 </ul>
 {pic("23-vegetable-patches.png", "All eight vegetables. At the back: corn, tomatoes, peas and bell peppers. At the front: pumpkins, carrots, lettuce and broccoli.")}
-<p>Slide <b>🌱 how grown</b> on a plant's card to make it small or big. A plant has four stages:</p>
+<p>Plants grow when you water them (<a href="#ch10">chapter 10</a>). You can also slide <b>🌱 how grown</b> on a plant's card to make it small or big. A plant has four stages:</p>
 <ol class="steps">
 <li><b>Sprouts</b>, just poking out of the soil.</li>
 <li><b>Young</b> plants, green all over.</li>
@@ -184,10 +185,39 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li><b>In flower</b>, and the vegetables <b>ripe</b>.</li>
 </ol>
 {pic("24-how-grown.png", "🌱 how grown, from left to right: sprouts, young, in bud, in flower. Sunflowers at the back, pumpkins at the front.")}
-{box("tip", "GOOD TO KNOW", "<p>New plants start fully grown. You can walk right through them, and the 🗡️ sword does not cut them.</p>")}
+{box("tip", "GOOD TO KNOW", "<p>New plants start as sprouts, ready to water. You can walk right through them, and the 🗡️ sword does not cut them.</p>")}
 
-<h2 id="ch10"><span class="ch">10</span>COMING SOON</h2>
-<p>The garden is not finished yet! Next, a <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant will show how much water it has, and grow when it is watered.</p>
+<h2 id="ch10"><span class="ch">10</span>THE WATERING CAN 💧</h2>
+<p>Plants need water to grow, and now there is a <b>watering can</b>! It is <b>🪜 inside the tree house</b>, on the floor in front of the bunk beds. (Been to the tree house before? The can is there the next time you go in.)</p>
+{pic("25-can-found.png", "The watering can in the tree house. It glows when your friend is close enough to pick it up.")}
+<p>Walk up to it and press <span class="key">Enter</span>, or tap it. It goes in your 🎒 and right into your friend's hand.</p>
+{pic("26-can-held.png", "Got it! The can is in your friend's hand.", "half")}
+<h3>Fill it up</h3>
+<p>The can starts out empty. Walk up to some <b>water</b> and press <span class="key">U</span> (or the controller's 🥅 button). It fills at:</p>
+<ul>
+<li>the spring, the duck pond, a castle's moat, the tree house's stream, the cemetery's brook, the beach and the sea, and the waterfall's pool;</li>
+<li>a well, a rain barrel (the garden has one), a water trough or a fountain.</li>
+</ul>
+<p>Under the sea, it fills anywhere!</p>
+{pic("27-filling.png", "Dipping the can into the spring. Bubbles come up as it fills.", "half")}
+<pre class="code">💧 Glug, glug! The can is full of water.</pre>
+{pic("28-full.png", "Full! The friend says so at the top of the picture.")}
+<p>A full can holds <b>6 pours</b>. Its card in the <span class="key">🎒 Backpack</span> tab shows how many are left.</p>
+{pic("29-can-card.png", "The can's card in 🎒 Backpack: 💧💧💧💧💧💧, 6 of 6 pours.", "half")}
+<h3>Water your plants</h3>
+<p>While your friend holds the can, every plant that is still growing shows a <b>water meter</b> above it: a 💧, and a bar that fills up blue. It holds three 💧.</p>
+{pic("30-meters.png", "Four sprouts and their meters: sunflowers and pumpkins with none, columbine with some, carrots with a little.")}
+<p>Stand next to a plant, face it, and press <span class="key">U</span>. Or just tap the plant: your friend walks over and waters it. The can tips, drops fall, and one 💧 goes into the plant.</p>
+{pic("31-pouring.png", "Pouring! One 💧 for the pumpkins.", "half")}
+<h3>Watch them grow</h3>
+<ul>
+<li>A plant drinks one 💧 every <b>15 seconds</b>. Each 💧 it drinks makes it grow one stage, with a puff and a 🌱.</li>
+<li>Three 💧 take a plant from sprouts all the way to flowers, or ripe vegetables. Fill up its meter, and it does the rest!</li>
+<li>Plants keep drinking while you are somewhere else, even when the game is closed. Come back later, and they have grown.</li>
+<li>Plants never wilt. A plant with no water just waits for more.</li>
+</ul>
+{pic("32-grown.png", "Later: the sunflowers, pumpkins, columbine and carrots, all grown. Grown plants need no more water, so their meters are gone.")}
+{box("tip", "GOOD TO KNOW", "<p>When nothing happens, your friend says why: “The can is empty!” (fill it at water), “It has all the water it can drink” (wait a little), or “This one is all grown!”</p>")}
 
 <h2 id="ch11"><span class="ch">11</span>FIXED</h2>
 <p>Some things were broken. Now they work:</p>
@@ -207,6 +237,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li>The frogs of the spring are having a party. Who is invited?</li>
 <li>Catch a bee in the garden, then let it go again by the flowers.</li>
 <li>Plant a vegetable garden. What will you cook when everything is ripe?</li>
+<li>Fill the can at the spring, then water the whole garden. How many trips does it take?</li>
 </ul>
 
 <h2 id="ch13"><span class="ch">13</span>THE QUICK CARD</h2>
@@ -221,7 +252,10 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <p><b>Go to the garden:</b> 🏞️, <span class="key">🌻 garden</span></p>
 <p><b>Go to the spring:</b> 🏞️, <span class="key">💧 spring</span></p>
 <p><b>Plant flowers or vegetables:</b> 🏞️, 🪨, <span class="key">🌻 garden</span></p>
-<p><b>Make a plant grow:</b> its card, 🌱 how grown</p>
+<p><b>Get the watering can:</b> 🪜 inside the tree house, walk to it, <span class="key">Enter</span></p>
+<p><b>Fill the can:</b> next to water, <span class="key">U</span></p>
+<p><b>Water a plant:</b> next to it, <span class="key">U</span>, or tap it</p>
+<p><b>Grow a plant by hand:</b> its card, 🌱 how grown</p>
 <p><b>Put a place in your world:</b> 🗺️, drag it onto the grid</p>
 </div>
 

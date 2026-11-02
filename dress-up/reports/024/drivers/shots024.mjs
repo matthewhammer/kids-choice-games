@@ -4,7 +4,8 @@
 // 🌗 night and day turned on in ⚙️ Advanced, noon, nightfall, the camp site's own night, lying down in bed, asleep, the next morning;
 // 🌱 cut plants grow back (the setting); the place menu with the 🌻 garden and the 💧 spring, the garden, its six
 // beds, the spring, wading in it, its frogs up close; the 🗺️ World design's places; and (0.0.472) the 🌻 garden group of things to
-// put, a flower bed's card, the eight flowers, the eight vegetables, and 🌱 how grown's four stages. Kept with the report (not in tools/checks, so not
+// put, a flower bed's card, the eight flowers, the eight vegetables, and 🌱 how grown's four stages; and (0.0.473) the 💧 watering can
+// in the tree house, picked up, filling at the spring, its 🎒 card, the plants' water meters, a pour, and the plants grown. Kept with the report (not in tools/checks, so not
 // in every release's speed run): a diag branch copies it into tools/checks to run it. Not a gate: exits 1 only if a scene failed.
 //   node shots024.mjs <devtools port> <url>      (writes out/guide024/)
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -58,9 +59,13 @@ const SAID = `document.querySelector(".pic-box"), [...document.querySelectorAll(
 const UNION = list => `(() => { const rs = [${list}].filter(Boolean).map(n => n.getBoundingClientRect ? n.getBoundingClientRect() : n).filter(r => r.width && r.height); if (!rs.length) return null;
   const x0 = Math.min(...rs.map(r => r.left ?? r.x)) - 8, y0 = Math.min(...rs.map(r => r.top ?? r.y)) - 8, x1 = Math.max(...rs.map(r => r.right ?? r.x + r.width)) + 8, y1 = Math.max(...rs.map(r => r.bottom ?? r.y + r.height)) + 8;
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }; })()`;
-// (0.0.472) beds of one kind in the garden, the tall ones at the back, the low ones in front of the wheelbarrow: [id, x] each
-const BEDS = (kind, key, back, front, seed) => `[...${JSON.stringify(back)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, x, z: SCENE.ground - 50, seed: ${seed} + i })),
-  ...${JSON.stringify(front)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, x, z: SCENE.ground + 62, seed: ${seed} + 10 + i }))]`;
+// (0.0.472) beds of one kind in the garden, the tall ones at the back, the low ones in front of the wheelbarrow: [id, x] each, fully
+// grown (since 0.0.473 a new one starts as sprouts)
+const BEDS = (kind, key, back, front, seed) => `[...${JSON.stringify(back)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, grown: 100, x, z: SCENE.ground - 50, seed: ${seed} + i })),
+  ...${JSON.stringify(front)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, grown: 100, x, z: SCENE.ground + 62, seed: ${seed} + 10 + i }))]`;
+// (0.0.473) the picture from the friend's head down, the whole width (the plants' meters in a row)
+const FROM_HEAD = `(() => { const p = document.querySelector(".pic-box").getBoundingClientRect(), f = document.getElementById("figure").getBoundingClientRect();
+  const y = Math.max(p.top, f.top - 20); return { x: p.left, y, width: p.width, height: p.bottom - y }; })()`;
 const said = `(() => [...document.querySelectorAll("*")].filter(n => n.childElementCount === 0 && /Good morning|still daytime|Night is falling|somewhere to sleep|Sleep/.test(n.textContent)).map(n => n.textContent.trim()).slice(-1)[0] || "")()`;
 async function scenes() {
   await step("the garden, the cover", async () => {
@@ -181,6 +186,45 @@ async function scenes() {
       changed(); draw(); await w(1500); return 1; })()`);
     await shot("24-how-grown", `(() => { const p = document.querySelector(".pic-box").getBoundingClientRect(), rs = [...bgShown.node.querySelectorAll('[data-obj^="flowerbed"]')].map(n => n.getBoundingClientRect());
       const y = Math.max(p.top, Math.min(...rs.map(r => r.top)) - 12); return { x: p.left, y, width: p.width, height: p.bottom - y }; })()`);
+  });
+  await step("💧 the watering can in the tree house", async () => {
+    texts.canFound = await ev(`(async () => { ${W} if (state.body.sit) standUp(); state.backpack = []; toolHold(""); ${PLACE("treeroom", 10, -30, "right")}
+      document.querySelector(".pic-box").scrollIntoView({ block: "center" }); await w(1500); return state.background.things.map(t => t.kind + (t.id ? ":" + t.id : "")); })()`);
+    await shot("25-can-found", PIC);
+  });
+  await step("the can picked up, in hand", async () => {
+    texts.canHeld = await ev(`(async () => { ${W} actionPress(); await w(1500); return { tool: toolHeld(), water: canWater() }; })()`);
+    await shot("26-can-held", NEAR(1.8, 0.6));
+  });
+  await step("filling it at the spring", async () => {
+    await ev(`(async () => { ${W} ${PLACE("spring", 0, 0, "right", ", springFrogs: 2, springBubbles: 5")} await w(600);
+      const P = springPool(stageC()); Object.assign(state.background, { figX: Math.round(P.cx - P.rx - 20), figY: Math.round(P.cy - SCENE.ground + 10) }); changed(); draw(); await w(1200);
+      toolUse(); await w(450); return 1; })()`);
+    await shot("27-filling", NEAR(2, 0.6));
+    texts.full = await ev(`(async () => { ${W} await w(700); return { water: canWater(), said: (document.getElementById("script-say") || {}).textContent || "" }; })()`);
+    await shot("28-full", UNION(`document.querySelector(".pic-box"), document.getElementById("script-say")`));
+  });
+  await step("the can's 🎒 card", async () => {
+    texts.canCard = await ev(`(async () => { ${W} ${TAB("pack")} const c = document.querySelector(".pack-card"); if (c) c.scrollIntoView({ block: "center" }); await w(300); return c ? c.textContent : ""; })()`);
+    await shot("29-can-card", ".pack-card");
+  });
+  await step("the plants' water meters", async () => {
+    texts.meters = await ev(`(async () => { ${W} ${TAB("body")} ${PLACE("garden", -175, 62, "right", ", gardenBeds: 0")} const now = Date.now();
+      // (the friend nearer the pumpkins they face than the sunflowers behind: where two beds meet, both are as near, and the can waters the first put)
+      const P = [["veggies", "veg", "pumpkin", -60, 0], ["flowerbed", "flower", "sunflower", -330, 0], ["flowerbed", "flower", "columbine", 135, 2], ["veggies", "veg", "carrot", 320, 1]];
+      state.background.things = P.map(([kind, key, id, x, water], i) => ({ ...THING_DEFAULTS[kind], kind, [key]: id, grown: 0, water, wet: now, x, z: SCENE.ground + 65, seed: 2400 + i }));
+      changed(); draw(); document.querySelector(".pic-box").scrollIntoView({ block: "center" }); await w(1200); return document.querySelectorAll("#pic-over [data-water-meters] > g").length; })()`);
+    await shot("30-meters", FROM_HEAD);
+  });
+  await step("a pour", async () => {
+    await ev(`(async () => { ${W} toolUse(); await w(450); return 1; })()`);
+    await shot("31-pouring", NEAR(1.8, 0.6));
+    texts.poured = await ev(`(async () => { ${W} await w(1100); const t = state.background.things.find(t => t.veg === "pumpkin"); return { can: canWater(), pumpkin: t && t.water }; })()`);
+  });
+  await step("later: every plant grown", async () => {
+    texts.grown = await ev(`(async () => { ${W} for (const t of state.background.things) if (t.kind === "flowerbed" || t.kind === "veggies") { t.water = 3; t.wet = Date.now() - 3.5 * DRINK_MS; }
+      gardenDrink(true); changed(); draw(); await w(1800); return state.background.things.filter(t => t.grown != null).map(t => t.grown); })()`);
+    await shot("32-grown", PIC);
   });
 }
 try {

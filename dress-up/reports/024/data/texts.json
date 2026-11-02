@@ -73,7 +73,7 @@
  ],
  "wade": true,
  "put": "+ 🌷 flower bed+ 🥕 vegetable patch",
- "card": "🌷 flower bed 1✖↔️ mirror🎲 another shape🔎 size100%🌼 which flower💙 Colorado blue columbine🖌️ Indian paintbrush🔔 Rocky Mountain penstemon🌞 blanket flower🌻 sunflower💜 silvery lupine🎩 prairie coneflower🩵 wild blue flax🌱 how grown100%",
+ "card": "🌷 flower bed 1✖↔️ mirror🎲 another shape🔎 size100%🌼 which flower💙 Colorado blue columbine🖌️ Indian paintbrush🔔 Rocky Mountain penstemon🌞 blanket flower🌻 sunflower💜 silvery lupine🎩 prairie coneflower🩵 wild blue flax🌱 how grown0%",
  "flowers": [
   "flowerbed 1",
   "flowerbed 2",
@@ -94,5 +94,30 @@
   "veggies 7",
   "veggies 8"
  ],
- "version": "0.0.472"
+ "canFound": [
+  "net",
+  "chocolate",
+  "item:can"
+ ],
+ "canHeld": {
+  "tool": "can",
+  "water": 0
+ },
+ "full": {
+  "water": 6,
+  "said": "💧 Glug, glug! The can is full of water."
+ },
+ "canCard": "💧 a watering can, Nov 2, 2:20 AM💧💧💧💧💧💧 6 of 6 pours⬇️ put down🎒 put it away",
+ "meters": 4,
+ "poured": {
+  "can": 5,
+  "pumpkin": 1
+ },
+ "grown": [
+  100,
+  100,
+  100,
+  100
+ ],
+ "version": "0.0.473"
 }
