@@ -371,7 +371,7 @@ const letGo = () => {
   if (goDoor !== null) { const p = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${goDoor}"] .portal`); if (p && !entering) enterScene(p); }
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
   if (actOn !== null) { const T = (state.background.things || [])[actOn];
-    if (T) leverAct(`[data-drag="thing:${actOn}"]`, () => { if (T.kind === "bee" || GARDEN_KINDS.has(T.kind)) toolUse(); else actionPress(); }); }
+    if (T) leverAct(`[data-drag="thing:${actOn}"]`, () => { if (T.kind === "bee" || GARDEN_KINDS.has(T.kind)) toolUse(T); else actionPress(); }); }
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
   if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)
     const t = seatsHere(state.background).find(q => q.name === sitName);
@@ -1593,10 +1593,10 @@ function toolInHand() {
   return hands.L === "sword" || hands.R === "sword" ? "sword" : "";
 }
 function toolHold(id) { state.pack = { ...(state.pack || {}), tool: toolHeld() === id ? "" : id }; changed(); draw(); }
-function toolUse() {
+function toolUse(want) {   // (want: a plant tapped, for the can: ticket 662)
   const id = toolInHand(), B = state.background;
   if (!id || swinging || entering || B.kind === "none") return false;
-  if (id === "can") return canUse();   // (ticket 660, part 3: tipped, to pour or fill)
+  if (id === "can") return canUse(want);   // (ticket 660, part 3: tipped, to pour or fill)
   const T = figureT, H = T.base || 300, k = T.k, f = state.body.facing, side = f === "left" ? -1 : 1;
   const hx = T.dx + side * 0.22 * H * k, hy = T.sg + T.dy - 0.5 * H * k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("data-swing", id); O.append(g); swinging = id; draw();
@@ -1850,15 +1850,19 @@ function plantSet(t, n, now) { Object.assign(t, n, { wet: now }); if (t.grown >=
 const canAt = () => packList().findIndex(o => o.id === "can");
 const canWater = () => { const it = packList()[canAt()]; return it ? Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0))) : 0; };
 function canSet(n) { const k = canAt(); if (k >= 0) state.backpack = packList().map((o, j) => j === k ? { ...o, t: { kind: "item", id: "can", ...(o.t || {}), water: n } } : o); }
-// the plant nearest within reach (to its near end) on the side the friend faces (aim: -1, 1; 0, facing us or away, either side)
-function plantNear(aim) {
-  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
-  let best = -1, bd = Infinity;
+// a plant within reach (to its near end) on the side the friend faces (aim: -1, 1; 0, facing us or away, either side): the one
+// tapped (want), walked to; else the one nearest the can in their hand, in front of them, and of two as near, the one whose middle
+// is nearer it (ticket 662: nearest their feet, where two beds met both were, and the one behind was watered if it was put first)
+function plantNear(aim, want) {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0), ax = fx + aim * 0.22 * (figureT.base || 300) * figureT.k;
+  let best = -1, bk = null;
   (B.things || []).forEach((t, i) => {
     if (!GARDEN_KINDS.has(t.kind) || t.hidden) return;
-    const dx = (t.x ?? 0) - fx, hw = 80 * depthSize(B, (t.z ?? SCENE.ground) - SCENE.ground) * (t.size ?? 100) / 100;
-    const d = Math.hypot(Math.max(0, Math.abs(dx) - hw), ((t.z ?? 0) - fz) / 0.6);
-    if (dx * aim >= -hw - 30 && d <= CAN_REACH && d < bd) { best = i; bd = d; }
+    const x = t.x ?? 0, hw = 80 * depthSize(B, (t.z ?? SCENE.ground) - SCENE.ground) * (t.size ?? 100) / 100;
+    const from = at => Math.hypot(Math.max(0, Math.abs(x - at) - hw), ((t.z ?? 0) - fz) / 0.6);
+    if ((x - fx) * aim < -hw - 30 || from(fx) > CAN_REACH) return;
+    const k = [t === want ? 0 : 1, Math.round(from(ax)), Math.abs(x - ax)];
+    if (!bk || (k[0] - bk[0] || k[1] - bk[1] || k[2] - bk[2]) < 0) { best = i; bk = k; }
   });
   return best;
 }
@@ -1876,9 +1880,9 @@ function waterNear() {
   }
   return false;
 }
-function canUse() {
+function canUse(want) {
   const B = state.background, f = state.body.facing, side = f === "left" ? -1 : 1, aim = f === "left" ? -1 : f === "right" ? 1 : 0;
-  const have = canWater(), p = plantNear(aim), t = p >= 0 ? B.things[p] : null, done = !!t && plantDone(t);
+  const have = canWater(), p = plantNear(aim, want), t = p >= 0 ? B.things[p] : null, done = !!t && plantDone(t);
   if (t && !done && plantNow(t).water <= PLANT_THIRST - 0.95 && have > 0) { canTip(side, t); return true; }
   if (have < CAN_HOLDS && waterNear()) { canTip(side, null); return true; }
   scriptSay(done ? "This one is all grown!" : t && have ? "It has all the water it can drink. Give it a little while." : have ? "Walk up to a plant, then pour."

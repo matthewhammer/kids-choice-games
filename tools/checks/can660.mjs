@@ -7,7 +7,9 @@
 // will not); a plant just put from the menu is sprouts. While the can is held each plant not all grown shows its meter over it, one
 // a plant, none for one all grown, none with the can put away. A plant drinks its water, a 💧 every DRINK_MS, growing a stage with
 // each, drawn again as it grows; all grown, it drinks no more and its meter goes. The can fills at a place's own water too (the
-// spring, the duck pond, the tree house's stream, a castle's moat). Put down and picked up, its water stays in it. Exits 1 on a failure.
+// spring, the duck pond, the tree house's stream, a castle's moat). Put down and picked up, its water stays in it. (Ticket 662) Where two
+// beds meet, the friend standing in the one behind, it waters the one they face, whichever was put first; a plant tapped, that one;
+// and its 🎒 card says when it was got with no comma before it. Exits 1 on a failure.
 //   node can660.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -42,6 +44,10 @@ try {
     const near = carryNear(), canNear = near >= 0 && B.things[near].id === "can";
     actionPress(); await w(900);
     const got = { canNear, pack: packList().map(o => o.id), held: toolHeld(), drawn: !!document.querySelector('#figure [data-tool="can"]'), water: canWater() };
+    // its 🎒 card: when it was got (from the floor, not a chest: nothing before it, nor a comma)
+    const tab0 = tab; tab = TABS.findIndex(t => t[1] === "pack"); showTab(); await w(900);
+    const card = [...document.querySelectorAll(".pack-card .hint")].map(h => h.textContent)[0] ?? null;
+    tab = tab0; showTab(); await w(300);
     // the garden: a sprout from the menu's defaults, and one all grown
     await go("garden", 60, -10, "right");
     B.things = [{ ...THING_DEFAULTS.flowerbed, kind: "flowerbed", flower: "columbine", x: 170, z: SCENE.ground - 10, seed: 31 },
@@ -70,6 +76,18 @@ try {
     // all of it drunk: all grown, drinking no more, its meter gone
     sprout.wet = Date.now() - 2 * DRINK_MS; gardenDrink(true); await w(500);
     const grown = { grown: sprout.grown, water: sprout.water, done: plantDone(sprout), meters: meters() };
+    // (ticket 662) two beds meeting where the friend stands, inside the left one (its near end 20 past their feet), the right one's
+    // near end at their feet: the one they face is watered, whichever was put first; a plant tapped, that one, though they face the other
+    await go("garden", 0, -10, "right");
+    const hw = 80 * depthSize(B, -10), bed = (x, seed) => ({ ...THING_DEFAULTS.veggies, kind: "veggies", veg: "carrot", grown: 0, water: 0, x, z: SCENE.ground - 10, seed });
+    const meet = {};
+    for (const [name, order, f, tap] of [["left first, facing right", "LR", "right", ""], ["right first, facing right", "RL", "right", ""],
+                                         ["right first, facing left", "RL", "left", ""], ["right first, facing right, the left tapped", "RL", "right", "L"]]) {
+      const P = { L: bed(-hw + 20, 41), R: bed(hw, 42) };
+      B.things = [...order].map(c => P[c]); state.body.facing = f; canSet(CAN_HOLDS); changed(); draw(); await w(300);
+      hush(); toolUse(tap ? P[tap] : undefined); await w(1500);
+      meet[name] = Object.keys(P).filter(c => P[c].water > 0).join("");
+    }
     // filled at a place's own water: from a dry spot by it
     const fills = {};
     for (const kind of ["spring", "lake", "treehouse", "castle"]) {
@@ -91,11 +109,12 @@ try {
     await go("treeroom", -133, 0);
     const later = { cans: (B.things || []).filter(t => t.kind === "item" && t.id === "can").length, mark: !!mark && !!W.carrySeeded[mark] };
     Object.assign(B, { kind: "none", things: [] }); state.backpack = []; changed();
-    return JSON.stringify({ tool, saw, got, start, empty, filled, pours, shown, drank, grown, fills, kept, later }); })()`));
-  const { tool, saw, got, start, empty, filled, pours, shown, drank, grown, fills, kept, later } = r;
+    return JSON.stringify({ tool, saw, got, card, meet, start, empty, filled, pours, shown, drank, grown, fills, kept, later }); })()`));
+  const { tool, saw, got, card, meet, start, empty, filled, pours, shown, drank, grown, fills, kept, later } = r;
   ok("the 💧 watering can: a tool, a thing to carry, drawn well (held either way, and standing)", tool.tool && tool.carry && tool.drawn, tool);
   ok("the tree room has the can on its floor the first time, with a mark of its own beside the room's", saw.room === 1 && saw.mark && saw.roomMark, saw);
   ok("picked up there: in the 🎒 and in the hand at once, empty", got.canNear && got.pack.includes("can") && got.held === "can" && got.drawn && got.water === 0, got);
+  ok("its 🎒 card says when it was got, with no comma before it", typeof card === "string" && /\d/.test(card) && !/^\s*,/.test(card), card);
   ok("a flower bed put from the menu is sprouts; with the can held it shows its meter, the corn all grown none", start.grown === 0 && start.stage === 0 && start.meters === 1, start);
   ok("empty, by a plant: it says so, and pours nothing", empty.tipped && /empty/i.test(empty.said) && empty.water === 0 && empty.can === 0, empty);
   ok("by the garden's water barrel it fills: all its pours", filled.can === filled.holds && /full/i.test(filled.said), filled);
@@ -105,6 +124,9 @@ try {
   ok("the meters: one for the sprout while the can is held, none with it put away, back with it held again", shown.held === 1 && shown.away === 0 && shown.back === 1, shown);
   ok("a 💧 and a half drunk: a stage up (25 of how grown a 💧), drawn again, a 💧 and a half left", drank.stage === 1 && Math.abs(drank.grown - 37.5) < 0.6 && drank.redrawn && Math.abs(drank.water - 1.5) < 0.05, drank);
   ok("all of it drunk: all grown, drinking no more, its meter gone", grown.grown === 100 && grown.water === 0 && grown.done && grown.meters === 0, grown);
+  ok("where two beds meet, the one the friend faces is watered, whichever was put first; a plant tapped, that one",
+     meet["left first, facing right"] === "R" && meet["right first, facing right"] === "R" && meet["right first, facing left"] === "L"
+     && meet["right first, facing right, the left tapped"] === "L", meet);
   for (const kind of ["spring", "lake", "treehouse", "castle"])
     ok(`the can fills at the ${kind}'s water, from the bank`, !!fills[kind].spot && fills[kind].can === filled.holds, fills[kind]);
   ok("put down and picked up again, its water still in it", kept.down && kept.downWater === 4 && kept.water === 4 && kept.held === "can", kept);

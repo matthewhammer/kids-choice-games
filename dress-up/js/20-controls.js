@@ -2409,7 +2409,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         try { pic.innerHTML = giftSvg(it.id, {}); } catch (e) { /* (a thing not drawn: its name alone) */ }
         const when = it.got ? new Date(it.got).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
         return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || it.id),
-          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`),
+          el("div", { class: "hint" }, [it.from === "chest" ? "from a 💰 chest" : "", when].filter(Boolean).join(", ")),   // (ticket 662: not ", Nov 2" when not from a chest)
           // (ticket 660, part 3) the can: how many pours of water are in it
           ...(it.id === "can" ? [el("div", { class: "pack-water" }, (n => n ? "💧".repeat(n) + "◌".repeat(CAN_HOLDS - n) + ` ${n} of ${CAN_HOLDS} pours` : "empty: fill it at water")(Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0)))))] : []),
           el("div", { class: "row pack-uses" }, [

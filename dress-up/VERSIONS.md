@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.474 (2026-11-02)
+
+Everything in 0.0.473, plus:
+
+- **💧 The watering can waters the plant in front of you** (ticket 662). Where two beds meet, with the friend standing at the edge of one, the can sometimes watered the bed behind them instead of the one they were facing. Now it waters the plant nearest the can in their hand. Tap a plant, and that is the one that gets the water.
+- **Fixed:** a thing picked up off the floor showed a stray comma before the date on its 🎒 backpack card (", Nov 2, 2:12 AM").
+
 ## 0.0.473 (2026-11-01)
 
 Everything in 0.0.472, plus:
