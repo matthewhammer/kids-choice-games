@@ -72,5 +72,27 @@
   "grass 8"
  ],
  "wade": true,
- "version": "0.0.471"
+ "put": "+ 🌷 flower bed+ 🥕 vegetable patch",
+ "card": "🌷 flower bed 1✖↔️ mirror🎲 another shape🔎 size100%🌼 which flower💙 Colorado blue columbine🖌️ Indian paintbrush🔔 Rocky Mountain penstemon🌞 blanket flower🌻 sunflower💜 silvery lupine🎩 prairie coneflower🩵 wild blue flax🌱 how grown100%",
+ "flowers": [
+  "flowerbed 1",
+  "flowerbed 2",
+  "flowerbed 3",
+  "flowerbed 4",
+  "flowerbed 5",
+  "flowerbed 6",
+  "flowerbed 7",
+  "flowerbed 8"
+ ],
+ "vegetables": [
+  "veggies 1",
+  "veggies 2",
+  "veggies 3",
+  "veggies 4",
+  "veggies 5",
+  "veggies 6",
+  "veggies 7",
+  "veggies 8"
+ ],
+ "version": "0.0.472"
 }

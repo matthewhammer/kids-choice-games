@@ -9,7 +9,7 @@
 <!-- og: begin (tools/og_previews.py in matthewhammer.github.io: the link preview's text and picture) -->
 <meta property="og:type" content="article">
 <meta property="og:title" content="Night, Day and the Garden in Messed Up Dress Up">
-<meta property="og:description" content="The retro manual&#x27;s second part, for M and N trying out the garden: a sword that cuts, what is cut stays cut, night and day, time for bed, plants that grow back, the 🌻 garden and the 💧 spring, with a quick card at the end. Every new thing from 0.0.465 to 0.0.471. From ^ticket(661).">
+<meta property="og:description" content="The retro manual&#x27;s second part, for M and N trying out the garden: a sword that cuts, what is cut stays cut, night and day, time for bed, plants that grow back, the 🌻 garden with 🌷 flowers and 🥕 vegetables to plant, and the 💧 spring, with a quick card at the end. Every new thing from 0.0.465 to…">
 <meta property="og:url" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/024/">
 <meta property="og:image" content="https://matthewhammer.org/kids-choice-games/dress-up/reports/024/og.png">
 <meta property="og:image:width" content="1200">
@@ -166,10 +166,10 @@ document.addEventListener("DOMContentLoaded", () => {
 <div class="cover">
   <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
   <h1>NIGHT, DAY<br>AND THE GARDEN</h1>
-  <div class="edition">a young player's guide to what is new since <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> · the sword, night and day, plants that grow back, the garden and the spring · version 0.0.471</div>
+  <div class="edition">a young player's guide to what is new since <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> · the sword, night and day, plants that grow back, the garden and what grows in it, and the spring · version 0.0.472</div>
   <figure class="shot half"><img src="pictures/01-garden.webp" alt="The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed." loading="lazy"><figcaption>The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed.</figcaption></figure>
 </div>
-<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.471.</p>
+<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.472.</p>
 
 <div class="toc">
 <a href="#ch1">1 · WHAT'S NEW</a><br>
@@ -180,10 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
 <a href="#ch6">6 · PLANTS GROW BACK 🌱</a><br>
 <a href="#ch7">7 · THE GARDEN 🌻</a><br>
 <a href="#ch8">8 · THE SPRING 💧</a><br>
-<a href="#ch9">9 · COMING SOON</a><br>
-<a href="#ch10">10 · FIXED</a><br>
-<a href="#ch11">11 · MAKE UP A STORY</a><br>
-<a href="#ch12">12 · THE QUICK CARD</a><br>
+<a href="#ch9">9 · PLANT A GARDEN 🌷</a><br>
+<a href="#ch10">10 · COMING SOON</a><br>
+<a href="#ch11">11 · FIXED</a><br>
+<a href="#ch12">12 · MAKE UP A STORY</a><br>
+<a href="#ch13">13 · THE QUICK CARD</a><br>
 <a href="#about">ABOUT THIS GUIDE</a><br>
 </div>
 
@@ -194,7 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
 <tr><td>0.0.466</td><td>🌗 <b>Night and day</b>, and 🛌 <b>sleeping</b> in a bed</td><td><a href="#ch4">4</a>, <a href="#ch5">5</a></td></tr>
 <tr><td>0.0.470</td><td>🌱 Cut plants <b>grow back</b></td><td><a href="#ch6">6</a></td></tr>
 <tr><td>0.0.471</td><td>Two new places: the 🌻 <b>garden</b> and the 💧 <b>spring</b></td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
-<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch10">10</a></td></tr>
+<tr><td>0.0.472</td><td>🌷 <b>Flowers</b> and 🥕 <b>vegetables</b> to plant in the garden</td><td><a href="#ch9">9</a></td></tr>
+<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch11">11</a></td></tr>
 </tbody></table></div>
 <p>The version number is under the game's name, at the top of the controls. If yours is older, reload the page.</p>
 
@@ -268,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <li>a <b>garden shed</b> with a window box, and a <b>rain barrel</b>;</li>
 <li>an <b>apple tree</b>, a <b>bench</b>, and a red <b>wheelbarrow</b>;</li>
 <li>🐝 <b>bees</b> (catch one with the bug net: <a class="ref" href="../023/"><code><b>^du_report(</b>23<b>)</b></code></a> shows how);</li>
-<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting.</li>
+<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting (<a href="#ch9">chapter 9</a> shows what to plant).</li>
 </ul>
 <figure class="shot "><img src="pictures/15-garden-beds.webp" alt="The garden with all six beds of soil." loading="lazy"><figcaption>The garden with all six beds of soil.</figcaption></figure>
 <p>How many beds? In <span class="key">🏞️ Background</span>, <b>🟫 beds of soil to plant in</b>: from none to six.</p>
@@ -285,15 +287,50 @@ document.addEventListener("DOMContentLoaded", () => {
 <p>To go there, open <span class="key">🏞️ Background</span> and choose <span class="key">💧 water</span>, then <span class="key">💧 spring</span>. Its settings are there too: <b>🐸 frogs</b> (none to three) and <b>🫧 how much it bubbles</b>.</p>
 <figure class="shot "><img src="pictures/14-place-menu-water.webp" alt="The 💧 water places, with the spring." loading="lazy"><figcaption>The 💧 water places, with the spring.</figcaption></figure>
 
-<h2 id="ch9"><span class="ch">9</span>COMING SOON</h2>
-<p>The garden is not finished yet! Next:</p>
+<h2 id="ch9"><span class="ch">9</span>PLANT A GARDEN 🌷</h2>
+<p>Now the garden has things to plant! Open <span class="key">🏞️ Background</span>, find <b>🪨 things to put here</b>, and tap <span class="key">🌻 garden</span>. There are two:</p>
+<figure class="shot "><img src="pictures/20-put-garden.webp" alt="🪨 things to put here, with 🌻 garden chosen: + 🌷 flower bed and + 🥕 vegetable patch." loading="lazy"><figcaption>🪨 things to put here, with 🌻 garden chosen: + 🌷 flower bed and + 🥕 vegetable patch.</figcaption></figure>
+<p>Tap <span class="key">+ 🌷 flower bed</span> or <span class="key">+ 🥕 vegetable patch</span>, or drag one into the picture, right where you want it to grow. Drag it again to move it.</p>
+<p>Each one you put gets its own <b>card</b>, below the buttons. On a flower bed's card, choose <b>🌼 which flower</b>. A vegetable patch's card has <b>🥕 which vegetable</b>.</p>
+<figure class="shot half"><img src="pictures/21-flower-card.webp" alt="A flower bed&#x27;s card: 🌼 which flower, and 🌱 how grown." loading="lazy"><figcaption>A flower bed's card: 🌼 which flower, and 🌱 how grown.</figcaption></figure>
+<p>There are <b>eight flowers</b>, and they all grow wild in Colorado:</p>
 <ul>
-<li><b>Flowers to plant:</b> eight kinds that grow wild in Colorado: 💙 Colorado blue columbine (Colorado's own flower), 🖌️ Indian paintbrush, 🔔 Rocky Mountain penstemon, 🌞 blanket flower, 🌻 sunflower, 💜 silvery lupine, 🎩 prairie coneflower and 🩵 wild blue flax.</li>
-<li><b>Vegetables to plant:</b> 🍅 tomatoes, 🌽 corn, 🥕 carrots, 🎃 pumpkins, 🥬 lettuce, 🫛 peas, 🫑 bell peppers and 🥦 broccoli.</li>
-<li>A <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant shows how much water it has, and grows when it is watered.</li>
+<li>💙 Colorado blue columbine (Colorado's own flower)</li>
+<li>🖌️ Indian paintbrush</li>
+<li>🔔 Rocky Mountain penstemon</li>
+<li>🌞 blanket flower</li>
+<li>🌻 sunflowers</li>
+<li>💜 silvery lupine</li>
+<li>🎩 prairie coneflower (it looks like a Mexican hat)</li>
+<li>🩵 wild blue flax</li>
 </ul>
+<figure class="shot "><img src="pictures/22-flower-beds.webp" alt="All eight flowers. At the back: sunflowers, silvery lupine, penstemon and Indian paintbrush. At the front: columbine, blanket flower, prairie coneflower and wild blue flax." loading="lazy"><figcaption>All eight flowers. At the back: sunflowers, silvery lupine, penstemon and Indian paintbrush. At the front: columbine, blanket flower, prairie coneflower and wild blue flax.</figcaption></figure>
+<p>And there are <b>eight vegetables</b> that grow in the United States:</p>
+<ul>
+<li>🍅 tomatoes, in their cage</li>
+<li>🌽 corn</li>
+<li>🥕 carrots</li>
+<li>🎃 pumpkins</li>
+<li>🥬 lettuce</li>
+<li>🫛 peas, climbing up their stakes</li>
+<li>🫑 bell peppers</li>
+<li>🥦 broccoli</li>
+</ul>
+<figure class="shot "><img src="pictures/23-vegetable-patches.webp" alt="All eight vegetables. At the back: corn, tomatoes, peas and bell peppers. At the front: pumpkins, carrots, lettuce and broccoli." loading="lazy"><figcaption>All eight vegetables. At the back: corn, tomatoes, peas and bell peppers. At the front: pumpkins, carrots, lettuce and broccoli.</figcaption></figure>
+<p>Slide <b>🌱 how grown</b> on a plant's card to make it small or big. A plant has four stages:</p>
+<ol class="steps">
+<li><b>Sprouts</b>, just poking out of the soil.</li>
+<li><b>Young</b> plants, green all over.</li>
+<li><b>In bud</b>, with the fruit still green.</li>
+<li><b>In flower</b>, and the vegetables <b>ripe</b>.</li>
+</ol>
+<figure class="shot "><img src="pictures/24-how-grown.webp" alt="🌱 how grown, from left to right: sprouts, young, in bud, in flower. Sunflowers at the back, pumpkins at the front." loading="lazy"><figcaption>🌱 how grown, from left to right: sprouts, young, in bud, in flower. Sunflowers at the back, pumpkins at the front.</figcaption></figure>
+<aside class="box tip"><div class="box-h">GOOD TO KNOW</div><p>New plants start fully grown. You can walk right through them, and the 🗡️ sword does not cut them.</p></aside>
 
-<h2 id="ch10"><span class="ch">10</span>FIXED</h2>
+<h2 id="ch10"><span class="ch">10</span>COMING SOON</h2>
+<p>The garden is not finished yet! Next, a <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant will show how much water it has, and grow when it is watered.</p>
+
+<h2 id="ch11"><span class="ch">11</span>FIXED</h2>
 <p>Some things were broken. Now they work:</p>
 <ul>
 <li><b>One dungeon.</b> The game was making a new 🗝️ dungeon every time the page loaded, with more and more holes down to it in the cemetery and the castle. Now a game keeps just one. <span class="ver">0.0.468</span></li>
@@ -302,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <li><b>Places look the same every time.</b> The witch's room, with its glowing mushroom, was sometimes drawn a tiny bit differently. <span class="ver">0.0.469</span></li>
 </ul>
 
-<h2 id="ch11"><span class="ch">11</span>MAKE UP A STORY</h2>
+<h2 id="ch12"><span class="ch">12</span>MAKE UP A STORY</h2>
 <p>Some ideas:</p>
 <ul>
 <li>A knight cuts a path through the forest... and by morning the forest has grown back!</li>
@@ -310,9 +347,10 @@ document.addEventListener("DOMContentLoaded", () => {
 <li>Count how many nights your friend can sleep. Can you get to ten?</li>
 <li>The frogs of the spring are having a party. Who is invited?</li>
 <li>Catch a bee in the garden, then let it go again by the flowers.</li>
+<li>Plant a vegetable garden. What will you cook when everything is ripe?</li>
 </ul>
 
-<h2 id="ch12"><span class="ch">12</span>THE QUICK CARD</h2>
+<h2 id="ch13"><span class="ch">13</span>THE QUICK CARD</h2>
 <div class="card">
 <p><b>Hold a sword:</b> 🎒 its card, <span class="key">✋ hold it</span></p>
 <p><b>Cut a plant:</b> face it, <span class="key">U</span>, or 🥅</p>
@@ -323,11 +361,13 @@ document.addEventListener("DOMContentLoaded", () => {
 <p><b>Plants grow back:</b> ⚙️, <span class="key">🌱 cut plants grow back</span></p>
 <p><b>Go to the garden:</b> 🏞️, <span class="key">🌻 garden</span></p>
 <p><b>Go to the spring:</b> 🏞️, <span class="key">💧 spring</span></p>
+<p><b>Plant flowers or vegetables:</b> 🏞️, 🪨, <span class="key">🌻 garden</span></p>
+<p><b>Make a plant grow:</b> its card, 🌱 how grown</p>
 <p><b>Put a place in your world:</b> 🗺️, drag it onto the grid</p>
 </div>
 
 <h2 id="about"><span class="ch">✎</span>ABOUT THIS GUIDE</h2>
-<p>Every picture is of <b>Messed Up Dress Up 0.0.471</b>, taken by this report's <code>drivers/shots024.mjs</code> on GitHub's computers, run <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/41336613420">41336613420</a>.</p>
+<p>Every picture is of <b>Messed Up Dress Up 0.0.472</b>, taken by this report's <code>drivers/shots024.mjs</code> on GitHub's computers, run <a href="https://github.com/matthewhammer/kids-choice-games/actions/runs/41368563147">41368563147</a>.</p>
 <p>The sword that cuts plants is <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-656"><code><b>^ticket(</b>656<b>)</b></code></a>, night and day and sleeping <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-657"><code><b>^ticket(</b>657<b>)</b></code></a>, the Hazel tiles <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-658"><code><b>^ticket(</b>658<b>)</b></code></a>, plants growing back <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-659"><code><b>^ticket(</b>659<b>)</b></code></a>, the garden and the spring <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-660"><code><b>^ticket(</b>660<b>)</b></code></a>, the dungeon and room fixes <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-639"><code><b>^ticket(</b>639<b>)</b></code></a>, and this guide <a class="ref" href="https://matthewhammer.org/hazel/dashboard/#ticket-661"><code><b>^ticket(</b>661<b>)</b></code></a>. Made for M and N, who tried the garden first.</p>
 </main>
 <script>

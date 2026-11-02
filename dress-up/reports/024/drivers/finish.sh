@@ -6,7 +6,9 @@ set -euo pipefail
 art="$1"; run="$2"; ver="$3"; R="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$R/pictures" "$R/data"
 rm -f "$R/pictures"/*.png "$R/pictures"/*.webp
-for f in "$art"/guide024/*.png; do ffmpeg -loglevel error -y -i "$f" -c:v libwebp -quality 82 "$R/pictures/$(basename "${f%.png}").webp"; done
+# (20-put-garden: the box round the group chips takes in the top of the panel's title above them and of its 🧹 button below; cut to the chips)
+for f in "$art"/guide024/*.png; do vf=(); [ "$(basename "$f")" = 20-put-garden.png ] && vf=(-vf "crop=iw:ih-14:0:4")
+  ffmpeg -loglevel error -y -i "$f" "${vf[@]}" -c:v libwebp -quality 82 "$R/pictures/$(basename "${f%.png}").webp"; done
 cp "$art/guide024/texts.json" "$R/data/texts.json"
 game=$(git -C "$R" rev-parse --short "${4:-origin/main}")   # (the game the pictures are of: the diag branch's base)
 printf '{"branch": "diag-661", "game": "%s", "version": "%s", "id": "%s", "url": "https://github.com/matthewhammer/kids-choice-games/actions/runs/%s"}\n' "$game" "$ver" "$run" "$run" > "$R/data/run.json"

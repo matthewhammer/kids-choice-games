@@ -25,10 +25,10 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <div class="cover">
   <div class="pub">KIDS' CHOICE GAMES PRESENTS</div>
   <h1>NIGHT, DAY<br>AND THE GARDEN</h1>
-  <div class="edition">a young player's guide to what is new since {du(23)} · the sword, night and day, plants that grow back, the garden and the spring{(" · version " + esc(VER)) if VER else ""}</div>
+  <div class="edition">a young player's guide to what is new since {du(23)} · the sword, night and day, plants that grow back, the garden and what grows in it, and the spring{(" · version " + esc(VER)) if VER else ""}</div>
   {pic("01-garden.png", "The new 🌻 garden: beds of soil to plant in, bees, an apple tree, and the shed.", "half")}
 </div>
-<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. {du(23)} showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.471.</p>
+<p class="series">Matthew, 2026-11-01, trying the garden with M: “a new du_report in the style of du_report 23, now explaining all new features between that report and the current release”. {du(23)} showed the 🎒 backpack, chests, pots, tools and the dungeon, up to version 0.0.464. This guide is everything since, up to 0.0.472.</p>
 
 <div class="toc">
 <a href="#ch1">1 · WHAT'S NEW</a><br>
@@ -39,10 +39,11 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <a href="#ch6">6 · PLANTS GROW BACK 🌱</a><br>
 <a href="#ch7">7 · THE GARDEN 🌻</a><br>
 <a href="#ch8">8 · THE SPRING 💧</a><br>
-<a href="#ch9">9 · COMING SOON</a><br>
-<a href="#ch10">10 · FIXED</a><br>
-<a href="#ch11">11 · MAKE UP A STORY</a><br>
-<a href="#ch12">12 · THE QUICK CARD</a><br>
+<a href="#ch9">9 · PLANT A GARDEN 🌷</a><br>
+<a href="#ch10">10 · COMING SOON</a><br>
+<a href="#ch11">11 · FIXED</a><br>
+<a href="#ch12">12 · MAKE UP A STORY</a><br>
+<a href="#ch13">13 · THE QUICK CARD</a><br>
 <a href="#about">ABOUT THIS GUIDE</a><br>
 </div>
 
@@ -53,7 +54,8 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <tr><td>0.0.466</td><td>🌗 <b>Night and day</b>, and 🛌 <b>sleeping</b> in a bed</td><td><a href="#ch4">4</a>, <a href="#ch5">5</a></td></tr>
 <tr><td>0.0.470</td><td>🌱 Cut plants <b>grow back</b></td><td><a href="#ch6">6</a></td></tr>
 <tr><td>0.0.471</td><td>Two new places: the 🌻 <b>garden</b> and the 💧 <b>spring</b></td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
-<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch10">10</a></td></tr>
+<tr><td>0.0.472</td><td>🌷 <b>Flowers</b> and 🥕 <b>vegetables</b> to plant in the garden</td><td><a href="#ch9">9</a></td></tr>
+<tr><td>0.0.467 to 0.0.469</td><td>Things that were broken, now fixed</td><td><a href="#ch11">11</a></td></tr>
 </tbody></table></div>
 <p>The version number is under the game's name, at the top of the controls. If yours is older, reload the page.</p>
 
@@ -127,7 +129,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li>a <b>garden shed</b> with a window box, and a <b>rain barrel</b>;</li>
 <li>an <b>apple tree</b>, a <b>bench</b>, and a red <b>wheelbarrow</b>;</li>
 <li>🐝 <b>bees</b> (catch one with the bug net: {du(23)} shows how);</li>
-<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting.</li>
+<li>beds of dug <b>soil</b>, either side of a path of stepping stones, ready for planting (<a href="#ch9">chapter 9</a> shows what to plant).</li>
 </ul>
 {pic("15-garden-beds.png", "The garden with all six beds of soil.")}
 <p>How many beds? In <span class="key">🏞️ Background</span>, <b>🟫 beds of soil to plant in</b>: from none to six.</p>
@@ -144,15 +146,50 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <p>To go there, open <span class="key">🏞️ Background</span> and choose <span class="key">💧 water</span>, then <span class="key">💧 spring</span>. Its settings are there too: <b>🐸 frogs</b> (none to three) and <b>🫧 how much it bubbles</b>.</p>
 {pic("14-place-menu-water.png", "The 💧 water places, with the spring.")}
 
-<h2 id="ch9"><span class="ch">9</span>COMING SOON</h2>
-<p>The garden is not finished yet! Next:</p>
+<h2 id="ch9"><span class="ch">9</span>PLANT A GARDEN 🌷</h2>
+<p>Now the garden has things to plant! Open <span class="key">🏞️ Background</span>, find <b>🪨 things to put here</b>, and tap <span class="key">🌻 garden</span>. There are two:</p>
+{pic("20-put-garden.png", "🪨 things to put here, with 🌻 garden chosen: + 🌷 flower bed and + 🥕 vegetable patch.")}
+<p>Tap <span class="key">+ 🌷 flower bed</span> or <span class="key">+ 🥕 vegetable patch</span>, or drag one into the picture, right where you want it to grow. Drag it again to move it.</p>
+<p>Each one you put gets its own <b>card</b>, below the buttons. On a flower bed's card, choose <b>🌼 which flower</b>. A vegetable patch's card has <b>🥕 which vegetable</b>.</p>
+{pic("21-flower-card.png", "A flower bed's card: 🌼 which flower, and 🌱 how grown.", "half")}
+<p>There are <b>eight flowers</b>, and they all grow wild in Colorado:</p>
 <ul>
-<li><b>Flowers to plant:</b> eight kinds that grow wild in Colorado: 💙 Colorado blue columbine (Colorado's own flower), 🖌️ Indian paintbrush, 🔔 Rocky Mountain penstemon, 🌞 blanket flower, 🌻 sunflower, 💜 silvery lupine, 🎩 prairie coneflower and 🩵 wild blue flax.</li>
-<li><b>Vegetables to plant:</b> 🍅 tomatoes, 🌽 corn, 🥕 carrots, 🎃 pumpkins, 🥬 lettuce, 🫛 peas, 🫑 bell peppers and 🥦 broccoli.</li>
-<li>A <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant shows how much water it has, and grows when it is watered.</li>
+<li>💙 Colorado blue columbine (Colorado's own flower)</li>
+<li>🖌️ Indian paintbrush</li>
+<li>🔔 Rocky Mountain penstemon</li>
+<li>🌞 blanket flower</li>
+<li>🌻 sunflowers</li>
+<li>💜 silvery lupine</li>
+<li>🎩 prairie coneflower (it looks like a Mexican hat)</li>
+<li>🩵 wild blue flax</li>
 </ul>
+{pic("22-flower-beds.png", "All eight flowers. At the back: sunflowers, silvery lupine, penstemon and Indian paintbrush. At the front: columbine, blanket flower, prairie coneflower and wild blue flax.")}
+<p>And there are <b>eight vegetables</b> that grow in the United States:</p>
+<ul>
+<li>🍅 tomatoes, in their cage</li>
+<li>🌽 corn</li>
+<li>🥕 carrots</li>
+<li>🎃 pumpkins</li>
+<li>🥬 lettuce</li>
+<li>🫛 peas, climbing up their stakes</li>
+<li>🫑 bell peppers</li>
+<li>🥦 broccoli</li>
+</ul>
+{pic("23-vegetable-patches.png", "All eight vegetables. At the back: corn, tomatoes, peas and bell peppers. At the front: pumpkins, carrots, lettuce and broccoli.")}
+<p>Slide <b>🌱 how grown</b> on a plant's card to make it small or big. A plant has four stages:</p>
+<ol class="steps">
+<li><b>Sprouts</b>, just poking out of the soil.</li>
+<li><b>Young</b> plants, green all over.</li>
+<li><b>In bud</b>, with the fruit still green.</li>
+<li><b>In flower</b>, and the vegetables <b>ripe</b>.</li>
+</ol>
+{pic("24-how-grown.png", "🌱 how grown, from left to right: sprouts, young, in bud, in flower. Sunflowers at the back, pumpkins at the front.")}
+{box("tip", "GOOD TO KNOW", "<p>New plants start fully grown. You can walk right through them, and the 🗡️ sword does not cut them.</p>")}
 
-<h2 id="ch10"><span class="ch">10</span>FIXED</h2>
+<h2 id="ch10"><span class="ch">10</span>COMING SOON</h2>
+<p>The garden is not finished yet! Next, a <b>💧 watering can</b>, hidden in the tree house. Fill it at the spring, the lake or the castle's moat, then water your plants. Each plant will show how much water it has, and grow when it is watered.</p>
+
+<h2 id="ch11"><span class="ch">11</span>FIXED</h2>
 <p>Some things were broken. Now they work:</p>
 <ul>
 <li><b>One dungeon.</b> The game was making a new 🗝️ dungeon every time the page loaded, with more and more holes down to it in the cemetery and the castle. Now a game keeps just one. {v("0.0.468")}</li>
@@ -161,7 +198,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li><b>Places look the same every time.</b> The witch's room, with its glowing mushroom, was sometimes drawn a tiny bit differently. {v("0.0.469")}</li>
 </ul>
 
-<h2 id="ch11"><span class="ch">11</span>MAKE UP A STORY</h2>
+<h2 id="ch12"><span class="ch">12</span>MAKE UP A STORY</h2>
 <p>Some ideas:</p>
 <ul>
 <li>A knight cuts a path through the forest... and by morning the forest has grown back!</li>
@@ -169,9 +206,10 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <li>Count how many nights your friend can sleep. Can you get to ten?</li>
 <li>The frogs of the spring are having a party. Who is invited?</li>
 <li>Catch a bee in the garden, then let it go again by the flowers.</li>
+<li>Plant a vegetable garden. What will you cook when everything is ripe?</li>
 </ul>
 
-<h2 id="ch12"><span class="ch">12</span>THE QUICK CARD</h2>
+<h2 id="ch13"><span class="ch">13</span>THE QUICK CARD</h2>
 <div class="card">
 <p><b>Hold a sword:</b> 🎒 its card, <span class="key">✋ hold it</span></p>
 <p><b>Cut a plant:</b> face it, <span class="key">U</span>, or 🥅</p>
@@ -182,6 +220,8 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <p><b>Plants grow back:</b> ⚙️, <span class="key">🌱 cut plants grow back</span></p>
 <p><b>Go to the garden:</b> 🏞️, <span class="key">🌻 garden</span></p>
 <p><b>Go to the spring:</b> 🏞️, <span class="key">💧 spring</span></p>
+<p><b>Plant flowers or vegetables:</b> 🏞️, 🪨, <span class="key">🌻 garden</span></p>
+<p><b>Make a plant grow:</b> its card, 🌱 how grown</p>
 <p><b>Put a place in your world:</b> 🗺️, drag it onto the grid</p>
 </div>
 

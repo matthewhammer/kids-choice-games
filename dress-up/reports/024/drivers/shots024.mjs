@@ -3,7 +3,8 @@
 // the garden (the cover); the 🗡️ sword held by a bush, swung (chop!), the bush gone and grown back, and 🙈 in 🏞️ Background (a tree cut);
 // 🌗 night and day turned on in ⚙️ Advanced, noon, nightfall, the camp site's own night, lying down in bed, asleep, the next morning;
 // 🌱 cut plants grow back (the setting); the place menu with the 🌻 garden and the 💧 spring, the garden, its six
-// beds, the spring, wading in it, its frogs up close; the 🗺️ World design's places. Kept with the report (not in tools/checks, so not
+// beds, the spring, wading in it, its frogs up close; the 🗺️ World design's places; and (0.0.472) the 🌻 garden group of things to
+// put, a flower bed's card, the eight flowers, the eight vegetables, and 🌱 how grown's four stages. Kept with the report (not in tools/checks, so not
 // in every release's speed run): a diag branch copies it into tools/checks to run it. Not a gate: exits 1 only if a scene failed.
 //   node shots024.mjs <devtools port> <url>      (writes out/guide024/)
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -57,6 +58,9 @@ const SAID = `document.querySelector(".pic-box"), [...document.querySelectorAll(
 const UNION = list => `(() => { const rs = [${list}].filter(Boolean).map(n => n.getBoundingClientRect ? n.getBoundingClientRect() : n).filter(r => r.width && r.height); if (!rs.length) return null;
   const x0 = Math.min(...rs.map(r => r.left ?? r.x)) - 8, y0 = Math.min(...rs.map(r => r.top ?? r.y)) - 8, x1 = Math.max(...rs.map(r => r.right ?? r.x + r.width)) + 8, y1 = Math.max(...rs.map(r => r.bottom ?? r.y + r.height)) + 8;
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 }; })()`;
+// (0.0.472) beds of one kind in the garden, the tall ones at the back, the low ones in front of the wheelbarrow: [id, x] each
+const BEDS = (kind, key, back, front, seed) => `[...${JSON.stringify(back)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, x, z: SCENE.ground - 50, seed: ${seed} + i })),
+  ...${JSON.stringify(front)}.map(([id, x], i) => ({ ...THING_DEFAULTS.${kind}, kind: "${kind}", ${key}: id, x, z: SCENE.ground + 62, seed: ${seed} + 10 + i }))]`;
 const said = `(() => [...document.querySelectorAll("*")].filter(n => n.childElementCount === 0 && /Good morning|still daytime|Night is falling|somewhere to sleep|Sleep/.test(n.textContent)).map(n => n.textContent.trim()).slice(-1)[0] || "")()`;
 async function scenes() {
   await step("the garden, the cover", async () => {
@@ -146,6 +150,37 @@ async function scenes() {
   await step("🗺️ World design's places", async () => {
     await ev(`(async () => { ${W} ${TAB("world")} return 1; })()`);
     await shot("19-world-places", `(() => { const p = document.querySelector(".world-palette"); if (p) p.scrollIntoView({ block: "center" }); return p; })()`);
+  });
+  await step("🌻 the garden group of things to put", async () => {
+    texts.put = await ev(`(async () => { ${W} ${PLACE("garden", -200, 40, "right", ", gardenBeds: 0")}
+      state.background.things = [{ ...THING_DEFAULTS.flowerbed, kind: "flowerbed", flower: "columbine", x: -60, z: SCENE.ground + 40, seed: 2300 }];
+      changed(); thingGroup = "garden"; ${TAB("background")} const g = document.querySelector(".thing-groups"); if (g) g.scrollIntoView({ block: "center" }); await w(300);
+      return (document.querySelector(".thing-items") || {}).textContent || ""; })()`);
+    await shot("20-put-garden", UNION(`document.querySelector(".thing-groups"), document.querySelector(".thing-items")`));
+  });
+  await step("a flower bed's card", async () => {
+    texts.card = await ev(`(async () => { ${W} const c = document.querySelector(".thingcard"); if (c) c.scrollIntoView({ block: "center" }); await w(300); return c ? c.textContent : ""; })()`);
+    await shot("21-flower-card", ".thingcard");
+  });
+  await step("🌷 the eight flowers", async () => {
+    texts.flowers = await ev(`(async () => { ${W} ${PLACE("garden", 0, 0, "front", ", gardenBeds: 0")}
+      state.background.things = ${BEDS("flowerbed", "flower", [["sunflower", -330], ["lupine", -150], ["penstemon", 20], ["paintbrush", 180]], [["columbine", -290], ["blanketflower", -95], ["coneflower", 100], ["flax", 295]], 2000)};
+      changed(); draw(); await w(600); const b = seatsHere(state.background).find(s => /bench/.test(s.name || "")); if (b) sitOn(b);
+      document.querySelector(".pic-box").scrollIntoView({ block: "center" }); await w(1500); return bgShown.objs.map(o => o.name).filter(nm => /flowerbed/.test(nm)); })()`);
+    await shot("22-flower-beds", PIC);
+  });
+  await step("🥕 the eight vegetables", async () => {
+    texts.vegetables = await ev(`(async () => { ${W} state.background.things = ${BEDS("veggies", "veg", [["corn", -330], ["tomato", -150], ["peas", 20], ["pepper", 180]], [["pumpkin", -290], ["carrot", -95], ["lettuce", 100], ["broccoli", 295]], 2100)};
+      changed(); draw(); await w(1500); return bgShown.objs.map(o => o.name).filter(nm => /veggies/.test(nm)); })()`);
+    await shot("23-vegetable-patches", PIC);
+  });
+  await step("🌱 how grown: sprouts, young, in bud, in flower and ripe", async () => {
+    await ev(`(async () => { ${W} const xs = [-330, -160, 10, 180], g = [10, 35, 60, 100];
+      state.background.things = [...xs.map((x, i) => ({ ...THING_DEFAULTS.flowerbed, kind: "flowerbed", flower: "sunflower", grown: g[i], x, z: SCENE.ground - 40, seed: 2200 })),
+        ...xs.map((x, i) => ({ ...THING_DEFAULTS.veggies, kind: "veggies", veg: "pumpkin", grown: g[i], x, z: SCENE.ground + 62, seed: 2210 }))];
+      changed(); draw(); await w(1500); return 1; })()`);
+    await shot("24-how-grown", `(() => { const p = document.querySelector(".pic-box").getBoundingClientRect(), rs = [...bgShown.node.querySelectorAll('[data-obj^="flowerbed"]')].map(n => n.getBoundingClientRect());
+      const y = Math.max(p.top, Math.min(...rs.map(r => r.top)) - 12); return { x: p.left, y, width: p.width, height: p.bottom - y }; })()`);
   });
 }
 try {
