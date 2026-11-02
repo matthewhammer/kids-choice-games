@@ -32,12 +32,12 @@ try {
       for (const [id] of list) { const st = [10, 30, 60, 100].map(g => draw({ [key]: id, grown: g }, 1234));
         st.forEach((s, j) => draws.push({ id, stage: j, ok: parse(s) && !/NaN|undefined/.test(s), len: s.length }));
         if (new Set(st).size !== 4) same.push(id); }
-    // put in the garden, every one of them
+    // put in the garden, every one of them, all grown (put from the menu, since part 3 each is sprouts: can660.mjs)
     Object.assign(B, { kind: "none", things: [], seat: null }); changed(); await w(100);
     set("background", "kind", "garden"); await w(600);
     const xs = [-300, -100, 100, 300], rows = [-95, -55, -5, 55];
-    B.things = [...GARDEN_FLOWERS.map(([id], i) => ({ ...THING_DEFAULTS.flowerbed, kind: "flowerbed", flower: id, x: xs[i % 4], z: SCENE.ground + rows[i >> 2], seed: 2000 + i })),
-                ...GARDEN_VEGETABLES.map(([id], i) => ({ ...THING_DEFAULTS.veggies, kind: "veggies", veg: id, x: xs[i % 4], z: SCENE.ground + rows[2 + (i >> 2)], seed: 2100 + i }))];
+    B.things = [...GARDEN_FLOWERS.map(([id], i) => ({ ...THING_DEFAULTS.flowerbed, grown: 100, kind: "flowerbed", flower: id, x: xs[i % 4], z: SCENE.ground + rows[i >> 2], seed: 2000 + i })),
+                ...GARDEN_VEGETABLES.map(([id], i) => ({ ...THING_DEFAULTS.veggies, grown: 100, kind: "veggies", veg: id, x: xs[i % 4], z: SCENE.ground + rows[2 + (i >> 2)], seed: 2100 + i }))];
     changed(); await w(800);
     const names = bgShown.objs.map(o => o.name), drawn = names.filter(nm => /^(flowerbed|veggies) \\d+$/.test(nm)).length;
     const inWay = solidsHere().filter(s => /^(flowerbed|veggies)/.test(s.name)).map(s => s.name);

@@ -1520,7 +1520,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.472", released: "2026-11-01" };
+const VERSION = { number: "0.0.473", released: "2026-11-01" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

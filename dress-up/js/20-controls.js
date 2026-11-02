@@ -2409,7 +2409,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         try { pic.innerHTML = giftSvg(it.id, {}); } catch (e) { /* (a thing not drawn: its name alone) */ }
         const when = it.got ? new Date(it.got).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
         return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || it.id),
-          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`), el("div", { class: "row pack-uses" }, [
+          el("div", { class: "hint" }, `${it.from === "chest" ? "from a 💰 chest" : ""}${when ? ", " + when : ""}`),
+          // (ticket 660, part 3) the can: how many pours of water are in it
+          ...(it.id === "can" ? [el("div", { class: "pack-water" }, (n => n ? "💧".repeat(n) + "◌".repeat(CAN_HOLDS - n) + ` ${n} of ${CAN_HOLDS} pours` : "empty: fill it at water")(Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0)))))] : []),
+          el("div", { class: "row pack-uses" }, [
             // (ticket 639) take it out: on the floor in front of the friend; a tool: held in the hand, or put away; a bee: let go
             el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down"),
             ...(TOOLS[it.id] ? [el("button", { "aria-pressed": String(held === it.id), onclick: () => toolHold(it.id) }, held === it.id ? "🎒 put it away" : "✋ hold it")] : []),

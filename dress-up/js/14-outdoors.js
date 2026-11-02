@@ -2813,16 +2813,31 @@ const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown
   // placeable on floor ...), glass bottle with cork, bug catcher's net, ... glass bottle holds bee, backpack holds glass bottle; certain
   // small mushrooms") the things to carry, each also a thing to put in a place; a hammer and a horseshoe for the smithy; a dragon egg
   ["chocolate", "🍫 a chocolate bar"], ["bottle", "🍾 a glass bottle with a cork"], ["bottlebee", "🐝 a bee in a bottle"], ["net", "🥅 a bug net"],
-  ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"], ["rock", "🪨 a rock"], ["statue", "🗿 a little statue"]];
+  ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"], ["rock", "🪨 a rock"], ["statue", "🗿 a little statue"],
+  // (ticket 660, part 3) the 💧 watering can, found in the tree room
+  ["can", "💧 a watering can"]];
 // (ticket 639) what can be picked up into the 🎒 backpack from a place, with the action press: these kinds of thing, and "item", a thing
 // put down from the backpack (its id, drawn by giftSvg). A thing's id in the backpack: its kind, or an item's own id
 const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item", "rock"]);   // (a 🗿 statue is an item)   // (a rock: to keep a floor switch pressed)
 const carryId = t => t.kind === "item" ? t.id || "gold" : t.kind;
 // (ticket 639) the tools: held in the hand (state.pack.tool) and swung with "use tool" (U, or the controller's 🥅 button)
 // (ticket 656) and the 🗡️ sword, which cuts plants (toolUse, swordCut)
-const TOOLS = { net: "🥅 the bug net", sword: "🗡️ the sword" };
-// a tool from the hand at 0, 0 up (-y), as it is held and swung
-const toolSvg = id => id === "sword" ? swordSideSvg([0, 0], 1) : netSvg(1);
+// (ticket 660, part 3) and the 💧 watering can, which fills at water and waters plants (canUse)
+const TOOLS = { net: "🥅 the bug net", sword: "🗡️ the sword", can: "💧 the watering can" };
+// a tool from the hand at 0, 0 up (-y), as it is held and swung (the can hangs from the hand, its spout the way they face: side)
+const toolSvg = (id, side = 1) => id === "sword" ? swordSideSvg([0, 0], 1) : id === "can" ? canSvg(side) : netSvg(1);
+// (ticket 660, part 3) a watering can, held by the handle over its top: the hand at 0, 0, the can below it, its spout out toward
+// side (1, our right) and up to the rose at its end (at 62, 9 before the 0.8 it is drawn at: canTip pours from there)
+function canSvg(side = 1) {
+  const ink = "#1f5a29", body = "#3f9b4a";
+  return `<g transform="scale(${side * 0.8} 0.8)"><path d="M-22 22 Q-40 26 -25 48" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>` +
+    `<path d="M22 44 L57 8 L63 14 L25 55 Z" fill="${body}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<ellipse cx="62" cy="9" rx="4.5" ry="10" transform="rotate(-45 62 9)" fill="#2f7a38" stroke="${ink}" stroke-width="1.8"/>` +
+    `<path d="M-22 14 L22 14 L26 58 Q0 64 -26 58 Z" fill="${body}" stroke="${ink}" stroke-width="2.5" stroke-linejoin="round"/>` +
+    `<path d="M-15 21 L-18 52" stroke="#a6e3ad" stroke-width="4" stroke-linecap="round" opacity="0.75"/>` +
+    `<ellipse cx="0" cy="14" rx="22" ry="5" fill="#57b862" stroke="${ink}" stroke-width="2"/><ellipse cx="0" cy="14" rx="15" ry="2.6" fill="#1d4723"/>` +
+    `<path d="M-17 15 Q-17 -4 0 -4 Q17 -4 17 15" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/></g>`;
+}
 // a glass bottle with a cork, empty or with a bee buzzing in it: its foot at 0, 0
 function bottleSvg(bee) {
   return `<path d="M-7 -58 L7 -58 L7 -40 Q24 -31 24 -13 Q24 3 0 3 Q-24 3 -24 -13 Q-24 -31 -7 -40 Z" fill="#d6eef8" fill-opacity="0.75" stroke="#5a7a8a" stroke-width="2.5"/>` +
@@ -2882,6 +2897,7 @@ function giftSvg(id, o = {}) {
     case "horseshoe": return `<path d="M-22 0 L-22 -26 Q-22 -50 0 -50 Q22 -50 22 -26 L22 0 L12 0 L12 -26 Q12 -40 0 -40 Q-12 -40 -12 -26 L-12 0 Z" fill="#8a9298" stroke="#454b50" stroke-width="2.5"/>` +
       `<circle cx="-17" cy="-14" r="2" fill="#3f464c"/><circle cx="17" cy="-14" r="2" fill="#3f464c"/><circle cx="-14" cy="-34" r="2" fill="#3f464c"/><circle cx="14" cy="-34" r="2" fill="#3f464c"/>`;
     case "rock": return rockSvg(0, -2, 26, 5, ROCK_TONES[0]);
+    case "can": return `<g transform="translate(-10 -50)">${canSvg(1)}</g>`;   // (ticket 660, part 3: standing on its foot)
     case "statue": { const fig = typeof statueFigure === "function" ? statueFigure(0.28) : "";
       const base = `<ellipse cx="0" cy="0" rx="22" ry="6" fill="#6f6c66"/><rect x="-18" y="-10" width="36" height="10" rx="2" fill="#9a968e" stroke="#55524c" stroke-width="2"/>`;
       if (fig) return base + `<g transform="translate(0 -10)">${fig}</g>`;
@@ -3869,7 +3885,7 @@ const THING_DEFAULTS = { item: { id: "gold" }, plate: { switch: "hold", wants: "
                          cow: { pose: "stand", coat: "holstein" }, pig: { pose: "stand", coat: "pink" }, chicken: { pose: "peck", coat: "brown" },   // (ticket 504)
                          saguaro: { arms: 2, flowers: true }, pricklypear: { bloom: "flowers", color: DESERT_FLOWERS[0] }, barrelcactus: { flowers: true, color: DESERT_FLOWERS[1] },
                          agave: { stalk: false, tone: AGAVE_TONES[0] }, joshuatree: { flowers: false }, ocotillo: { leaves: true, flowers: true },   // (ticket 501)
-                         flowerbed: { flower: "columbine", grown: 100 }, veggies: { veg: "tomato", grown: 100 },   // (ticket 660)
+                         flowerbed: { flower: "columbine", grown: 0 }, veggies: { veg: "tomato", grown: 0 },   // (ticket 660; part 3: sprouts, to water and grow)
                          barn: { style: "gambrel", color: "none" }, fencepiece: { style: "wood" } };   // (ticket 502)
 const thingParams = kind => [...THING_PARAMS.all.filter(([p]) => kind !== "lifted" || p !== "seed"), ...(THING_PARAMS[kind] || [])];   // (ticket 284: a lifted thing has one shape, its own)
 // (ticket 219, Matthew: a bubble, eventually a concept of its own: "color,

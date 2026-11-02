@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.473 (2026-11-01)
+
+Everything in 0.0.472, plus:
+
+- **💧 A watering can, so the plants grow** (for M's garden; ticket 660, part 3 of 3). The can is on the floor of the tree house's room, and a tree room you saw before has it the next time you go in. Walk up to it and press Enter: it goes in the 🎒 and into your hand. Use it with 🥅 use tool (U, or the controller's button), or tap a plant. Near water, it fills: the spring, the duck pond, a castle's moat, the tree house's stream, the sea, a well, a rain barrel, a water trough or a fountain. Full, it holds 6 pours. Next to a 🌷 flower bed or a 🥕 vegetable patch, it pours one 💧 into the plant. While you hold the can, each plant that is still growing shows its water meter, three 💧 long. A plant drinks one 💧 every 15 seconds, even while you are somewhere else, and each 💧 it drinks makes it grow a stage: three take sprouts all the way to flowers or ripe vegetables. Plants never wilt: one with no water just waits for more. Flower beds and vegetable patches you put now start as sprouts.
+
 ## 0.0.472 (2026-11-01)
 
 Everything in 0.0.471, plus:

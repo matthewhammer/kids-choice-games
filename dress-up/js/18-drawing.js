@@ -6,6 +6,7 @@
 function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
+  if (typeof gardenMeters === "function") gardenMeters();   // (ticket 660, part 3: the plants' meters, while the 💧 can is held)
   if (tripTimer) tripWork("drawing", t);   // (⏱️ a trip being timed)
   if (bgShown.text !== text) return;
   const ms = performance.now() - t;
@@ -1421,7 +1422,7 @@ function drawNow() {
   // (ticket 639) the tool held (✋ hold it, in the 🎒 tab), in the hand on the side they face, leaning out; not while it swings
   { const tool = !lieAlong && !carry && !swinging && toolHeld(); const f = tool && document.getElementById("figure");
     if (f) { const H = figureT.base || 300, side = state.body.facing === "left" ? -1 : 1;
-      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${toolSvg(tool)}</g>`); } }
+      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${tool === "can" ? 0 : side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${toolSvg(tool, side)}</g>`); } }   // (ticket 660, part 3: the can hangs level)
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units

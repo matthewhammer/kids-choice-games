@@ -201,7 +201,7 @@ pic.addEventListener("pointerdown", e => {
     else if (T && T.kind === "lever") Object.assign(drag, { lever: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 639, Matthew: "some players don't have a keyboard handy") pressed on a shut 💰 chest, a thing to carry, or (the net held) a
     // 🐝: as a lever, a press let go before SIGN_DRAG_PX walks there and opens it, picks it up, or swings
-    else if (T && ((T.kind === "chest" && T.open === false) || CARRY_KINDS.has(T.kind) || (T.kind === "plate" && !(T.wants === "any" ? T.held : T.lit) && T.switch !== "toggle") || (T.kind === "bee" && toolHeld()))) Object.assign(drag, { act: true, cx: e.clientX, cy: e.clientY, far: false });
+    else if (T && ((T.kind === "chest" && T.open === false) || CARRY_KINDS.has(T.kind) || (T.kind === "plate" && !(T.wants === "any" ? T.held : T.lit) && T.switch !== "toggle") || (T.kind === "bee" && toolHeld()) || (GARDEN_KINDS.has(T.kind) && toolHeld() === "can"))) Object.assign(drag, { act: true, cx: e.clientX, cy: e.clientY, far: false });
     // (ticket 471, the review after 0.0.385) pressed on a 🕳️ cave passage's opening: as a board, a press let go before it has
     // gone SIGN_DRAG_PX goes through it, as any doorway clicked; moved further, the passage is dragged
     else if (T && e.target.closest && e.target.closest(".thing .portal")) Object.assign(drag, { door: true, cx: e.clientX, cy: e.clientY, far: false });
@@ -371,7 +371,7 @@ const letGo = () => {
   if (goDoor !== null) { const p = bgShown.node && bgShown.node.querySelector(`[data-drag="thing:${goDoor}"] .portal`); if (p && !entering) enterScene(p); }
   if (pull !== null) leverAct(`[data-drag="thing:${pull}"]`, () => leverPull(pull));   // (ticket 284; ticket 316: walked to and pulled)
   if (actOn !== null) { const T = (state.background.things || [])[actOn];
-    if (T) leverAct(`[data-drag="thing:${actOn}"]`, () => { if (T.kind === "bee") toolUse(); else actionPress(); }); }
+    if (T) leverAct(`[data-drag="thing:${actOn}"]`, () => { if (T.kind === "bee" || GARDEN_KINDS.has(T.kind)) toolUse(); else actionPress(); }); }
   if (pullRoom) leverAct(`[data-lever="${pullRoom}"]`, () => roomLeverPull(pullRoom));   // (ticket 305)
   if (sitName && !entering && !(state.body.sit && state.background.seat === sitName)) {   // (ticket 413: as a seat clicked)
     const t = seatsHere(state.background).find(q => q.name === sitName);
@@ -1205,7 +1205,7 @@ const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
                      ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"],
                      // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
-                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net, a 🗡️ sword)"]];   // (tickets 221, 499)
+                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net, a 🗡️ sword, the 💧 watering can)"]];   // (tickets 221, 499)
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1546,6 +1546,7 @@ function pickUp(i) {
   const id = carryId(t), { x, z, uid, seed, ...looks } = t;
   B.things = B.things.filter((_, j) => j !== i);
   state.backpack = [...packList(), { id, got: Date.now(), from: "floor", t: looks }];
+  if (id === "can" && !toolHeld()) state.pack = { ...(state.pack || {}), tool: "can" };   // (ticket 660, part 3: the can, in the hand at once, for M)
   plateCheck(); changed(); draw();
   packFly(giftSvg(id, B), x ?? 0, (z ?? SCENE.ground) - 20 * figureT.k, true);
 }
@@ -1595,6 +1596,7 @@ function toolHold(id) { state.pack = { ...(state.pack || {}), tool: toolHeld() =
 function toolUse() {
   const id = toolInHand(), B = state.background;
   if (!id || swinging || entering || B.kind === "none") return false;
+  if (id === "can") return canUse();   // (ticket 660, part 3: tipped, to pour or fill)
   const T = figureT, H = T.base || 300, k = T.k, f = state.body.facing, side = f === "left" ? -1 : 1;
   const hx = T.dx + side * 0.22 * H * k, hy = T.sg + T.dy - 0.5 * H * k, O = makerOver(), g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.setAttribute("data-swing", id); O.append(g); swinging = id; draw();
@@ -1821,6 +1823,151 @@ function netCatch() {
   };
   requestAnimationFrame(frame);
 }
+// (ticket 660, part 3, for M's garden; Matthew: "Watering can is in the tree house. ... We can fill up the watering can at the spring
+// or the pond, or castle moat, etc --- and then water plants. Each plant has a watering level, and a way to get the watering level
+// when we are on the same screen. Plants grow based on how much they are watered.") The 💧 watering can is a tool, found in the tree
+// room (ROOM_CARRY_LATER) and held as soon as it is picked up; "use tool" (U, 🥅 on the controller, or a plant tapped) tips it. By a
+// plant with room in its meter for a 💧 (a 🌷 flower bed or a 🥕 vegetable patch, not all grown), with water in the can, it pours: one
+// 💧 out of the can and into the plant. Else by water, it fills, CAN_HOLDS pours: the place's own (WATER: the spring, the duck pond, a
+// moat, a stream, the sea; under the sea, everywhere), or a well, a water barrel, a trough or a fountain, within CAN_REACH. A plant
+// drinks its water, a 💧 every DRINK_MS, and grows a stage with each (plantNow, gardenDrink); while the can is held, each plant here
+// not all grown shows its meter over it (gardenMeters). None wilts: a plant with no water waits for more.
+const CAN_HOLDS = 6, CAN_REACH = 150, PLANT_THIRST = 3, DRINK_MS = 15000, POUR_MS = 900, FILL_MS = 800;
+const GARDEN_KINDS = new Set(["flowerbed", "veggies"]);
+const WATER_OBJ = /^(well|water barrel|water trough|fountain)( \d+)?$/, ALL_WET = new Set(["underwater", "deepsea"]);
+const plantDone = t => (t.grown ?? 100) >= 75;   // (stage 3: in flower, or ripe)
+// a plant's water and how grown it is now: since it was last watered or grew (t.wet) it has drunk a 💧 each DRINK_MS, each a stage
+// (25 of 🌱 how grown); all grown, it drinks no more. (Worked out, not kept: kept only when it grows or runs dry, so the place's
+// drawing does not change while a plant drinks.)
+function plantNow(t, now = Date.now()) {
+  const w = Math.max(0, t.water || 0), g = t.grown ?? 100;
+  if (!w || plantDone(t)) return { water: w, grown: g };
+  const water = Math.max(0, Math.round((w - Math.max(0, now - (t.wet || now)) / DRINK_MS) * 1000) / 1000);
+  return { water, grown: Math.round((g + 25 * (w - water)) * 1000) / 1000 };
+}
+function plantSet(t, n, now) { Object.assign(t, n, { wet: now }); if (t.grown >= 75) Object.assign(t, { grown: 100, water: 0 }); }
+// the can in the 🎒 and how many pours of water are in it (kept with it, as its own looks: put down and picked up, still in it)
+const canAt = () => packList().findIndex(o => o.id === "can");
+const canWater = () => { const it = packList()[canAt()]; return it ? Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0))) : 0; };
+function canSet(n) { const k = canAt(); if (k >= 0) state.backpack = packList().map((o, j) => j === k ? { ...o, t: { kind: "item", id: "can", ...(o.t || {}), water: n } } : o); }
+// the plant nearest within reach (to its near end) on the side the friend faces (aim: -1, 1; 0, facing us or away, either side)
+function plantNear(aim) {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0);
+  let best = -1, bd = Infinity;
+  (B.things || []).forEach((t, i) => {
+    if (!GARDEN_KINDS.has(t.kind) || t.hidden) return;
+    const dx = (t.x ?? 0) - fx, hw = 80 * depthSize(B, (t.z ?? SCENE.ground) - SCENE.ground) * (t.size ?? 100) / 100;
+    const d = Math.hypot(Math.max(0, Math.abs(dx) - hw), ((t.z ?? 0) - fz) / 0.6);
+    if (dx * aim >= -hw - 30 && d <= CAN_REACH && d < bd) { best = i; bd = d; }
+  });
+  return best;
+}
+// water within reach: the place's own round the friend's feet, or a well, a barrel, a trough or a fountain
+function waterNear() {
+  const B = state.background, fx = B.figX ?? 0, fz = SCENE.ground + (B.figY ?? 0), at = waterHere(B);
+  if (ALL_WET.has(B.kind)) return true;
+  // (rows 3 apart, the reach's oval across each, 10 apart: a stream far off is a thin band, crossing a row or two)
+  if (at) for (let dy = -0.6 * CAN_REACH; dy <= 0.6 * CAN_REACH; dy += 3) { const span = CAN_REACH * Math.sqrt(Math.max(0, 1 - (dy / (0.6 * CAN_REACH)) ** 2));
+    for (let dx = -span; dx <= span; dx += 10) if (at(fx + dx, fz + dy)) return true; }
+  for (const o of bgShown.objs) {
+    if (!WATER_OBJ.test(o.name) || o.node.style.display === "none") continue;
+    let bb; try { bb = o.node.getBBox(); } catch (e) { continue; }
+    if (Math.hypot(Math.max(0, bb.x - fx, fx - (bb.x + bb.width)), (o.z - fz) / 0.6) <= CAN_REACH) return true;
+  }
+  return false;
+}
+function canUse() {
+  const B = state.background, f = state.body.facing, side = f === "left" ? -1 : 1, aim = f === "left" ? -1 : f === "right" ? 1 : 0;
+  const have = canWater(), p = plantNear(aim), t = p >= 0 ? B.things[p] : null, done = !!t && plantDone(t);
+  if (t && !done && plantNow(t).water <= PLANT_THIRST - 0.95 && have > 0) { canTip(side, t); return true; }
+  if (have < CAN_HOLDS && waterNear()) { canTip(side, null); return true; }
+  scriptSay(done ? "This one is all grown!" : t && have ? "It has all the water it can drink. Give it a little while." : have ? "Walk up to a plant, then pour."
+    : "The can is empty! Fill it at water: the spring, the pond, a moat, a stream or a rain barrel.", done ? "🌟" : "💧");
+  return true;
+}
+// the can tipped: over a plant, pouring (drops from its rose onto the plant); else dipped in the water, filling (bubbles up out of it)
+function canTip(side, t) {
+  const B = state.background, T = figureT, H = T.base || 300, k = T.k, O = makerOver(), NS = "http://www.w3.org/2000/svg";
+  const g = document.createElementNS(NS, "g"), wet = document.createElementNS(NS, "g"), pour = !!t, ms = pour ? POUR_MS : FILL_MS;
+  const hx = T.dx + side * 0.22 * H * k, hy = T.sg + T.dy - 0.5 * H * k, sc = k * H / 300 * 1.1, t0 = performance.now();
+  g.setAttribute("data-swing", "can"); wet.setAttribute("data-can", pour ? "pour" : "fill"); O.append(g, wet); swinging = "can"; draw();
+  g.innerHTML = toolSvg("can", side);
+  const tz = pour ? t.z ?? SCENE.ground : 0, to = pour ? [t.x ?? 0, tz - 22 * depthSize(B, tz - SCENE.ground)] : null, drops = [];
+  const frame = now => {
+    // (tipped about the middle of its body, 0, 29 in canSvg's units, the hand keeping hold of the handle: forward to pour, back to fill)
+    const e = now - t0, u = Math.min(1, e / ms), a = side * (pour ? 62 : -25) * Math.sin(Math.PI * Math.min(1, u * 1.15)), r = a * Math.PI / 180, dip = pour ? 0 : 30 * k * Math.sin(Math.PI * u);
+    g.setAttribute("transform", `translate(${f1(hx)} ${f1(hy + dip)}) scale(${sc.toFixed(3)}) rotate(${a.toFixed(1)} 0 29)`);
+    let w = "";
+    if (pour) {   // (each drop from where the rose was when it left, falling faster as it goes, onto the plant's soil)
+      const lx = side * 49.6, ly = 7.2 - 29, sx = hx + sc * (lx * Math.cos(r) - ly * Math.sin(r)), sy = hy + sc * (lx * Math.sin(r) + ly * Math.cos(r) + 29);
+      while (drops.length < 20 && e >= ms * (0.25 + 0.025 * drops.length)) drops.push({ sx, sy, l: e, dx: ((drops.length % 3) - 1) * 22 * k });
+      for (const d of drops) { const v = (e - d.l) / 320; if (v < 0 || v >= 1) continue;
+        w += `<ellipse cx="${f1(d.sx + (to[0] + d.dx - d.sx) * v)}" cy="${f1(d.sy + (to[1] - d.sy) * v * v)}" rx="${f1(4.2 * sc)}" ry="${f1(6.5 * sc)}" fill="#4aa8ee" stroke="#ffffff" stroke-width="${f1(0.8 * sc)}" opacity="0.9"/>`; }
+    } else for (let j = 0; j < 6; j++) { const v = ((e / ms) * 1.6 - j * 0.12); if (v < 0 || v >= 1) continue;
+      w += `<circle cx="${f1(hx + side * (j % 3 - 1) * 12 * sc)}" cy="${f1(hy + dip + (12 - 60 * v) * sc)}" r="${f1((3.5 + 1.5 * (j % 2)) * sc)}" fill="none" stroke="#bfe6ff" stroke-width="${f1(1.8 * sc)}" opacity="${(1 - v).toFixed(2)}"/>`; }
+    wet.innerHTML = w;
+    if (u < 1 || (pour && drops.some(d => e - d.l < 320))) { requestAnimationFrame(frame); return; }
+    g.remove(); wet.remove(); swinging = "";
+    const at = Date.now();
+    if (pour) { if ((B.things || []).includes(t)) { const n = plantNow(t, at); plantSet(t, { ...n, water: Math.min(PLANT_THIRST, Math.round((n.water + 1) * 1000) / 1000) }, at); canSet(canWater() - 1); } }
+    else { canSet(CAN_HOLDS); scriptSay("Glug, glug! The can is full of water.", "💧"); }
+    changed(); draw();
+  };
+  requestAnimationFrame(frame);
+}
+// what the plants here have drunk since they were last seen to: each grown a stage drawn again, with a 🌱 (none when show is
+// false: coming to a place, before it is drawn, what grew while the friend was away is simply there)
+function gardenDrink(show) {
+  const B = state.background, now = Date.now();
+  if (!B || B.kind === "none") return;
+  const grew = []; let kept = false;
+  for (const t of B.things || []) {
+    if (!GARDEN_KINDS.has(t.kind) || !(t.water > 0) || plantDone(t)) continue;
+    const n = plantNow(t, now), was = gardenStage(t);
+    if (n.water > 0 && gardenStage(n) === was) continue;
+    plantSet(t, n, now); kept = true;
+    if (gardenStage(t) !== was) grew.push(t);
+  }
+  if (!kept || !show) return;
+  changed(); draw();
+  if (grew.length) leafPuffs(grew.map(t => [t.x ?? 0, (t.z ?? SCENE.ground) - 40 * depthSize(B, (t.z ?? SCENE.ground) - SCENE.ground)]), "🌱");
+}
+// a plant's meter, its foot at x, y: a 💧 and a bar of PLANT_THIRST parts, as full as the plant has water
+function waterMeterSvg(x, y, s, w) {
+  const W = 60, H = 11, fill = Math.max(0, Math.min(1, w / PLANT_THIRST)), x0 = -W / 2 + 7;
+  return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${s.toFixed(3)})"><rect x="${-W / 2 - 12}" y="${-H - 7}" width="${W + 19}" height="${H + 8}" rx="${(H + 8) / 2}" fill="#10243a" opacity="0.75"/>` +
+    `<path d="M${-W / 2 - 3} ${-H - 4} Q${-W / 2 + 2} ${-H + 3} ${-W / 2 + 2} ${-H + 5} A5 5 0 1 1 ${-W / 2 - 8} ${-H + 5} Q${-W / 2 - 8} ${-H + 3} ${-W / 2 - 3} ${-H - 4} Z" fill="#5ab4f0"/>` +
+    `<rect x="${x0}" y="${-H - 3}" width="${W - 4}" height="${H}" rx="3" fill="#ffffff" opacity="0.2"/>` +
+    (fill > 0 ? `<rect x="${x0}" y="${-H - 3}" width="${f1((W - 4) * fill)}" height="${H}" rx="3" fill="#3aa0f0"/>` : "") +
+    [...Array(PLANT_THIRST - 1)].map((_, j) => `<path d="M${f1(x0 + (W - 4) * (j + 1) / PLANT_THIRST)} ${-H - 3} v${H}" stroke="#10243a" stroke-width="2"/>`).join("") + `</g>`;
+}
+// while the can is held: over each plant here not all grown, its meter, over the scene (#pic-over); its top found once a drawing
+let meterKey = "", meterG = null;
+const meterTops = new Map();
+function gardenMeters() {
+  const B = state.background, now = Date.now();
+  const list = toolHeld() === "can" && B.kind !== "none" ? (B.things || []).map((t, i) => ({ t, i })).filter(({ t }) => GARDEN_KINDS.has(t.kind) && !t.hidden && !plantDone(t)) : [];
+  for (const m of list) { m.w = plantNow(m.t, now).water; m.shape = [B.kind, m.i, m.t.kind, m.t.flower, m.t.veg, m.t.x, m.t.z, m.t.size, m.t.mirror, gardenStage(m.t)].join(); }
+  const key = list.map(m => m.shape + ":" + Math.round(m.w * 20)).join(";");
+  if (key === meterKey && (!list.length || (meterG && meterG.isConnected))) return;
+  if (!list.length) { meterKey = key; if (meterG) { meterG.remove(); meterG = null; const O = document.getElementById("pic-over"); if (O && !O.children.length) O.style.display = "none"; } return; }
+  let missing = false;
+  if (meterTops.size > 200) meterTops.clear();
+  const svg = list.map(m => {
+    let top = meterTops.get(m.shape);
+    if (!top) { const n = bgShown.node && bgShown.node.querySelector(`[data-obj="${m.t.kind} ${m.i + 1}"]`); let bb = null;
+      try { bb = n && n.getBBox(); } catch (e) { /* (not drawn yet) */ }
+      if (!bb || !bb.width) { missing = true; return ""; }
+      top = [bb.x + bb.width / 2, bb.y]; meterTops.set(m.shape, top); }
+    const s = Math.max(0.6, depthSize(B, (m.t.z ?? SCENE.ground) - SCENE.ground) * (m.t.size ?? 100) / 100);
+    return waterMeterSvg(top[0], top[1] - 6 * s, s, m.w);
+  }).join("");
+  meterKey = missing ? "" : key;
+  const O = makerOver();
+  if (!meterG || !meterG.isConnected) { meterG = document.createElementNS("http://www.w3.org/2000/svg", "g"); meterG.setAttribute("data-water-meters", ""); O.append(meterG); }
+  meterG.innerHTML = svg;
+}
+setInterval(() => { if (!document.hidden) { gardenDrink(true); gardenMeters(); } }, 1000);
 // (ticket 639, Matthew 2026-10-29: "some placeable objects in each room with a person that can also be picked up (healer, blacksmith,
 // witch) -- that could be the start to some stories that my kids create. Let's leave the world open to explore now, and no fixed puzzles")
 // The first time one of these rooms is shown, its own things to carry are put on its floor (B.carrySeeded): taken, they are gone from it
@@ -1840,18 +1987,24 @@ const ROOM_CARRY = {
 // (0.0.468) once a room, not once a game: B.carrySeeded was one mark for every place, so after the witch's room the tree room never had
 // its net (the bug-catching puzzle stuck). Each room's own mark, by the place it is (worldHome: its square, or an inside off the grid),
 // in its world's W.carrySeeded. A save from 0.0.463 to 0.0.467 (B.carrySeeded) whose room has its things already: not put again.
+// (ticket 660, part 3) A thing given a room later (ROOM_CARRY_LATER) has a mark of its own there, the room's and its name, so a tree
+// room seen before the 💧 watering can was in it has it the next time it is shown.
+const ROOM_CARRY_LATER = { treeroom: { can: [["item", 95, -35, { id: "can" }]] } };
 function roomCarrySeed() {
-  const B = state.background, list = ROOM_CARRY[B.kind], W = state.world;
-  if (!list || !W) return;
+  const B = state.background, list = ROOM_CARRY[B.kind], later = ROOM_CARRY_LATER[B.kind] || {}, W = state.world;
+  if ((!list && !Object.keys(later).length) || !W) return;
   const at = worldHome || "off:" + W.id + ":" + placeKey(B), marks = W.carrySeeded || (W.carrySeeded = {});
-  if (marks[at]) return;
-  marks[at] = true;
-  const T = list.map(([kind, x, dz, o], i) => {
-    const t = { ...(THING_DEFAULTS[kind] || {}), ...o, kind, x, z: SCENE.ground + dz, seed: 301 + i };
+  const made = (L, seed) => L.map(([kind, x, dz, o], i) => {
+    const t = { ...(THING_DEFAULTS[kind] || {}), ...o, kind, x, z: SCENE.ground + dz, seed: seed + i };
     if (kind === "potion") t.color = POTION_COLORS[o.color % POTION_COLORS.length];
     return t;
   });
-  if (!(B.carrySeeded && (B.things || []).some(t => T.some(s => s.kind === t.kind && s.seed === t.seed)))) B.things = [...(B.things || []), ...T];
+  const add = []; let marked = false;
+  if (list && !marks[at]) { marks[at] = marked = true; const T = made(list, 301);
+    if (!(B.carrySeeded && (B.things || []).some(t => T.some(s => s.kind === t.kind && s.seed === t.seed)))) add.push(...T); }
+  for (const [name, L] of Object.entries(later)) if (!marks[at + ":" + name]) { marks[at + ":" + name] = marked = true; add.push(...made(L, 401)); }
+  if (!marked) return;
+  if (add.length) B.things = [...(B.things || []), ...add];
   queueMicrotask(() => { changed(); draw(); });
 }
 // (ticket 639, Matthew: "let's have some small puzzles --- my one about the bug catching, and yours about plates") the plate puzzle:

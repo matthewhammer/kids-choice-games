@@ -1549,6 +1549,7 @@ function worldKeep() {
     if (sq) for (const k of cellKeys(cell.kind)) { const v = structuredClone(cell[k] ?? (k === "things" ? [] : DEFAULTS.background[k])); if (JSON.stringify(v) !== JSON.stringify(B[k])) B[k] = v; }
     else if (home) { const v = structuredClone((W.off || {})[placeKey(B)] || []); if (JSON.stringify(v) !== JSON.stringify(B.things)) B.things = v; }
     if (typeof regrowHere === "function") regrowHere(false);   // (ticket 659: what has grown back while the friend was away, there before it is drawn)
+    if (typeof gardenDrink === "function") gardenDrink(false);   // (ticket 660, part 3: and what the plants grew from their water)
   } else if (sq) {
     for (const k of cellKeys(cell.kind)) if (JSON.stringify(cell[k]) !== JSON.stringify(B[k])) cell[k] = structuredClone(B[k]);
   } else if (home) {
