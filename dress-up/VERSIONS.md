@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.475 (2026-11-03)
+
+Everything in 0.0.474, plus:
+
+- **🕳️ A link straight to the trap room** (ticket 676, a first step toward the trap room on a report's page). Open the game with `?try=trap` and it starts in the trap room of N's castle with the 📜 Scripting tab open; add `&logic=hazel` and every room runs its Hazel rule. Like the other test links, nothing is saved: your game is as you left it next time.
+
 ## 0.0.474 (2026-11-02)
 
 Everything in 0.0.473, plus:

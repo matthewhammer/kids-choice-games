@@ -1469,7 +1469,8 @@ function potsOverFires(n) {
   }
   return T;
 }
-const TRY = (() => { try { const m = /^(cave|caveroom)-(\d{1,2})$/.exec(new URLSearchParams(location.search || "").get("try") || ""); return m ? { kind: m[1], n: +m[2] } : null; } catch (e) { return null; } })();
+// (ticket 676) ?try=trap: the castle's trap room with its 📜 Scripting tab open, for a report to frame (with ?logic=hazel, Hazel's rule)
+const TRY = (() => { try { const v = new URLSearchParams(location.search || "").get("try") || ""; if (v === "trap") return { kind: "trap" }; const m = /^(cave|caveroom)-(\d{1,2})$/.exec(v); return m ? { kind: m[1], n: +m[2] } : null; } catch (e) { return null; } })();
 function persist() { if (TRY) return; try { localStorage.setItem("dress-up-v1", JSON.stringify(state)); } catch (_) {} }
 
 // (ticket 134) This version, shown after the game's name, and newer ones.
@@ -1520,7 +1521,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.474", released: "2026-11-02" };
+const VERSION = { number: "0.0.475", released: "2026-11-03" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

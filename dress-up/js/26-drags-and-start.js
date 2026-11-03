@@ -2770,7 +2770,14 @@ showVersion();
 // (a copy of the game kept on this device, for airplane mode: ticket 486)
 offlineStart();
 // (ticket 610) a test visit (TRY, 01-state.js): the place, with n cauldrons each over a burning campfire, and a note of its frames a second
-if (TRY) {
+if (TRY && TRY.kind === "trap") {
+  // (ticket 676) the trap room of N's castle (whichever of its rooms is the trap room), its Scripting tab open; nothing is saved
+  const B = state.background, rooms = CASTLE_ROOMS.N.map((d, i) => B["castleRoom" + (i + 1) + "N"] ?? d);
+  B.kind = "castleroom"; B.castle = "N"; B.castleRoom = Math.max(1, rooms.indexOf("trap") + 1);
+  tab = Math.max(0, TABS.findIndex(t => t[1] === "scripting"));
+  showTab();
+  document.body.append(el("div", { class: "try-note" }, "🧪 test, nothing saved: 🕳️ the trap room, its 📜 Scripting tab open"));
+} else if (TRY) {
   const B = state.background, n = TRY.n;
   B.kind = TRY.kind;
   B.things = potsOverFires(n);
