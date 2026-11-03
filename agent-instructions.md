@@ -30,7 +30,7 @@ A push to `main` is a deploy. Release each feature as soon as it works; never le
 
 ## Reports ([why](https://matthewhammer.org/kids-choice-games/dress-up/reports/022/#where))
 
-`dress-up/reports/NNN/index.html`, called `^du_report(N)`, opening with the linked series line. Publishing is three edits: the series index, `hazel/dress-up/reports/index.html` and `nav/nav.js` in matthewhammer.github.io. Then `python3 ~/matthewhammer.github.io/tools/og_previews.py all`, push both repositories, and check all three live.
+`dress-up/reports/NNN/index.html`, called `^du_report(N)`, opening with the linked series line. Publishing is two edits: the series index and `hazel/dress-up/reports/index.html` in matthewhammer.github.io (the nav no longer lists the reports one by one, Matthew 2026-11-03). Then `python3 ~/matthewhammer.github.io/tools/og_previews.py all`, push both repositories, and check all three live.
 
 ## Testing traps ([why](https://matthewhammer.org/kids-choice-games/dress-up/reports/022/#checks))
 
