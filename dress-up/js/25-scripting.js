@@ -947,14 +947,59 @@ function scriptTilesModules(text) {
   }
   return out;
 }
+// (ticket 682, Matthew 2026-11-03: undo and redo in the scripts, "bound to the usual key combinations"; hazeljs keeps no history,
+// its README says, so the page keeps one) each editable box's text, step by step, by language and module ("hazel:Common",
+// "fumola:TrapRoom"): a step is a burst of typing, ended by a pause of SCRIPT_UNDO_PAUSE ms, or one edit made in the tiles. In a
+// box, Ctrl+Z (⌘Z on a Mac) undoes, and Ctrl+Shift+Z or Ctrl+Y redoes, in place of the browser's own undo, which the tiles' writes
+// into the boxes break. Keys pressed in the tiles' frame stay the frame's: there, no undo yet.
+const SCRIPT_UNDO_PAUSE = 800, SCRIPT_UNDO_MAX = 200;
+const scriptHistory = new Map();   // key -> { past, future: texts, at: when the last typed step was noted }
+const scriptEditors = new Map();   // key -> { get, put }: the box's text in the state
+let scriptHistoryApply = null;     // (the panel's hook: the boxes filled again, saved and compiled at once; scriptingPanel sets it)
+let scriptHistoryLast = null;      // the key of the box changed last, for an undo with no box focused
+function scriptHistoryNote(key, before, step = false) {
+  let h = scriptHistory.get(key);
+  if (!h) scriptHistory.set(key, h = { past: [], future: [], at: -Infinity });
+  const now = performance.now();
+  if (step || now - h.at > SCRIPT_UNDO_PAUSE) { h.past.push(before); if (h.past.length > SCRIPT_UNDO_MAX) h.past.shift(); }
+  h.future = []; h.at = step ? -Infinity : now; scriptHistoryLast = key;
+}
+function scriptUndo(key, redo) {
+  const h = scriptHistory.get(key), E = scriptEditors.get(key);
+  if (!h || !E) return false;
+  const from = redo ? h.future : h.past, to = redo ? h.past : h.future;
+  if (!from.length) return false;
+  to.push(E.get()); E.put(from.pop()); h.at = -Infinity;
+  if (scriptHistoryApply) scriptHistoryApply(redo ? "redo" : "undo");
+  return true;
+}
+// (682) the same keys with no box focused, while 📜 Scripting is open: the box changed last. An edit in the tiles leaves the caret
+// in their frame, whose keys are its own; a click back in the page gives the keys to the page, and then these reach here.
+if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("keydown", e => {
+  const k = (e.key || "").toLowerCase();
+  if (!((e.ctrlKey || e.metaKey) && !e.altKey && (k === "z" || k === "y"))) return;
+  const a = document.activeElement;
+  if (a && (a.tagName === "TEXTAREA" || a.tagName === "INPUT" || a.isContentEditable)) return;
+  if (!scriptHistoryLast || !document.querySelector("#panel textarea.script-editor")) return;
+  if (scriptUndo(scriptHistoryLast, k === "y" || e.shiftKey)) e.preventDefault();
+});
+// (682, Matthew: "console messages that give timing information: cost per edit, cost per undo, cost per redo, in ms") what one step
+// cost the page: the state saved, Hazel's analysis and run of the program (scriptCompile, when the program changed), and the panel
+// drawn again. The pause before an edit is compiled is not counted.
+function scriptStepCost(kind, work) {
+  const was = scriptCompiled, t0 = performance.now();
+  work();
+  const ms = performance.now() - t0, C = scriptCompiled;
+  console.log(`[scripts] ${kind}: ${ms.toFixed(1)} ms` + (C !== was && C.key ? ` (Hazel's analysis and run ${C.ms.toFixed(1)} ms of it)` : " (the program unchanged: Hazel not asked again)"));
+}
 let scriptTilesEdited = null;   // (the panel's hook: boxes filled again, the program saved and compiled; scriptingPanel sets it)
 function scriptTilesEdit(F, text) {
   const mods = scriptTilesModules(String(text || ""));
   if (!mods) return;
   const S = scriptsState();
   let any = false;
-  if (mods.Common != null && mods.Common !== S.common) { S.common = mods.Common; any = true; }
-  for (const r of SCRIPT_ROOMS) if (mods[r.name] != null && mods[r.name] !== S.rooms[r.name]) { S.rooms[r.name] = mods[r.name]; any = true; }
+  if (mods.Common != null && mods.Common !== S.common) { scriptHistoryNote("hazel:Common", S.common, true); S.common = mods.Common; any = true; }
+  for (const r of SCRIPT_ROOMS) if (mods[r.name] != null && mods[r.name] !== S.rooms[r.name]) { scriptHistoryNote("hazel:" + r.name, S.rooms[r.name], true); S.rooms[r.name] = mods[r.name]; any = true; }
   F.sent = JSON.stringify(F.mod ? scriptTileSpec(F) : scriptSpec());   // (the frame has this one: not posted back, so its caret stays)
   if (any && scriptTilesEdited) scriptTilesEdited();
 }
@@ -1888,11 +1933,13 @@ function scriptingPanel(box) {
   hazelLoad().then(sync, () => { status.textContent = "Hazel did not load (it comes from " + SCRIPT_LIB_URL + "): its rooms run their JS"; });
   if (uses("fumola")) wantFumola();
   let timer = null;
-  const later = () => { clearTimeout(timer); timer = setTimeout(() => { changed(); sync(); }, 600); };
+  const later = () => { clearTimeout(timer); timer = setTimeout(() => scriptStepCost("edit", () => { changed(); sync(); }), 600); };
   // (each change written to the state as it is now, not as the tab found it: a load or a start over replaces it, and then the
   // boxes are filled again from the new one, below)
   const editor = (modName, get, put, lang) => {
     const ta = el("textarea", { class: "script-editor", spellcheck: "false", rows: "9", wrap: "off", "data-module": modName, "data-lang": lang });
+    const key = lang + ":" + modName;   // (682: its history's)
+    scriptEditors.set(key, { get, put });
     const hl = el("pre", { class: "script-hl", "aria-hidden": "true" });
     let paint = () => { scriptHighlight(hl, lang, ta.value, true); hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
     // (ticket 579) the text as stored (src), shown broken to the box's width, from src each time (so a wider box takes the breaks
@@ -1909,7 +1956,7 @@ function scriptingPanel(box) {
     };
     ta.value = src;
     ta.refill = () => { const want = get(); if (want !== src) { src = want; ta.value = want; cols = 0; flow(); paint(); } };
-    ta.addEventListener("input", () => { src = ta.value; put(src); paint(); later(); scriptMaxNavSoon(); for (const b of ta.parentNode.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); } });
+    ta.addEventListener("input", () => { scriptHistoryNote(key, src); src = ta.value; put(src); paint(); later(); scriptMaxNavSoon(); for (const b of ta.parentNode.querySelectorAll(".script-band")) { if (b.unscroll) b.unscroll(); b.remove(); } });
     ta.addEventListener("blur", () => { cols = 0; flow(); });
     ta.reflow = () => { cols = 0; if (ta.clientWidth) flow(); };
     ta.addEventListener("focus", () => { if (ta.clientWidth) flow(); });
@@ -1917,8 +1964,12 @@ function scriptingPanel(box) {
     if (typeof ResizeObserver === "function") new ResizeObserver(() => { if (ta.clientWidth) flow(); }).observe(ta);
     setTimeout(() => { if (ta.clientWidth) flow(); }, 50);
     ta.addEventListener("scroll", () => { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; });
-    // (the game's keys move the friend: in an editor they are the editor's)
-    ta.addEventListener("keydown", e => e.stopPropagation());
+    // (the game's keys move the friend: in an editor they are the editor's; 682: and Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y the box's history)
+    ta.addEventListener("keydown", e => {
+      e.stopPropagation();
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && (k === "z" || k === "y")) { e.preventDefault(); scriptUndo(key, k === "y" || e.shiftKey); }
+    });
     paint();
     // (ticket 577: the colours under the text, the same size as it, however the box is resized)
     // (ticket 581) the line numbers beside it, from 1, scrolled with it; lines are not wrapped by the box (579 breaks them), so
@@ -2067,7 +2118,9 @@ function scriptingPanel(box) {
   ]);
   tiles.shown = () => "hazel"; tiles.refresh = () => {};
   // (578) an edit in the tiles: the boxes filled again from it, saved, and compiled a moment later (not posted back: scriptTilesEdit)
-  scriptTilesEdited = () => { refresh(); changed(); clearTimeout(timer); timer = setTimeout(sync, 600); };
+  scriptTilesEdited = () => { refresh(); changed(); clearTimeout(timer); timer = setTimeout(() => scriptStepCost("edit in the tiles", sync), 600); };
+  // (682) an undo or a redo: the boxes filled again from the state, saved and compiled at once, its cost in the console
+  scriptHistoryApply = kind => { refresh(); clearTimeout(timer); scriptStepCost(kind, () => { changed(); sync(); }); };
   box.append(
     ...(SCRIPT_LOGIC ? [el("div", { class: "hint" }, SCRIPT_LOGIC === "hazel" ? "This page was opened with ?logic=hazel: every room runs the shipped Hazel rules, whatever the chips or the boxes say."
       : SCRIPT_FUMOLA ? `This page was opened with ?logic=${SCRIPT_LOGIC}: every room runs the shipped Fumola rules, in Fumola's wasm build, whatever the chips or the boxes say.`

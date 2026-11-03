@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.477 (2026-11-03)
+
+Everything in 0.0.476, plus:
+
+- **📜 Undo and redo in the Scripting tab's boxes, on the usual keys** (ticket 682). In a Hazel or Fumola box, Ctrl+Z (⌘Z on a Mac) undoes and Ctrl+Shift+Z or Ctrl+Y redoes: a burst of typing at a time, or one edit made in Hazel's tiles. With no box focused, the same keys undo and redo in the box changed last. Keys typed inside the tiles stay the tiles'.
+- **📜 What each change costs, in the browser's console** (ticket 682): a line for each edit, undo and redo, such as `[scripts] undo: 18.9 ms (Hazel's analysis and run 15.2 ms of it)`.
+
 ## 0.0.476 (2026-11-03)
 
 Everything in 0.0.475, plus:
