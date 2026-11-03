@@ -908,6 +908,7 @@ function scriptFrameMessage(e) {
     return;
   } else if (m.type === "status") F.status = m;
   else if (m.type === "edit") { scriptTilesEdit(F, m.text); return; }
+  else if (m.type === "history") { if (scriptHistoryLast) scriptUndo(scriptHistoryLast, !!m.redo); return; }   // (682: the whole program's tiles: the box changed last)
   else if (m.type === "caret") { scriptCaretTo(F.iframe, +m.top || 0); return; }
   else if (m.type === "goto") { scriptGoto(String(m.name || "")); return; }
   else if (m.type === "crash") {
@@ -1183,9 +1184,14 @@ function scriptTileMessage(e) {
   } else if (m.type === "goto") { scriptGoto(String(m.name || ""));
   } else if (m.type === "edit") {
     const S = scriptsState(), text = String(m.text || "");
-    if (T.mod === "Common") S.common = text; else if (SCRIPT_ROOMS.some(r => r.name === T.mod)) S.rooms[T.mod] = text;
+    // (682: each edit in a box's tiles a step of that box's history)
+    if (T.mod === "Common") { if (text !== S.common) scriptHistoryNote("hazel:Common", S.common, true); S.common = text; }
+    else if (SCRIPT_ROOMS.some(r => r.name === T.mod)) { if (text !== S.rooms[T.mod]) scriptHistoryNote("hazel:" + T.mod, S.rooms[T.mod], true); S.rooms[T.mod] = text; }
     T.sent = JSON.stringify(scriptSpec());   // (this frame has it: not posted back)
     if (scriptTilesEdited) scriptTilesEdited();
+  } else if (m.type === "history") {
+    // (682) Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y typed in this box's tiles (embed-editable posts them; it keeps no history): undone here
+    scriptUndo("hazel:" + T.mod, !!m.redo);
   }
 }
 
