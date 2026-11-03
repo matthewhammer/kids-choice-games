@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.476 (2026-11-03)
+
+Everything in 0.0.475, plus:
+
+- **📜 The game's Hazel comes from Hazel's npm package** (ticket 674). The 📜 Scripting tab loads Hazel from [hazeljs](https://www.npmjs.com/package/hazeljs) 0.0.1, published 2026-11-02, instead of a build of a Hazel branch. It is the same Hazel (built from the same commit), but pinned: the game's Hazel no longer changes when that branch does. The tiles still come from Hazel's branch build.
+
 ## 0.0.475 (2026-11-03)
 
 Everything in 0.0.474, plus:

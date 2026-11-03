@@ -27,7 +27,9 @@
 // (ticket 658: Hazel's builds moved to build.hazel.org; hazel.org/build/... answers 301 to there, so a frame from the old URL is
 // from build.hazel.org's origin, not hazel.org's, and its messages were dropped: the tiles stayed at "loading")
 const SCRIPT_BUILD = "https://build.hazel.org/js-library-embed/";
-const SCRIPT_LIB_URL = SCRIPT_BUILD + "hazel-lib.js";
+// (ticket 674) the library from its npm package, hazeljs 0.0.1: built from #2719 at 0d66c36618, the commit SCRIPT_BUILD serves, but
+// pinned, so the game's Hazel no longer moves when the branch does. The frame and its origin stay SCRIPT_BUILD's (below)
+const SCRIPT_LIB_URL = "https://cdn.jsdelivr.net/npm/hazeljs@0.0.1/hazel-lib.js";
 // (the frame's messages are taken from this origin only, and posted to it only: SCRIPT_BUILD's, which must be SCRIPT_FRAME_URL's too)
 const SCRIPT_HAZEL_ORIGIN = SCRIPT_BUILD.split("/").slice(0, 3).join("/");
 // (ticket 578) the tiles from embed-editable (stacked on embed-selectable, on #2719's branch): the frame that takes edits; the
