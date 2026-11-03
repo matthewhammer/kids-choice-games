@@ -1,7 +1,8 @@
 // (ticket 682, Matthew 2026-11-03: undo and redo in the scripts "bound to the usual key combinations", and "console messages that
 // give timing information: cost per edit, cost per undo, cost per redo, in ms") In 📜 Scripting, TrapRoom's Hazel box: a typed change
 // is one step and logs "[scripts] edit: N ms"; Ctrl+Z gives the text back and logs "[scripts] undo: N ms"; Ctrl+Shift+Z puts the
-// change back ("[scripts] redo"), and so does Ctrl+Y after another undo; an undo with nothing to undo leaves the text as it is.
+// change back ("[scripts] redo"), and so does Ctrl+Y after another undo; an undo with nothing to undo leaves the text as it is;
+// with no box focused the keys reach the box changed last, and so does the tiles' {type: "history"} message.
 // Exits 1 on a failure.
 //   node undo682.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
@@ -66,6 +67,16 @@ try {
   ok("redone, then no box focused", (await text()) === typed && (await where()) === "BODY", [await where()]);
   await chord("z");
   ok("Ctrl+Z with no box focused undoes in the box changed last", (await text()) === shipped, await text());
+  // the tiles: embed-editable posts {type: "history"} for the keys typed in them; handed to the page here as the whole program's
+  // frame would hand it, after a step typed in the box
+  const viaTiles = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    for (let i = 0; i < 40 && !(scriptFrame && scriptFrame.iframe && scriptFrame.iframe.contentWindow); i++) await w(250);
+    const F = scriptFrame; if (!F || !F.iframe.contentWindow) return "no frame";
+    const ta = document.querySelector('#panel textarea[data-module="TrapRoom"]');
+    ta.focus(); ta.value = ${JSON.stringify(typed)}; ta.dispatchEvent(new Event("input")); await w(1200);
+    scriptFrameMessage({ origin: SCRIPT_HAZEL_ORIGIN, source: F.iframe.contentWindow, data: { type: "history", redo: false } }); await w(400);
+    return ta.value; })()`);
+  ok("the tiles' history message undoes in the box changed last", viaTiles === shipped, viaTiles);
   console.log("  (the logged costs: " + logs.filter(l => l.startsWith("[scripts]")).join(" | ") + ")");
   ok("no page errors", errs.length === 0, errs);
 } catch (e) { ok("the check ran", false, String(e && e.stack || e)); }

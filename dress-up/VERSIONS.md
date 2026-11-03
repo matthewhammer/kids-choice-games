@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.478 (2026-11-03)
+
+Everything in 0.0.477, plus:
+
+- **📜 Undo and redo in Hazel's tiles too** (ticket 682). With a Hazel box showing its tiles, Ctrl+Z (⌘Z on a Mac), Ctrl+Shift+Z and Ctrl+Y typed in the tiles undo and redo that box, one edit at a time, as they do in the text. In the whole program's tiles, under the boxes, they act on the box changed last.
+
 ## 0.0.477 (2026-11-03)
 
 Everything in 0.0.476, plus:
