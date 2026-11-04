@@ -626,7 +626,8 @@ const WORLD_DEFAULT = {"cols": 6, "rows": 7, "start": "3,3", "cells": {"0,0": {"
 const DEFAULTS = {
   world: WORLD_DEFAULT,
   // (ticket 631, 632) what the friend carries: each { id, got, from }, what a chest gave first; and the pack itself: drawn on them, or not
-  backpack: [], pack: { drawn: false, tool: "" },
+  // (ticket 687) and 🎒 your items: the items in the slots 🅰️ and 🅱️ (either may be "": empty), and what covers the game behind them
+  backpack: [], pack: { drawn: false, tool: "", a: "bubbles", b: "fire", screen: "dim" },
   // (ticket 406) the other worlds, by id (the one the friend is in is `world`), and the worlds kept as templates, by id
   worldsAway: {}, worldTemplates: {},
   // (ticket 639) the 🗝️ dungeon world, made once a game (dungeonWorldEnsure): made or not, in an object so a save keeps it
@@ -809,6 +810,22 @@ const clone = o => JSON.parse(JSON.stringify(o));
 // a top-level setting read from a save over its default: an object's fields over the default's, a list (the 🎒 backpack) whole
 // (ticket 637: spread as an object, the backpack came back {} from 📂 Load and from every reload's autosave)
 const savedOver = (k, v) => Array.isArray(DEFAULTS[k]) ? clone(Array.isArray(v) ? v : DEFAULTS[k]) : { ...DEFAULTS[k], ...(v || {}) };
+// (ticket 687) buttons from before 🅰️ and 🅱️: theirs are 🫧's and 🔥's (in them to start), and the three actions they replace go
+function itemButtons(C) {
+  if (!C || typeof C !== "object") return C;
+  if (!("useA" in C) && Number.isInteger(C.bubbles)) C.useA = C.bubbles;
+  if (!("useB" in C) && Number.isInteger(C.fire)) C.useB = C.fire;
+  delete C.bubbles; delete C.fire; delete C.tool;
+  return C;
+}
+function upgradeItems(next, saved) {
+  const S = saved && saved.controls, C = next.controls;
+  if (S && typeof S === "object" && !("useA" in S)) {
+    if (Number.isInteger(S.bubbles)) C.useA = S.bubbles;
+    if (Number.isInteger(S.fire)) C.useB = S.fire;
+  }
+  itemButtons(C);
+}
 // before the nose views: a nose was a shape (or "none"), a direction and
 // one size
 // (0.0.188, Matthew: 👆 walk where you click "so helpful, let's have it on by default") a save from 0.0.187, the hour it
@@ -996,7 +1013,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, bubbles: 6, fire: 7, throw: 1, act: 4, tool: 2 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, useA: 6, useB: 7, items: -1, throw: 1, act: 4 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start; ticket 687: 🅰️ and 🅱️ there now, 🫧 and 🔥 in them to start)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
@@ -1450,6 +1467,7 @@ try {
   upgradeDungeonMade(state, saved);
   upgradeClickWalk(state, saved);
   upgradePitShapes(state, saved);
+  upgradeItems(state, saved);
   if (INSPECT_ALL) Object.assign(state.access, INSPECT_ON);   // (ticket 236)
   upgradeFace(state.face, saved.face);
   if (state.body.sit && state.body.pose === "stand") state.body.pose = "sit";   // (ticket 132)
@@ -1521,7 +1539,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.478", released: "2026-11-03" };
+const VERSION = { number: "0.0.479", released: "2026-11-04" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

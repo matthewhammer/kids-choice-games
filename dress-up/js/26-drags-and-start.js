@@ -1203,9 +1203,12 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     ["bubbles", "🫧 blow bubbles (held)"], ["fire", "🔥 breathe fire (held)"], ["throw", "🏺 throw what you hold (with a pot held)"],
+                     // (ticket 687: 🅰️ and 🅱️, the items chosen in 🎒 your items, a tool or an ability each, in place of ticket 221's 🫧,
+                     // 499's 🔥 and 639's 🥅 use tool, each on its own button; 🫧 and 🔥 are A's and B's to start, on their buttons)
+                     ["useA", "🅰️ use item A (a tool: press; an ability: hold)"], ["useB", "🅱️ use item B (a tool: press; an ability: hold)"],
+                     ["items", "🎒 your items: the screen, open or shut (press)"], ["throw", "🏺 throw what you hold (with a pot held)"],
                      // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
-                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"], ["tool", "🥅 use the tool you hold (the bug net, a 🗡️ sword, the 💧 watering can)"]];   // (tickets 221, 499)
+                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"]];
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1262,6 +1265,7 @@ function padPoll(t) {
   const now = new Set(g.buttons.map((b, i) => (b.pressed ? i : -1)).filter(i => i >= 0));
   const arrows = padMapping === "standard" ? [12, 13, 14, 15] : [];
   const pressed = [...now].filter(i => !padDown.has(i) && !arrows.includes(i)), lit = now.size !== padDown.size || pressed.length > 0;
+  const fresh = [...now].filter(i => !padDown.has(i));   // (ticket 687: the arrows too, for 🎒 your items)
   padDown = now;
   const C = state.controls, B = state.body, BG = state.background;
   // learning a button: the next one pressed is the action's (and no other's)
@@ -1278,6 +1282,9 @@ function padPoll(t) {
     padLoop = requestAnimationFrame(padPoll); return;
   }
   const btn = a => Number.isInteger(C[a]) && C[a] >= 0 ? C[a] : -2, held = a => now.has(btn(a)), hit = a => pressed.includes(btn(a));
+  // (ticket 687) 🎒 your items, open: the controller chooses there, and nothing in the game moves
+  if (itemsOpen) { itemsPad(fresh, g, btn); padLoop = requestAnimationFrame(padPoll); return; }
+  if (hit("items")) { itemsShow(true); padLoop = requestAnimationFrame(padPoll); return; }
   if (hit("back")) { if (!backBtn.hidden) backBtn.click(); }
   if (hit("door")) padDoor();
   if (hit("crawlToggle")) { padCrawl = !padCrawl; padWant = null; }   // (ticket 146: on or off; arrows then crawl)
@@ -1320,7 +1327,8 @@ function padPoll(t) {
   const coasting = !moving && ramp > 0 && Math.hypot(padVel[0], padVel[1]) > 2 && BG.kind !== "none" && !entering && !drag && !onLadder;
   if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
-  const run = held("run"), low = (held("crouch") && !(toolInHand() && btn("tool") === btn("crouch"))) || padCrawl;   // (ticket 639: a tool held takes Y from crouching; ticket 656: a sword in the hand too)
+  const slotA = itemIn("a"), slotB = itemIn("b"), toolOn = b => [["useA", slotA], ["useB", slotB]].some(([a, id]) => id && ITEM[id].kind === "tool" && btn(a) === b);
+  const run = held("run"), low = (held("crouch") && !toolOn(btn("crouch"))) || padCrawl;   // (ticket 639: a tool takes Y from crouching; ticket 687: a tool in 🅰️ or 🅱️ on its button)
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
@@ -1338,10 +1346,11 @@ function padPoll(t) {
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   const acted = hit("act") && actionPress();   // (ticket 639: a chest, a thing to carry or a pot in reach, before the passage)
   if (hit("enter") && !acted) enterPicture();   // (ticket 145)
-  if (hit("tool")) toolUse();   // (ticket 639)
-  blowPad = held("bubbles");   // (ticket 221: bubbles while it is held)
+  // (ticket 687) 🅰️ and 🅱️: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
+  for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && ITEM[id].kind === "tool" && hit(a)) itemToolUse(id);
+  blowPad = (slotA === "bubbles" && held("useA")) || (slotB === "bubbles" && held("useB"));
   if (blowPad) blowGo();
-  firePad = held("fire");   // (ticket 499: fire while it is held)
+  firePad = (slotA === "fire" && held("useA")) || (slotB === "fire" && held("useB"));
   if (firePad) fireGo();
   if (moving || coasting) {
     // (ticket 188: the speed they are told, reached at once, or over the ramp's time: a step toward it each frame)
@@ -2179,7 +2188,7 @@ function padUse(id) {
   const kept = padLayouts()[id], C = state.controls, like = L => Object.keys(L).every(a => C[a] === L[a]);
   const fresh = padFor !== C;
   padFor = C;
-  if (kept) Object.assign(C, kept);
+  if (kept) Object.assign(C, itemButtons(kept));   // (ticket 687: a layout kept from before 🅰️ and 🅱️ gives them 🫧's and 🔥's buttons)
   else if (id === TOUCH_ID && (id !== padId || fresh)) Object.assign(C, TOUCH_CONTROLS);
   else if (id !== TOUCH_ID && (padId === TOUCH_ID || like(TOUCH_CONTROLS))) Object.assign(C, DEFAULTS.controls);
   // (an action newer than the layout kept, as ticket 145's ✨: on its usual
@@ -2204,7 +2213,8 @@ function padUse(id) {
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, bubbles: 6, fire: 7, throw: 1, act: 3, tool: 2 };
+// (ticket 687: 🅰️ and 🅱️ where 🫧 and 🔥 were)
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, useA: 6, useB: 7, items: -1, throw: 1, act: 3 };
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };
@@ -2265,21 +2275,24 @@ function touchBuild() {
   const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
   touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
     // (ticket 221: 🫧 blow bubbles, under select; ticket 499: 🔥 breathe fire, under start, each a column of its own, so none covers another)
-    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🫧")])]),
-    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🔥")]), abxy])]);
+    // (ticket 687: 🫧's and 🔥's buttons are 🅰️'s and 🅱️'s, each showing the item in its slot)
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🅰️")])]),
+    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🅱️")]), abxy])]);
   document.body.append(touchPad.el);
   touchPad.keys = "";
   touchLabels();
 }
 // (each button shows what it does: its action's emoji, from the 🎮 Controls tab's layout)
 function touchLabels() {
-  const C = state.controls, key = JSON.stringify(C);
+  const C = state.controls, key = JSON.stringify([C, itemIn("a"), itemIn("b")]);
   if (!touchPad.el || key === touchPad.keys) return;
   touchPad.keys = key;
   for (const x of touchPad.el.querySelectorAll("button[data-b]")) {
     const a = PAD_ACTIONS.find(([k]) => C[k] === +x.dataset.b);
-    x.lastChild.textContent = a ? a[1].split(" ")[0] : "";
-    x.title = `${x.firstChild.textContent}: ${a ? a[1] : "nothing yet (set one in the 🎮 Controls tab)"}`;
+    // (ticket 687) 🅰️'s and 🅱️'s buttons show the item in the slot, or the slot's mark when it is empty
+    const slot = a && SLOTS.find(([, k]) => k === a[0]), it = slot && ITEM[itemIn(slot[0])];
+    x.lastChild.textContent = a ? (slot ? (it ? it.icon : slot[2]) : a[1].split(" ")[0]) : "";
+    x.title = `${x.firstChild.textContent}: ${a ? (slot ? `${slot[2]} ${it ? it.icon + " " + it.name : "nothing in it: choose one in 🎒 your items"}` : a[1]) : "nothing yet (set one in the 🎮 Controls tab)"}`;
     x.classList.toggle("idle", !a);
   }
 }

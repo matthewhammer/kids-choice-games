@@ -1291,3 +1291,48 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 .pack-pic { width: 100%; height: 70px; }
 .pack-name { font-weight: 600; }
 .pack-uses { font-style: italic; }
+/* (ticket 687) 🎒 your items: the button by the 🎮 one, and the screen over the game: dimmed, black or white behind the items.
+   The button stays over the screen, to shut it again; both over the ways' arrows (35), under the on-screen controller (40). */
+.items-btn { position: absolute; bottom: 8px; right: 66px; z-index: 38; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+             background: var(--panel); opacity: 0.9; }
+.items-btn[aria-pressed="true"] { opacity: 1; outline: 3px solid var(--accent); }
+.pad-btn[hidden] ~ .items-btn { right: 8px; }
+body.big .items-btn { bottom: auto; top: 8px; right: 182px; }
+body.big .pad-btn[hidden] ~ .items-btn { right: 124px; }
+body.pic-in-world .items-btn { display: none; }
+.items-screen { position: absolute; inset: 0; z-index: 37; overflow: auto; line-height: 1.35; padding: 12px 14px 16px;
+                display: flex; flex-direction: column; gap: 10px; font-size: clamp(12px, 1.6vw, 18px); container-type: size; }
+/* (its text by the screen's own size, the picture's: small beside the panels, big in full screen; a browser without container
+   units keeps the size above) */
+.items-screen > * { font-size: clamp(11px, 1.9cqw, 20px); }
+/* (open, the button moves to the top right, over the corner the screen covers, so nothing of the screen is under it) */
+body.items-open .items-btn { top: 8px; right: 8px; bottom: auto; }
+.items-screen[hidden] { display: none; }
+.items-screen.dim { background: rgba(8, 6, 16, 0.86); color: #f4f1ff; }
+.items-screen.black { background: #000; color: #f4f1ff; }
+.items-screen.white { background: #fff; color: #1b1726; }
+.items-screen .hint { color: inherit; opacity: 0.75; font-size: 0.85em; }
+.items-screen p.hint { margin: 0; }
+.items-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-right: 52px; }
+.items-top h2 { margin: 0; font-size: 1.3em; margin-right: auto; }
+.items-backs { display: flex; gap: 6px; flex-wrap: wrap; }
+.items-screen button { padding: 4px 10px; }
+.items-screen button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.items-screen button:disabled { opacity: 0.35; cursor: default; }
+.items-slots { display: flex; gap: 12px; flex-wrap: wrap; }
+.items-slot { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 14px; border: 3px solid currentColor; min-width: 12em; }
+.items-slot.empty { border-style: dashed; opacity: 0.8; }
+.items-mark { font-size: 1.6em; }
+.items-slot-icon { font-size: 2.2em; line-height: 1; }
+.items-slot-name { display: flex; flex-direction: column; font-weight: 600; }
+.items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr)); gap: 10px; }
+.items-tile { border: 2px solid rgba(127, 127, 127, 0.55); border-radius: 14px; padding: 8px; text-align: center;
+              display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.items-tile.at { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+.items-tile.missing { opacity: 0.45; }
+.items-icon { font-size: 2.6em; line-height: 1.1; }
+.items-name { font-weight: 600; }
+.items-pick { display: flex; gap: 6px; margin-top: 4px; }
+.items-pick button { font-size: 1.15em; padding: 2px 10px; }
+.items-rest { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.items-thing { border: 1px solid rgba(127, 127, 127, 0.55); border-radius: 999px; padding: 2px 10px; font-size: 0.9em; }

@@ -2,7 +2,7 @@
 // them from the mouth, rising and drifting; with theme B on too, the two take
 // turns; from the left hand they start left of the right hand's; the
 // controller has the action (button 6) and the on-screen controller its 🫧
-// button. Exits 1 on a failure.
+// button (ticket 687: 🅰️ use item A, with 🫧 in it to start). Exits 1 on a failure.
 //   node blow221.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -37,9 +37,9 @@ try {
     return JSON.stringify({ L, R, M }); })()`));
   ok("from the left hand they start left of the right hand's, the mouth above both", hands.L && hands.R && hands.M && hands.L[0] < hands.R[0] && hands.M[1] < Math.min(hands.L[1], hands.R[1]), hands);
   const pad = JSON.parse(await ev(`(async () => { touchWant(true); await new Promise(r => setTimeout(r, 300)); const btn = document.querySelector('#touchpad [data-b="6"]');
-    const r = { action: PAD_ACTIONS.some(a => a[0] === "bubbles"), button: DEFAULTS.controls.bubbles, onScreen: !!btn };
+    const r = { action: PAD_ACTIONS.some(a => a[0] === "useA"), button: DEFAULTS.controls.useA, item: DEFAULTS.pack.a, label: btn ? btn.textContent : "", onScreen: !!btn };   // (ticket 687: 🫧 is 🅰️'s to start)
     touchWant(false); return JSON.stringify(r); })()`));
-  ok("the controller's action 🫧 (button 6), and its button on the on-screen controller", pad.action && pad.button === 6 && pad.onScreen, pad);
+  ok("the controller's 🅰️ use item A (button 6), 🫧 in it to start, and its button on the on-screen controller showing 🫧", pad.action && pad.button === 6 && pad.item === "bubbles" && pad.onScreen && /🫧/.test(pad.label), pad);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }

@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.479 (2026-11-04)
+
+Everything in 0.0.478, plus:
+
+- **🎒 Your items** (ticket 687). A new 🎒 button at the picture's corner (or I on the keyboard) opens a screen over the game, which holds still under it: the items the friend has, and the two that are active, in 🅰️ and 🅱️. The items are the abilities anyone has, 🫧 blow bubbles and 🔥 breathe fire, and the tools once found: 🥅 the bug net, 🗡️ the sword and 💧 the watering can (a tool not found yet is shown dim). Tap 🅰️ or 🅱️ under an item to put it in that slot (an item already in the other slot swaps with it; tapping a lit 🅰️ or 🅱️ empties the slot). With a controller, the arrows choose an item and the 🅰️ or 🅱️ button puts it there; on the keyboard, the arrows and Z or X. Behind the items the game is 🌗 dimmed, ⬛ black or ⬜ white, your choice. ✖ back to the game, 🎒 again, Escape or select shuts it.
+- **🅰️ use item A and 🅱️ use item B** take the place of the controller's 🫧 blow bubbles, 🔥 breathe fire and 🥅 use tool. 🅰️ is on the left trigger and 🅱️ on the right, where 🫧 and 🔥 were, with 🫧 in 🅰️ and 🔥 in 🅱️ to start, so nothing changes until you choose something else. A tool in a slot is used with a press; an ability lasts while its button is held. On the keyboard, Z uses 🅰️ and X uses 🅱️ (B, F and U still blow bubbles, breathe fire and use the tool in your hand). The on-screen controller's 🅰️ and 🅱️ buttons show what is in each slot. A layout set in 🎮 Controls keeps its buttons: 🫧's button becomes 🅰️'s, and 🔥's 🅱️'s. 🎒 your items can have a controller button of its own too: set one in 🎮 Controls.
+
 ## 0.0.478 (2026-11-03)
 
 Everything in 0.0.477, plus:

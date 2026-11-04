@@ -722,7 +722,7 @@ function blowTick(t) {
   blowSim.raf = 0;
   const layer = document.getElementById("access-layer"), Bg = state.background, F = sceneFrame, k = (F.bottom - F.top) / 700;
   const dt = Math.min(0.05, Math.max(0, (t - blowSim.last) / 1000)); blowSim.last = t;
-  const holding = (blowPad || blowKey) && Bg.kind !== "none";
+  const holding = (blowPad || blowKey || itemKeyHolds("bubbles")) && Bg.kind !== "none";   // (ticket 687: or Z or X, with 🫧 in its slot)
   if (holding && t >= blowSim.next) {
     const p = blowFrom(), themes = ["A", "B", "C"].filter(L => state.body["blow" + L]).map(L => ({ color: Bg["bubble" + L + "Color"], size: Bg["bubble" + L + "Size"] ?? 18,
       shine: (Bg["bubble" + L + "Shine"] ?? 70) / 100, sparkle: Bg["bubble" + L + "Sparkle"] || "none", sparkleColor: Bg["bubble" + L + "SparkleColor"] || "#ffffff" }));
@@ -906,7 +906,7 @@ function fireTick(t) {
   // costume changed from the dragon: let go. Before the frame's own request is cleared, so letting go asks for no second one)
   if (fireBtn && (!fireBtn.el.isConnected || fireBtn.el.closest("[hidden]"))) fireBtnUp();
   fireSim.raf = 0;
-  const B = state.body, A = (firePad || fireKey || fireBtn || t < fireSim.until) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");
+  const B = state.body, A = (firePad || fireKey || itemKeyHolds("fire") || fireBtn || t < fireSim.until) && !figAway && !figBurst ? fireAt() : null, O = document.getElementById("fire-over");   // (ticket 687: or Z or X, with 🔥 in its slot)
   fireSim.at = A;
   if (A) {
     // (built again only when what it draws changes: its fire, which way it is seen, its heat shown, the mouth's size)

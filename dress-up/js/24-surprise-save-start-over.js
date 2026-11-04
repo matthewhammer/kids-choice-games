@@ -283,6 +283,7 @@ function loadSaved(data) {
   dungeonDedupe(next);
   upgradeClickWalk(next, saved);
   upgradePitShapes(next, saved);
+  upgradeItems(next, saved);   // (ticket 687)
   upgradeFace(next.face, saved.face);
   next.music = { ...next.music, volume: state.music.volume, mute: state.music.mute };
   state = next;
