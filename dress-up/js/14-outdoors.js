@@ -2820,7 +2820,7 @@ const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown
 // put down from the backpack (its id, drawn by giftSvg). A thing's id in the backpack: its kind, or an item's own id
 const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item", "rock"]);   // (a 🗿 statue is an item)   // (a rock: to keep a floor switch pressed)
 const carryId = t => t.kind === "item" ? t.id || "gold" : t.kind;
-// (ticket 639) the tools: held in the hand (state.pack.tool) and swung with "use tool" (U, or the controller's 🥅 button)
+// (ticket 639) the tools: held in the hand and swung (ticket 687: a tool in 🔹 or 🔸, in that hand, used with its slot's button, or U)
 // (ticket 656) and the 🗡️ sword, which cuts plants (toolUse, swordCut)
 // (ticket 660, part 3) and the 💧 watering can, which fills at water and waters plants (canUse)
 const TOOLS = { net: "🥅 the bug net", sword: "🗡️ the sword", can: "💧 the watering can" };

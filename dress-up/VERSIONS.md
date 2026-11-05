@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.481 (2026-11-04)
+
+Everything in 0.0.480, plus:
+
+- **🔹 and 🔸, your two items** (ticket 687). The two item slots in 🎒 your items are marked 🔹 and 🔸 now, not 🅰️ and 🅱️, so they aren't mixed up with the controller's own A and B buttons. 🔹 is on the left trigger (Z on the keyboard) and 🔸 on the right trigger (X), as before; in 🎮 Controls they are "🔹 use your 🔹 item" and "🔸 use your 🔸 item", and the on-screen controller's two buttons say 🔹 and 🔸.
+- **Your two items, in your two hands.** The friend holds your 🔹 item in their left hand and your 🔸 item in their right: 🥅 the bug net, 💧 the watering can or 🗡️ the sword, as they are swung or tipped; 🫧 as a bubble wand, a few bubbles drifting up off its ring; 🔥 as a small flame on the open palm, flickering, an ember rising. A costume's own things stay in its hands (a knight keeps the sword and the shield), and while you carry a pot, both hands are on it. A tool is no longer shown in the hand unless it is one of your two items: in the 🎒 Backpack tab, "✋ hold it" is now 🔹 and 🔸, putting the tool in that slot. A tool you pick up goes into an empty slot, or in place of 🫧 or 🔥 (🔸 first), never in place of another tool: the watering can is in your hand as soon as you find it, as before.
+
 ## 0.0.480 (2026-11-04)
 
 Everything in 0.0.479, plus:

@@ -1203,9 +1203,9 @@ function flyInto(box, arrive) {
 const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 high, slow jump"], ["run", "🏃 run (held, with an arrow)"],
                      ["crouch", "🧎 crouch down (held); with an arrow, crawl"], ["crawlToggle", "🐛 crawling on or off (press)"],
                      ["back", "⬅️ back the way they came"], ["door", "🚪 through the nearest passage"], ["enter", "✨ through the passage that glows"],
-                     // (ticket 687: 🅰️ and 🅱️, the items chosen in 🎒 your items, a tool or an ability each, in place of ticket 221's 🫧,
+                     // (ticket 687: 🔹 and 🔸, the items chosen in 🎒 your items, a tool or an ability each, in place of ticket 221's 🫧,
                      // 499's 🔥 and 639's 🥅 use tool, each on its own button; 🫧 and 🔥 are A's and B's to start, on their buttons)
-                     ["useA", "🅰️ use item A (a tool: press; an ability: hold)"], ["useB", "🅱️ use item B (a tool: press; an ability: hold)"],
+                     ["useA", "🔹 use your 🔹 item (a tool: press; an ability: hold)"], ["useB", "🔸 use your 🔸 item (a tool: press; an ability: hold)"],
                      ["items", "🎒 your items: the screen, open or shut (press)"], ["throw", "🏺 throw what you hold (with a pot held)"],
                      // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
                      ["act", "🫳 open a chest, pick up, lift a pot (what glows)"]];
@@ -1329,7 +1329,7 @@ function padPoll(t) {
   if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
   const slotA = itemIn("a"), slotB = itemIn("b"), toolOn = b => [["useA", slotA], ["useB", slotB]].some(([a, id]) => id && ITEM[id].kind === "tool" && btn(a) === b);
-  const run = held("run"), low = (held("crouch") && !toolOn(btn("crouch"))) || padCrawl;   // (ticket 639: a tool takes Y from crouching; ticket 687: a tool in 🅰️ or 🅱️ on its button)
+  const run = held("run"), low = (held("crouch") && !toolOn(btn("crouch"))) || padCrawl;   // (ticket 639: a tool takes Y from crouching; ticket 687: a tool in 🔹 or 🔸 on its button)
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
   else if (want !== padWant && !onLadder) {
@@ -1347,7 +1347,7 @@ function padPoll(t) {
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   const acted = hit("act") && actionPress();   // (ticket 639: a chest, a thing to carry or a pot in reach, before the passage)
   if (hit("enter") && !acted) enterPicture();   // (ticket 145)
-  // (ticket 687) 🅰️ and 🅱️: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
+  // (ticket 687) 🔹 and 🔸: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
   for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && ITEM[id].kind === "tool" && hit(a)) itemToolUse(id);
   blowPad = (slotA === "bubbles" && held("useA")) || (slotB === "bubbles" && held("useB"));
   if (blowPad) blowGo();
@@ -1556,7 +1556,7 @@ function pickUp(i) {
   const id = carryId(t), { x, z, uid, seed, ...looks } = t;
   B.things = B.things.filter((_, j) => j !== i);
   state.backpack = [...packList(), { id, got: Date.now(), from: "floor", t: looks }];
-  if (id === "can" && !toolHeld()) state.pack = { ...(state.pack || {}), tool: "can" };   // (ticket 660, part 3: the can, in the hand at once, for M)
+  itemFound(id);   // (ticket 660, part 3: the can, in the hand at once, for M; ticket 687: any tool found, in a slot: itemFound)
   plateCheck(); changed(); draw();
   packFly(giftSvg(id, B), x ?? 0, (z ?? SCENE.ground) - 20 * figureT.k, true);
 }
@@ -1593,7 +1593,10 @@ function beeFree(k) {
 // it. The net, swung near a 🐝 with an empty 🍾 bottle in the pack: the bee in the bottle, the bottle back in the pack.
 const NET_REACH = 150, SWING_MS = 360;
 let swinging = "";   // (the tool swinging now, or "")
-const toolHeld = () => { const id = state.pack && state.pack.tool; return id && TOOLS[id] && packList().some(o => o.id === id) ? id : ""; };
+// (ticket 687) the tool in hand: one in 🔹 or 🔸 (🔹's first), from the backpack (ticket 639's "✋ hold it", state.pack.tool, is
+// gone: what is held is what is chosen); toolSlotted(id): that tool in either
+const toolSlotted = id => { const P = state.pack || {}; return !!id && (P.a === id || P.b === id) && !!TOOLS[id] && packList().some(o => o.id === id); };
+const toolHeld = () => { const P = state.pack || {}; return toolSlotted(P.a) ? P.a : toolSlotted(P.b) ? P.b : ""; };
 // (ticket 656) the tool "use tool" swings: the one held from the backpack, or else a sword already in the friend's own hand (a
 // knight's, the Time Wanderer's, or one chosen to hold)
 function toolInHand() {
@@ -1602,9 +1605,9 @@ function toolInHand() {
   const hands = heldItems(state.body, state.costume.kind, state.costume);
   return hands.L === "sword" || hands.R === "sword" ? "sword" : "";
 }
-function toolHold(id) { state.pack = { ...(state.pack || {}), tool: toolHeld() === id ? "" : id }; changed(); draw(); }
-function toolUse(want) {   // (want: a plant tapped, for the can: ticket 662)
-  const id = toolInHand(), B = state.background;
+// (ticket 687: use, the tool of a slot's button; else for a plant tapped the can, for a bee the net, if in a slot; else the one in hand)
+function toolUse(want, use) {   // (want: a plant tapped, for the can: ticket 662)
+  const id = use || (want && GARDEN_KINDS.has(want.kind) && toolSlotted("can") ? "can" : want && want.kind === "bee" && toolSlotted("net") ? "net" : toolInHand()), B = state.background;
   if (!id || swinging || entering || B.kind === "none") return false;
   if (id === "can") return canUse(want);   // (ticket 660, part 3: tipped, to pour or fill)
   const T = figureT, H = T.base || 300, k = T.k, f = state.body.facing, side = f === "left" ? -1 : 1;
@@ -1960,7 +1963,7 @@ let meterKey = "", meterG = null;
 const meterTops = new Map();
 function gardenMeters() {
   const B = state.background, now = Date.now();
-  const list = toolHeld() === "can" && B.kind !== "none" ? (B.things || []).map((t, i) => ({ t, i })).filter(({ t }) => GARDEN_KINDS.has(t.kind) && !t.hidden && !plantDone(t)) : [];
+  const list = toolSlotted("can") && B.kind !== "none" ? (B.things || []).map((t, i) => ({ t, i })).filter(({ t }) => GARDEN_KINDS.has(t.kind) && !t.hidden && !plantDone(t)) : [];
   for (const m of list) { m.w = plantNow(m.t, now).water; m.shape = [B.kind, m.i, m.t.kind, m.t.flower, m.t.veg, m.t.x, m.t.z, m.t.size, m.t.mirror, gardenStage(m.t)].join(); }
   const key = list.map(m => m.shape + ":" + Math.round(m.w * 20)).join(";");
   if (key === meterKey && (!list.length || (meterG && meterG.isConnected))) return;
@@ -2189,7 +2192,7 @@ function padUse(id) {
   const kept = padLayouts()[id], C = state.controls, like = L => Object.keys(L).every(a => C[a] === L[a]);
   const fresh = padFor !== C;
   padFor = C;
-  if (kept) Object.assign(C, itemButtons(kept));   // (ticket 687: a layout kept from before 🅰️ and 🅱️ gives them 🫧's and 🔥's buttons)
+  if (kept) Object.assign(C, itemButtons(kept));   // (ticket 687: a layout kept from before 🔹 and 🔸 gives them 🫧's and 🔥's buttons)
   else if (id === TOUCH_ID && (id !== padId || fresh)) Object.assign(C, TOUCH_CONTROLS);
   else if (id !== TOUCH_ID && (padId === TOUCH_ID || like(TOUCH_CONTROLS))) Object.assign(C, DEFAULTS.controls);
   // (an action newer than the layout kept, as ticket 145's ✨: on its usual
@@ -2214,7 +2217,7 @@ function padUse(id) {
 // (localStorage "dress-up-touchpad"), not the friend's.
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
-// (ticket 687: 🅰️ and 🅱️ where 🫧 and 🔥 were)
+// (ticket 687: 🔹 and 🔸 where 🫧 and 🔥 were)
 const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: -1, enter: 3, useA: 6, useB: 7, items: 9, throw: 1, act: 3 };   // (ticket 687: 🎒 on start, 🚪 off it)
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
@@ -2255,7 +2258,8 @@ function touchBuild() {
     x.addEventListener("contextmenu", e => e.preventDefault());
     return x;
   };
-  const btn = (cls, i, name) => { const x = hold(el("button", { type: "button", class: cls, "aria-label": name }, [name, el("small")]), i); x.dataset.b = i; return x; };
+  // (ticket 687: a mark, 🔹 or 🔸, drawn bigger, as those small emoji are)
+  const btn = (cls, i, name, mark) => { const x = hold(el("button", { type: "button", class: cls, "aria-label": name }, [mark ? el("span", { class: "mark" }, name) : name, el("small")]), i); x.dataset.b = i; return x; };
   // the arrows: where a finger is on the cross, from its middle, is the
   // direction (a diagonal between two arms), and it slides from one to the next
   const arm = (cls, sign) => el("div", { class: "arm " + cls }, sign);
@@ -2276,9 +2280,9 @@ function touchBuild() {
   const abxy = el("div", { class: "abxy pad", role: "group", "aria-label": "buttons" }, [btn("bx", 3, "X"), btn("by", 2, "Y"), btn("ba", 1, "A"), btn("bb", 0, "B")]);
   touchPad.el = el("div", { class: "touchpad", id: "touchpad", hidden: "" }, [
     // (ticket 221: 🫧 blow bubbles, under select; ticket 499: 🔥 breathe fire, under start, each a column of its own, so none covers another)
-    // (ticket 687: 🫧's and 🔥's buttons are 🅰️'s and 🅱️'s, each showing the item in its slot)
-    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🅰️")])]),
-    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🅱️")]), abxy])]);
+    // (ticket 687: 🫧's and 🔥's buttons are 🔹's and 🔸's, each showing the item in its slot)
+    el("div", { class: "half l" }, [btn("sh", 4, "L"), dpad, el("div", { class: "sms" }, [btn("sm", 8, "select"), btn("sm", 6, "🔹", true)])]),
+    el("div", { class: "half r" }, [btn("sh", 5, "R"), el("div", { class: "sms" }, [btn("sm", 9, "start"), btn("sm", 7, "🔸", true)]), abxy])]);
   document.body.append(touchPad.el);
   touchPad.keys = "";
   touchLabels();
@@ -2290,7 +2294,7 @@ function touchLabels() {
   touchPad.keys = key;
   for (const x of touchPad.el.querySelectorAll("button[data-b]")) {
     const a = PAD_ACTIONS.find(([k]) => C[k] === +x.dataset.b);
-    // (ticket 687) 🅰️'s and 🅱️'s buttons show the item in the slot, or the slot's mark when it is empty
+    // (ticket 687) 🔹's and 🔸's buttons show the item in the slot, or the slot's mark when it is empty
     const slot = a && SLOTS.find(([, k]) => k === a[0]), it = slot && ITEM[itemIn(slot[0])];
     x.lastChild.textContent = a ? (slot ? (it ? it.icon : slot[2]) : a[1].split(" ")[0]) : "";
     x.title = `${x.firstChild.textContent}: ${a ? (slot ? `${slot[2]} ${it ? it.icon + " " + it.name : "nothing in it: choose one in 🎒 your items"}` : a[1]) : "nothing yet (set one in the 🎮 Controls tab)"}`;

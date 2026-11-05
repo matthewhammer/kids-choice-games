@@ -477,8 +477,15 @@ const HOLDABLES = {
   staff:   { name: "🪄 staff", ext: [190, 120, 40], fist: true },
   lasso:   { name: "➿ lasso", ext: [0, 64, 44], fist: true },
   rein:    { name: "🐴 the horse's rein", ext: [0, 0, 0], fist: true },
+  // (ticket 687, Matthew: "let's have the L and R hands depict the two selected items") the items of 🎒 your items, held as
+  // the others are (heldWithItems: 🔹's in the left hand, 🔸's in the right, where the costume leaves the hand free), drawn by
+  // itemHeldSvg (js/25-inventory.js); not in the hand menu (slot: true): they come of the slots, not of a choice here
+  net:     { name: "🥅 the bug net", ext: [125, 0, 36], fist: true, slot: true },
+  can:     { name: "💧 the watering can", ext: [0, 62, 72], fist: true, slot: true },
+  bubbles: { name: "🫧 bubbles", ext: [120, 0, 44], fist: true, slot: true },
+  fire:    { name: "🔥 fire", ext: [90, 0, 24], fist: false, slot: true },
 };
-const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"], ...Object.entries(HOLDABLES).map(([id, h]) => [id, h.name])];
+const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"], ...Object.entries(HOLDABLES).filter(([, h]) => !h.slot).map(([id, h]) => [id, h.name])];
 // What a costume puts in each own hand by itself ("auto"): the broom, staff, scepter, sword and lasso in the left (side +1
 // facing us), the bow and the shield in the right, each while its own costume setting has it on
 function heldAuto(kind, WC) {
@@ -494,7 +501,7 @@ function heldItems(body, kind, WC) {
   const auto = heldAuto(kind, WC), v = own => body["hold" + own] || "auto";
   const pick = (own, other) => { const x = v(own);
     if (x === "auto") { const a = auto[own]; return a && v(other) !== a ? a : null; }
-    return HOLDABLES[x] && (x !== "rein" || (body.horse && body.horse !== "none")) ? x : null; };
+    return HOLDABLES[x] && !HOLDABLES[x].slot && (x !== "rein" || (body.horse && body.horse !== "none")) ? x : null; };
   return { L: pick("L", "R"), R: pick("R", "L") };
 }
 // (ticket 522, M and Matthew: "Cowgirl and Cowboy, 3 variations of style each. 6 styles of hat. Lasso to hold. No guns
@@ -626,7 +633,7 @@ const WORLD_DEFAULT = {"cols": 6, "rows": 7, "start": "3,3", "cells": {"0,0": {"
 const DEFAULTS = {
   world: WORLD_DEFAULT,
   // (ticket 631, 632) what the friend carries: each { id, got, from }, what a chest gave first; and the pack itself: drawn on them, or not
-  // (ticket 687) and 🎒 your items: the items in the slots 🅰️ and 🅱️ (either may be "": empty), and what covers the game behind them
+  // (ticket 687) and 🎒 your items: the items in the slots 🔹 and 🔸 (either may be "": empty), and what covers the game behind them
   backpack: [], pack: { drawn: false, tool: "", a: "bubbles", b: "fire", screen: "dim" },
   // (ticket 406) the other worlds, by id (the one the friend is in is `world`), and the worlds kept as templates, by id
   worldsAway: {}, worldTemplates: {},
@@ -810,7 +817,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 // a top-level setting read from a save over its default: an object's fields over the default's, a list (the 🎒 backpack) whole
 // (ticket 637: spread as an object, the backpack came back {} from 📂 Load and from every reload's autosave)
 const savedOver = (k, v) => Array.isArray(DEFAULTS[k]) ? clone(Array.isArray(v) ? v : DEFAULTS[k]) : { ...DEFAULTS[k], ...(v || {}) };
-// (ticket 687) buttons from before 🅰️ and 🅱️: theirs are 🫧's and 🔥's (in them to start), and the three actions they replace go
+// (ticket 687) buttons from before 🔹 and 🔸: theirs are 🫧's and 🔥's (in them to start), and the three actions they replace go
 // (Matthew, 2026-11-04: start opens 🎒 your items) and in a layout from before, 🎒, with no button of its own, takes 🚪 the
 // nearest passage's (start, in the usual layouts and a taught pad's), and 🚪 has none
 function itemButtons(C) {
@@ -1017,7 +1024,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: -1, enter: 4, useA: 6, useB: 7, items: 9, throw: 1, act: 4 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start; ticket 687: 🅰️ and 🅱️ there now, 🫧 and 🔥 in them to start; 🎒 your items on start, Matthew's pick, 🚪 the nearest passage off it)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: -1, enter: 4, useA: 6, useB: 7, items: 9, throw: 1, act: 4 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start; ticket 687: 🔹 and 🔸 there now, 🫧 and 🔥 in them to start; 🎒 your items on start, Matthew's pick, 🚪 the nearest passage off it)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
@@ -1543,7 +1550,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.480", released: "2026-11-04" };
+const VERSION = { number: "0.0.481", released: "2026-11-04" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

@@ -112,7 +112,7 @@ try {
     const r = { action: PAD_ACTIONS.some(a => a[0] === "useB") && DEFAULTS.pack.b === "fire", button: DEFAULTS.controls.useB, fire: !!box(7), label: (document.querySelector('#touchpad [data-b="7"]') || {}).textContent || "",
                 apart: apart(box(7), box(9)) && apart(box(6), box(8)) };
     touchWant(false); return JSON.stringify(r); })()`));
-  ok("the controller's 🅱️ use item B, 🔥 in it to start (button 7), and its button on the on-screen controller, clear of start (and 🫧 clear of select)", pad.action && pad.button === 7 && pad.fire && /🔥/.test(pad.label) && pad.apart, pad);
+  ok("the controller's 🔸 use your 🔸 item, 🔥 in it to start (button 7), and its button on the on-screen controller, clear of start (and 🫧 clear of select)", pad.action && pad.button === 7 && pad.fire && /🔥/.test(pad.label) && pad.apart, pad);
   // 🔥 held on the on-screen controller as it is hidden: let go, not burning on
   const hide = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
     Object.assign(state.background, { kind: "emptyroom", figX: 0, figY: 70 }); state.body.facing = "right"; changed(); touchWant(true); await w(300);

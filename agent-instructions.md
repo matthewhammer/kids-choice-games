@@ -22,7 +22,7 @@ A push to `main` is a deploy. Release each feature as soon as it works; never le
 - **Pictures are deterministic:** time only via `picClock()`, chance only via a seed in the settings.
 - **A new place:** `PLACES`, `PLACE_GROUPS`, `SCENES`, `SCENE_FIG`, `SCENE_FAR`, `ARRIVE`, `PLACE_PHRASE`, `SCENE_TUNE`, the kinds list in `25-scripting.js`.
 - **A new costume:** `COSTUME_CLOTHES` (or `ANIMALS`), `TD_GEAR` (from above), `LIE_GEAR` (asleep).
-- **A new item** (🎒 your items, ticket 687): a row in `ITEMS` (`js/25-inventory.js`), an ability or a tool; a tool is also in `TOOLS` and used by `toolUse`; an ability's tick reads its slots' buttons (`blowPad`/`firePad` in `padPoll`, `itemKeyHolds` for Z and X).
+- **A new item** (🎒 your items, ticket 687): a row in `ITEMS` (`js/25-inventory.js`), an ability or a tool; a tool is also in `TOOLS` and used by `toolUse`; an ability's tick reads its slots' buttons (`blowPad`/`firePad` in `padPoll`, `itemKeyHolds` for Z and X); in the hand: an entry in `HOLDABLES` with `slot: true` and its drawing in `itemHeldSvg` (`heldWithItems` puts 🔹's in the left hand, 🔸's in the right, where the costume leaves a hand free).
 - **Settings:** a row in `TABS`, a rule in `SHOWN_WHEN`, a default in `DEFAULTS`; an old save must still load (`upgrade…`).
 - **Caching:** `part(name, inputs, build)` gets every input it reads and nothing per-frame.
 - **Depth:** standing things are `obj(name, z, svg)`; the depth lies within the thing's collision box.

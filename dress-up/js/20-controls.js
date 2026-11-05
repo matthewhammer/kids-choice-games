@@ -2399,10 +2399,10 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const list = el("div", { class: "pack-list" }), names = Object.fromEntries(CHEST_GIFTS);
     let sig = null;
     const render = () => {
-      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify([items, toolHeld(), state.background.kind === "none", typeof statueFig !== "undefined" && !!statueFig]);
+      const items = Array.isArray(state.backpack) ? state.backpack : [], s = JSON.stringify([items, itemIn("a"), itemIn("b"), state.background.kind === "none", typeof statueFig !== "undefined" && !!statueFig]);
       if (s === sig) return; sig = s;
       if (!items.length) { list.replaceChildren(el("p", { class: "hint" }, "Nothing in it yet: open a 💰 treasure chest, or walk up to a thing that glows (a potion, a mushroom, a bottle, a net...) and press Enter, or tap it.")); return; }
-      const nowhere = state.background.kind === "none", held = toolHeld();
+      const nowhere = state.background.kind === "none";
       list.replaceChildren(...items.map((it, i) => {
         const pic = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         pic.setAttribute("viewBox", "-60 -100 120 110"); pic.setAttribute("class", "pack-pic"); pic.setAttribute("aria-hidden", "true");
@@ -2415,7 +2415,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           el("div", { class: "row pack-uses" }, [
             // (ticket 639) take it out: on the floor in front of the friend; a tool: held in the hand, or put away; a bee: let go
             el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down"),
-            ...(TOOLS[it.id] ? [el("button", { "aria-pressed": String(held === it.id), onclick: () => toolHold(it.id) }, held === it.id ? "🎒 put it away" : "✋ hold it")] : []),
+            ...(TOOLS[it.id] ? SLOTS.map(([sl, , mark]) => el("button", { "aria-pressed": String(itemIn(sl) === it.id), title: `${mark}: in your ${mark} item, in that hand`, onclick: () => itemSet(sl, it.id) }, slotMark(mark))) : []),   // (ticket 687: in 🔹 or 🔸, which is in the hand, where ✋ hold it was)
             ...(it.id === "bottlebee" ? [el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => beeFree(i) }, "🐝 let it go")] : [])])]);
       }));
     };

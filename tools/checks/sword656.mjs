@@ -38,7 +38,7 @@ try {
     // no costume: the 🎒's sword, held
     state.costume = { ...state.costume, kind: "none" };
     state.backpack = [...packList(), { id: "sword", got: Date.now() }]; toolHold("sword"); await w(300);
-    out.packHeld = toolInHand(); out.packDrawn = !!document.querySelector('#figure [data-tool="sword"]');
+    out.packHeld = toolInHand(); out.packDrawn = !!document.querySelector('#figure [data-tool="sword"], #figure-far [data-tool="sword"]');   // (ticket 687: in its own hand, near or far)
     state.background.things = [{ ...(THING_DEFAULTS.saguaro || {}), kind: "saguaro", x: -90, z: 389, seed: 8 }]; changed(); draw(); await w(300);
     await swing(); out.saguaros = state.background.things.filter(t => t.kind === "saguaro").length;
     // the world: two clearings, a tree cut in the first only

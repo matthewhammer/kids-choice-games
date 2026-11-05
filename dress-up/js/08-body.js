@@ -1705,6 +1705,8 @@ function heldSvg(id, H, view, o) {
     case "shield": return side ? shieldSideSvg(H, WC, !o.knight, dir) : back || o.knight ? shieldSvg(H, WC, o.own === "R" ? "shield-arms" : "shield-arms" + o.own, back) : shieldPlainSvg(H);
     case "staff": return side ? staffSideSvg(H, orb, dir) : back ? staffBackSvg(H, orb) : staffSvg(H, orb);
     case "lasso": return `<g data-western="lasso">${lassoSvg(H, view, side ? dir : o.out, o.spin)}</g>`;
+    // (ticket 687: the items of 🎒 your items, js/25-inventory.js; on the floor, crawling toward us, put away: the default above)
+    case "net": case "can": case "bubbles": case "fire": return itemHeldSvg(id, H, view, o);
     default: return "";
   }
 }

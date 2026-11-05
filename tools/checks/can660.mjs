@@ -43,7 +43,7 @@ try {
     // picked up: in the 🎒, in the hand
     const near = carryNear(), canNear = near >= 0 && B.things[near].id === "can";
     actionPress(); await w(900);
-    const got = { canNear, pack: packList().map(o => o.id), held: toolHeld(), drawn: !!document.querySelector('#figure [data-tool="can"]'), water: canWater() };
+    const got = { canNear, pack: packList().map(o => o.id), held: toolHeld(), drawn: !!document.querySelector('#figure [data-tool="can"], #figure-far [data-tool="can"]'), water: canWater() };
     // its 🎒 card: when it was got (from the floor, not a chest: nothing before it, nor a comma)
     const tab0 = tab; tab = TABS.findIndex(t => t[1] === "pack"); showTab(); await w(900);
     const card = [...document.querySelectorAll(".pack-card .hint")].map(h => h.textContent)[0] ?? null;

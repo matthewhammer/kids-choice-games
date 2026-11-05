@@ -7,11 +7,13 @@
 // what's on screen to mostly, but not entirely, hide it)"; "items for: creating bubbles, creating fire, other things we have
 // special buttons for"; "so that these special buttons become something that can be changed from within the game, like selecting
 // an item that gives that ability"; "going forward, we'll have use item A, use item B, and those can be tools, or abilities")
+// (and then: "A and B is already in use on our game pad"; "two other symbols that are not letters, or numbers, or related to other
+// game objects or events yet": 🔹 and 🔸, his pick, the two slots' marks, which nothing else in the game uses)
 // 🎒 Your items: a screen over the game (the 🎒 button at the picture's corner, I on the keyboard, or start on the controller:
 // Matthew's pick, 2026-11-04, 🚪 the nearest passage taken off it), the game's picture held still under it. On it, every item: the abilities, which anyone has
 // (🫧 blowing bubbles, 🔥 breathing fire), and the tools, once found (in the 🎒 backpack; the sword also in the friend's own
-// hand), the ones not found yet shown dim. Two of them are the active items, in the slots 🅰️ and 🅱️ (state.pack.a and .b;
-// either may be empty, and no item is assumed): the controller's "use item A" and "use item B" (the left and right triggers,
+// hand), the ones not found yet shown dim. Two of them are the active items, in the slots 🔹 and 🔸 (state.pack.a and .b;
+// either may be empty, and no item is assumed): the controller's "🔹 use your 🔹 item" and "🔸 use your 🔸 item" (the left and right triggers,
 // where 🫧 and 🔥 were), Z and X on the keyboard. A tool is used by a press (toolUse: swung, or the can tipped); an ability goes
 // on while its button is held. The screen covers the game dimmed, black or white (state.pack.screen).
 const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", "breathe fire", "ability"],
@@ -19,7 +21,9 @@ const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", 
 const ITEM = Object.fromEntries(ITEMS.map(([id, icon, name, kind]) => [id, { id, icon, name, kind }]));
 const ITEM_SCREENS = [["dim", "🌗 dimmed"], ["black", "⬛ black"], ["white", "⬜ white"]];
 // the slots: each its state.pack key, its controller action, its mark and its key on the keyboard
-const SLOTS = [["a", "useA", "🅰️", "Z"], ["b", "useB", "🅱️", "X"]];
+const SLOTS = [["a", "useA", "🔹", "Z"], ["b", "useB", "🔸", "X"]];
+// a slot's mark in a line of text, drawn bigger (🔹 and 🔸 are small emoji; style.css .slot-mark)
+const slotMark = m => el("span", { class: "slot-mark", "aria-hidden": "true" }, m);
 
 // the friend has it: an ability always; a tool in the backpack, or (the sword) in their own hand
 function itemHas(id) {
@@ -43,13 +47,76 @@ function itemSet(s, id) {
   changed();
   itemsRender();
 }
-// a tool, used from its slot: held first (put in the hand from the backpack, or, for a sword in the friend's own hand, the
-// backpack's tool put away), then swung as "use tool" swings it
+// a tool, used from its slot: swung as "use tool" swings it, or the can tipped
 function itemToolUse(id) {
   if (!ITEM[id] || ITEM[id].kind !== "tool" || !itemHas(id)) return false;
-  const want = packList().some(o => o.id === id) ? id : "";
-  if (toolHeld() !== want) { state.pack = { ...(state.pack || {}), tool: want }; changed(); }
-  return toolUse();
+  return toolUse(undefined, id);
+}
+// (ticket 660, part 3, for M: the can in the hand at once) a tool just found goes in a slot: an empty one, or else in place of
+// an ability (🔸's first: its hand, the right, is a tool's; an ability is always had, so nothing is lost), never of a tool
+function itemFound(id) {
+  if (!TOOLS[id] || itemIn("a") === id || itemIn("b") === id) return;
+  const s = !itemIn("b") ? "b" : !itemIn("a") ? "a" : ITEM[itemIn("b")].kind === "ability" ? "b" : ITEM[itemIn("a")].kind === "ability" ? "a" : "";
+  if (s) state.pack = { ...(state.pack || {}), [s]: id };
+}
+// (the 🎒 tab's 🔹 and 🔸, and older code's toolHold: in a slot as a found tool goes, or out of its slot again)
+function toolHold(id) {
+  const P = state.pack || {};
+  if (P.a === id || P.b === id) state.pack = { ...P, ...(P.a === id ? { a: "" } : {}), ...(P.b === id ? { b: "" } : {}) };
+  else itemFound(id);
+  changed(); draw();
+}
+
+// ---- in the hands ----
+// (Matthew: "let's have the L and R hands depict the two selected items") what each own hand holds, drawn: the costume's or a
+// hold choice's thing (heldItems), else 🔹's item in the left hand and 🔸's in the right (a costume's own thing is never taken
+// from it; an item already in the other hand is not drawn twice). slotL, slotR: the hand's thing came of a slot. Not while the
+// people or the statue are drawn (personBusy): the slots are the friend's own.
+function heldWithItems(base) {
+  if (typeof personBusy !== "undefined" && personBusy) return base;
+  const a = itemIn("a"), b = itemIn("b");
+  const L = base.L || (a && a !== base.R ? a : null), R = base.R || (b && b !== L ? b : null);
+  return { L, R, slotL: !base.L && !!L, slotR: !base.R && !!R };
+}
+// (Matthew: "if the selected items are bubbles or fire, can we render a cheap animation there on the hand for a 'simmering'
+// ability that's just waiting, and idling a bit (a few bubbles ... limited ..., or a small flame, similarly limited in
+// animation expense)") An item in the hand, at the hand (H, the friend's units), leaning the way the hand reaches (the way
+// they face in profile): the net and the can as they are swung and tipped; 🫧 a bubble wand, three bubbles at a time rising
+// off its ring; 🔥 a small flame on the open palm, flickering, an ember rising. Each moves by SMIL on the picture's own clock
+// (begun at 0, or before it, so a friend drawn again picks up where it was, the drawing the same each time; held still with
+// the picture): a fixed few shapes, nothing done a frame for them.
+function itemHeldSvg(id, H, view, o) {
+  const [hx, hy] = H, s = view === "side" ? (o.dir || 1) : (o.out || 1);
+  const at = (x, y, inner, rot = 0) => `<g transform="translate(${f1(x)} ${f1(y)})${rot ? ` rotate(${rot})` : ""}">${inner}</g>`;
+  const loop = (attr, values, dur, begin, extra = "") => `<animate${attr === "transform" ? "Transform" : ""} attributeName="${attr}" ${extra}values="${values}" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>`;
+  switch (id) {
+    case "net": return at(hx, hy, `<g transform="scale(1.1)">${netSvg(1)}</g>`, s * 18);
+    case "can": return at(hx, hy, `<g transform="scale(1.1)">${canSvg(s)}</g>`);
+    case "bubbles": {
+      // the wand: a stick up and out of the fist, its ring a soap film; and off the ring, three bubbles a third of a cycle apart
+      const rx = s * 18, ry = -62;
+      let b = `<path d="M0 8 L${f1(rx * 0.85)} ${f1(ry + 13)}" stroke="#7c3aed" stroke-width="4.5" stroke-linecap="round"/>` +
+        `<circle cx="${f1(rx)}" cy="${ry}" r="13" fill="#dbeafe" fill-opacity="0.45" stroke="#7c3aed" stroke-width="3.5"/>` +
+        `<path d="M${f1(rx - 6)} ${ry - 5} Q${f1(rx - 2)} ${ry - 9} ${f1(rx + 3)} ${ry - 8}" stroke="#fff" stroke-width="2" fill="none" opacity="0.8"/>`;
+      for (let i = 0; i < 3; i++) {
+        const r = 4 + i * 1.5, dx = s * (6 + 7 * i), begin = (-0.8 * i).toFixed(1);
+        b += `<g opacity="0">${loop("opacity", "0;0.95;0.95;0", 2.4, begin, 'keyTimes="0;0.15;0.7;1" ')}` +
+          `<circle cx="${f1(rx)}" cy="${ry - 12}" r="${r}" fill="#e0f2fe" fill-opacity="0.35" stroke="#60a5fa" stroke-width="1.6">` +
+          `${loop("transform", `0 0;${f1(dx)} -50`, 2.4, begin, 'type="translate" ')}</circle></g>`;
+      }
+      return at(hx, hy, b);
+    }
+    case "fire": {
+      // the flame on the palm, scaled about its foot: a flicker, never a frame's work; and one ember, up and out
+      const flame = `<g>${loop("transform", "1 1;0.9 1.14;1.08 0.93;0.95 1.07;1 1", 0.9, 0, 'type="scale" ')}` +
+        `<path d="M0 0 C-15 -3 -14 -24 -3 -44 C1 -31 11 -28 9 -15 C16 -20 15 -6 0 0 Z" fill="#f97316" stroke="#c2410c" stroke-width="1.5"/>` +
+        `<path d="M0 -2 C-8 -4 -7 -15 -1 -27 C2 -18 7 -15 5 -9 C7 -10 7 -4 0 -2 Z" fill="#fde047"/></g>`;
+      const ember = `<g opacity="0">${loop("opacity", "0;1;0", 1.6, -0.5)}<circle cx="0" cy="-34" r="2.2" fill="#fdba74">` +
+        `${loop("transform", `0 0;${s * 7} -34`, 1.6, -0.5, 'type="translate" ')}</circle></g>`;
+      return at(hx, hy - 12, flame + ember);
+    }
+    default: return "";
+  }
 }
 // Z and X held: each its slot's (blowTick and fireTick read itemKeyHolds, as they read B's and F's own flags)
 const itemKeys = { a: false, b: false };
@@ -112,7 +179,7 @@ function itemsRender() {
       el("div", { class: "items-name" }, name),
       el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : "hold to use"),
       el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
-        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, mark)))]);
+        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))))]);
   });
   const names = Object.fromEntries(CHEST_GIFTS), rest = packList().filter(o => !ITEM[o.id]);
   itemsEl.replaceChildren(
@@ -121,7 +188,8 @@ function itemsRender() {
         el("button", { type: "button", "aria-pressed": String(screen === k), onclick: () => { state.pack = { ...(state.pack || {}), screen: k }; changed(); itemsRender(); } }, label))),
       el("button", { type: "button", class: "items-close", onclick: () => itemsShow(false) }, "✖ back to the game")]),
     el("div", { class: "items-slots" }, SLOTS.map(slot)),
-    el("p", { class: "hint" }, "Choose what 🅰️ and 🅱️ do: tap 🅰️ or 🅱️ under an item. With a controller, the arrows choose an item, and the button you want it on puts it there; start shuts this."),
+    el("p", { class: "hint" }, ["Choose what ", slotMark("🔹"), " and ", slotMark("🔸"), " do: tap ", slotMark("🔹"), " or ", slotMark("🔸"),
+      " under an item. With a controller, the arrows choose an item, and the button you want it on puts it there; start shuts this."]),
     el("div", { class: "items-grid" }, tiles),
     ...(rest.length ? [el("div", { class: "items-rest" }, [el("span", { class: "hint" }, "🎒 also in your backpack:"),
       ...rest.map(o => el("span", { class: "items-thing" }, names[o.id] || o.id))])] : []));
@@ -146,7 +214,7 @@ function itemsPad(fresh, g, btn) {
   for (const [s, a] of SLOTS) if (has(btn(a))) itemsPick(s);
   if (has(btn("items")) || has(btn("back"))) itemsShow(false);
 }
-// the keyboard: I opens and shuts the screen (Escape shuts it); on it, the arrows choose and Z or X puts the item in 🅰️ or 🅱️;
+// the keyboard: I opens and shuts the screen (Escape shuts it); on it, the arrows choose and Z or X puts the item in 🔹 or 🔸;
 // in the game, Z and X use the items in them. (Before the game's own keys: under the screen, they do nothing.)
 document.addEventListener("keydown", e => {
   if (e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;

@@ -279,10 +279,12 @@ function drawNow() {
   // (ticket 528: and the other way, the own hand an arm is: from behind, side +1 is the right hand, so its style goes there too)
   const ownOf = side => (away ? -side : side) > 0 ? "L" : "R";
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
-  const heldNow = heldItems(B, kind, WC);
-  const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own) })))
+  // (ticket 687) and 🔹's item in the left hand, 🔸's in the right, where nothing else is (heldWithItems; slotL, slotR)
+  const heldNow = heldWithItems(heldItems(B, kind, WC));
+  const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own), slot: !!heldNow["slot" + own] })))
     .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"))
-    .filter(h => !(swinging === "sword" && h.item === "sword"));   // (ticket 656: the sword in the hand is the one swinging, drawn by toolUse)
+    .filter(h => !(swinging && h.item === swinging))   // (ticket 656: the sword in the hand is the one swinging, drawn by toolUse; ticket 687: any tool)
+    .filter(h => !(h.slot && carry));   // (ticket 687: a pot over the head takes both hands, as ticket 639's tool was put away for it)
   // (ticket 529: swimming, everything held is put away, as the lasso is: both arms windmill over the head and under the
   // body each stroke, so a thing in the hand would sweep through the friend; crawling toward us, each lies flat on the
   // floor under its hand, heldSvg's "floor" drawings, reaching out to the side, not up)
@@ -905,7 +907,9 @@ function drawNow() {
   // (ticket 522, the lasso; ticket 518, everything held: a thing in the far hand, in profile or turned partway, is drawn with
   // that hand, behind the body, and goes into #figure-far with it; the rest after the shirt, before the rein and the hands)
   const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = crawlTo ? "floor" : dir ? "side" : away ? "back" : "front";
-  const heldDraw = h => heldSvg(h.item, h.arm.H, heldView, { WC: wanderer ? { ...WC, ...wandererArms(WC) } : WC, kb, monk, dryad: WC.monkWho === "dryad", knight: knight || wanderer, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
+  const heldDraw = h => { const s = heldSvg(h.item, h.arm.H, heldView, { WC: wanderer ? { ...WC, ...wandererArms(WC) } : WC, kb, monk, dryad: WC.monkWho === "dryad", knight: knight || wanderer, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
+    // (ticket 687: an item of 🎒 your items, marked as a tool or an ability)
+    return h.slot && s ? `<g data-${ITEM[h.item].kind}="${h.item}">${s}</g>` : s; };
   const farAt = svg.length;
   if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
@@ -1419,10 +1423,8 @@ function drawNow() {
   else if (scened && TOP_DOWN_KINDS.has(BG.kind) && !ride) topDownFigure(B);   // (ticket 621: seen from above, as the room is; ticket 624: in every pose)
   if (carry && !lieAlong) { const f = document.getElementById("figure"), H = figureT.base || 300;   // (ticket 629: the pot held over the head)
     if (f) f.insertAdjacentHTML("beforeend", `<g data-carry="pot">${potSvg(0, figureT.g - H * 1.02, 0.13 * H, carry.color)}</g>`); }
-  // (ticket 639) the tool held (✋ hold it, in the 🎒 tab), in the hand on the side they face, leaning out; not while it swings
-  { const tool = !lieAlong && !carry && !swinging && toolHeld(); const f = tool && document.getElementById("figure");
-    if (f) { const H = figureT.base || 300, side = state.body.facing === "left" ? -1 : 1;
-      f.insertAdjacentHTML("beforeend", `<g data-tool="${tool}" transform="translate(${f1(side * 0.22 * H)} ${f1(figureT.g - 0.5 * H)}) rotate(${tool === "can" ? 0 : side * 28}) scale(${(H / 300 * 1.1).toFixed(3)})">${toolSvg(tool, side)}</g>`); } }   // (ticket 660, part 3: the can hangs level)
+  // (ticket 639's tool held, laid over the hand on the side they face, is gone: ticket 687 draws the items of 🔹 and 🔸 in
+  // their own hands, with what else a hand holds, above)
   if (document.documentElement.classList.contains("lineart")) lineArtUnuse(pic);   // (lines only: no <use> left, its colours out of the styles' reach)
   if (figAway || figBurst) for (const n of figShown) if (n.style) n.style.visibility = "hidden";   // (ticket 349: and burst into bubbles)   // (ticket 193: a spin's copy is shown instead)
   // (ticket 199) climbing down a hatch: every piece of the friend cut off below its near edge, in the picture's own units
