@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.490 (2026-11-05)
+
+Everything in 0.0.489, plus:
+
+- **A knight rides with sword and shield again** (ticket 693). Since 0.0.485, riding put away whatever was in 🔹 and 🔸 so the friend could hold the reins; but a costume's own things are in those slots now too, so a knight riding let go of its sword and shield. Now only 🫧 and 🔥, which are magic in the hand rather than things held, give way to the reins. A sword, a shield, gold coins or anything else really held stays in its hand, and that hand lets go of its rein, as before.
+
 ## 0.0.489 (2026-11-04)
 
 Everything in 0.0.488, plus:
