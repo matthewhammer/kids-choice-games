@@ -79,6 +79,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
   <div class="edition">a young player's guide to flying: the 🎈 balloon, the 🫧 bubble, and every place and every thing seen from the sky</div>
   {pic("03-world-high", "The whole world from the top of the sky: every square of it a patch of the quilt, the seams stitched between them, the balloon at the middle.", "half")}
 </div>
+{('<p class="series"><b>Updated 2026-11-05:</b> the pictures retaken of ' + esc(VER) + ', where every kind of thing is drawn as itself from above (16 were plain dots in 0.0.489).</p>') if VER and VER != "0.0.489" else ""}
 <p class="series">Matthew, 2026-11-04: “this overview map (top down for each background) is very nice. Let's create a dress up report about it, with lots of screenshots of backgrounds and placed objects.” M had asked for a way to see the world like this before. The flying is {ref(691)}; this report is {ref(692)}.</p>
 <nav class="toc"><a href="#ch1">1 · WHAT'S NEW</a><br><a href="#ch2">2 · TAKE OFF 🎈</a><br><a href="#ch3">3 · HOW HIGH ⬆️⬇️</a><br><a href="#ch4">4 · LANDING 🛬</a><br><a href="#ch5">5 · EVERY PLACE FROM ABOVE</a><br><a href="#ch6">6 · PLACED THINGS</a><br><a href="#ch7">7 · EVERY THING TO PLACE</a><br><a href="#ch8">8 · IS IT FAST?</a><br><a href="#ch9">9 · WHAT'S NEXT</a></nav>
 
@@ -118,7 +119,7 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 <h2 id="ch7"><span class="ch">7</span>EVERY THING TO PLACE</h2>
 <p>Every kind of thing there is to place, a dozen to a square, each in its usual view and then from above.</p>
 <div class="gallery">{things}</div>
-{box("warn", "NOT YET", "<p>" + (f"{len(dots)} kinds are still a plain dot from above: " + esc(", ".join(label.get(d, d) for d in dots)) + "." if dots else "Some kinds of thing are still a plain dot from above.") + " They are where they should be, just not drawn as themselves yet.</p>")}
+{box("warn", "NOT YET", "<p>" + f"{len(dots)} kinds are still a plain dot from above: " + esc(", ".join(label.get(d, d) for d in dots)) + ". They are where they should be, just not drawn as themselves yet.</p>") if dots else box("tip", "EVERY ONE", "<p>Every kind of thing is drawn as itself from above. The first version of this guide (pictures of 0.0.489) found 16 that were still a plain dot, from the chocolate bar to the helmet; 0.0.491 drew them all.</p>")}
 
 <h2 id="ch8"><span class="ch">8</span>IS IT FAST?</h2>
 <p>The game's first rule is 60 frames a second for everything a controller does. Flying keeps to it by drawing the quilt <b>once</b>, when you take off, and then only moving and scaling it: one change a frame, whatever the height. The squares out of view are hidden, and high up each square's small things are left out.</p>
@@ -133,10 +134,10 @@ BODY = f"""<p class="series"><a href="../">Dress Up reports</a> · <a class="ref
 
 <h2 id="ch9"><span class="ch">9</span>WHAT'S NEXT</h2>
 <ol class="steps">
-<li><b>The dots.</b> Draw {(str(len(dots)) + " ") if dots else ""}kinds of thing from above as themselves (the gem, the bee, shells, starfish, fish…): {ref(691)}.</li>
+{('<li><b>The dots.</b> Draw ' + str(len(dots)) + ' kinds of thing from above as themselves (the gem, the bee, shells, starfish, fish…): ' + ref(691) + '.</li>') if dots else ''}
 <li><b>The bubble's own symbol.</b> The 🫧 big bubble to ride shares its symbol with 🫧 blowing bubbles; Matthew may pick it another: {ref(691)}.</li>
 <li><b>Inside places.</b> The rooms inside a house or a castle have no square of their own, so you cannot see their things from the sky: {ref(691)}.</li>
-<li><b>The pictures archive.</b> The archive of every picture in the game is refreshed tonight, flying and all: {ref(689)}.</li>
+<li><b>The pictures archive.</b> The archive of every picture in the game was refreshed on 2026-11-05 (run-2026-11-05, 0.0.490), flying and all: {ref(689)}.</li>
 </ol>
 
 <h2 id="about"><span class="ch">✎</span>ABOUT THIS GUIDE</h2>

@@ -473,12 +473,7 @@
     "🥅 bug net",
     "🐝 bee"
    ],
-   "dots": [
-    "chocolate",
-    "bottle",
-    "net",
-    "bee"
-   ]
+   "dots": []
   },
   "71-things-works-1": {
    "group": "works",
@@ -492,9 +487,7 @@
     "🎚️ lever",
     "🕳️ trap door"
    ],
-   "dots": [
-    "plate"
-   ]
+   "dots": []
   },
   "72-things-nature-2": {
    "group": "nature",
@@ -544,9 +537,7 @@
     "🫕 cauldron",
     "🧪 potion"
    ],
-   "dots": [
-    "potion"
-   ]
+   "dots": []
   },
   "75-things-spooky-5": {
    "group": "spooky",
@@ -562,10 +553,7 @@
     "💀 skull on a stake",
     "🪵 fence of stakes"
    ],
-   "dots": [
-    "skeleton",
-    "skullstake"
-   ]
+   "dots": []
   },
   "76-things-signs-6": {
    "group": "signs",
@@ -605,14 +593,7 @@
     "🪭 sea fan",
     "🥬 sea lettuce"
    ],
-   "dots": [
-    "coral",
-    "shell",
-    "starfish",
-    "seafish",
-    "anchor",
-    "seafan"
-   ]
+   "dots": []
   },
   "78-things-cave-8": {
    "group": "cave",
@@ -630,9 +611,7 @@
     "🕳️ cave passage",
     "🍄 cave mushroom"
    ],
-   "dots": [
-    "gem"
-   ]
+   "dots": []
   },
   "79-things-animals-9": {
    "group": "animals",
@@ -710,9 +689,7 @@
    "labels": [
     "🪖 helmet"
    ],
-   "dots": [
-    "helmet"
-   ]
+   "dots": []
   }
  },
  "squares": {
@@ -805,13 +782,13 @@
   "cols": 6,
   "rows": 7,
   "squares": 31,
-  "shapes": 1831,
-  "buildMs": 12.2,
+  "shapes": 1852,
+  "buildMs": 8.2,
   "start": "3,3"
  },
  "fps": {
-  "low": 59,
+  "low": 60,
   "high": 60
  },
- "version": "0.0.489"
+ "version": "0.0.491"
 }
