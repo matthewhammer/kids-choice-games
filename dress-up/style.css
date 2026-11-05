@@ -1347,3 +1347,25 @@ body.items-open .items-btn { top: 8px; right: 8px; }
                          100% { transform: translate(var(--dx, 8px), -50px); opacity: 0; } }
 @keyframes simmer-flicker { 0%, 100% { transform: scale(1, 1); } 25% { transform: scale(0.9, 1.14); } 50% { transform: scale(1.08, 0.93); }
                             75% { transform: scale(0.95, 1.07); } }
+/* (ticket 691) flying over the world seen from above: where they are, at the top; ⬆️, how high, ⬇️ and 🛬 down the left side.
+   Only its buttons take taps: a tap anywhere else on the quilt flies there (js/25-flight.js). */
+.fly-hud { position: absolute; inset: 0; z-index: 36; pointer-events: none; line-height: 1.4; }   /* (.pic-box's own is 0, for the picture) */
+.fly-hud[hidden] { display: none; }
+.fly-where { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 130px); overflow: hidden; text-overflow: ellipsis;
+             white-space: nowrap; background: var(--panel); opacity: 0.92; padding: 2px 12px; border-radius: 999px; font-size: clamp(11px, 1.6vw, 18px); }
+/* (down the left side, between the picture's top buttons and its bottom: the meter takes what height is left, so a small picture
+   beside the panels keeps all four in it) */
+.fly-side { position: absolute; left: 6px; top: 46px; bottom: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; pointer-events: auto; }
+.fly-side button { font-size: clamp(13px, 2.2vw, 24px); line-height: 1.25; padding: 1px 6px; background: var(--panel); opacity: 0.92; touch-action: none; flex: none; }
+.fly-side button[aria-pressed="true"] { opacity: 1; outline: 3px solid var(--accent); }
+.fly-meter { position: relative; width: 12px; flex: 0 1 110px; min-height: 16px; border-radius: 6px; overflow: hidden; background: #ffffff66; border: 2px solid var(--panel); }
+.fly-level { position: absolute; left: 0; right: 0; bottom: 0; background: #7cc4ff; }
+.fly-hud.fly-saying .fly-side { display: none; }   /* (a word while on the ground, "take off from outside": only the words) */
+body.flying .ways-layer, body.flying #back { display: none !important; }
+.items-fly { margin-left: 4px; }
+#fly.fly-high .fly-things { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
+/* (the craft bobbing as it floats: a CSS animation of its own group, nothing done a frame for it) */
+.fly-bob { animation: fly-bob 3.2s ease-in-out infinite; }
+@keyframes fly-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+body.still-scenery .fly-bob { animation: none; }

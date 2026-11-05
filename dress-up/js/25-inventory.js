@@ -18,6 +18,9 @@
 // on while its button is held. The screen covers the game dimmed, black or white (state.pack.screen).
 const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", "breathe fire", "ability"],
                ["net", "🥅", "the bug net", "tool"], ["sword", "🗡️", "the sword", "tool"], ["can", "💧", "the watering can", "tool"],
+               // (ticket 691: the crafts, which anyone has, as the abilities: used, the friend takes off, and flies over the world seen
+               // from above; used again, lands: js/25-flight.js)
+               ["balloon", "🎈", "the hot-air balloon", "craft"], ["bubbleride", "🫧", "a big bubble to ride", "craft"],
                // (Matthew: "costume props [to] appear in the backpack when we add the costume": itemsDressed) a costume's own things, held
                // in the hand (drawn as HOLDABLES draws them), nothing done by their button: shown on the screen once had
                ["broom", "🧹", "a broom", "prop"], ["staff", "🪄", "a staff", "prop"], ["scepter", "👑", "a scepter", "prop"],
@@ -43,7 +46,7 @@ const slotMark = m => el("span", { class: "slot-mark", "aria-hidden": "true" }, 
 function itemHas(id) {
   const it = itemOf(id);
   if (!it) return false;
-  if (it.kind === "ability") return true;
+  if (it.kind === "ability" || it.kind === "craft") return true;
   if (packList().some(o => o.id === id)) return true;
   if (id !== "sword") return false;
   const h = heldItems(state.body, state.costume.kind, state.costume);
@@ -134,6 +137,9 @@ function itemHeldSvg(id, H, view, o) {
   switch (id) {
     case "net": return at(hx, hy, `<g transform="scale(1.1)">${netSvg(1)}</g>`, s * 18);
     case "can": return at(hx, hy, `<g transform="scale(1.1)">${canSvg(s)}</g>`);
+    // (ticket 691) the crafts, held: the balloon a little one on its string, up from the fist; the bubble one big bubble on the palm
+    case "balloon": return at(hx, hy, `<path d="M0 0 Q${f1(s * 10)} -30 ${f1(s * 4)} -58" fill="none" stroke="#5e3d22" stroke-width="2"/><ellipse cx="${f1(s * 4)}" cy="-76" rx="15" ry="18" fill="#e84a3a" stroke="#a8322a" stroke-width="2"/>`);
+    case "bubbleride": return at(hx, hy - 22, `<circle r="20" fill="#e0f2fe" fill-opacity="0.35" stroke="#60a5fa" stroke-width="2"/>`);
     case "bubbles": {
       // the wand, one path: a stick up and out of the fist and its ring, a soap film; and off the ring, two bubbles half a cycle
       // apart (the held items' budget: at most 5 shapes for 🫧 and 🔥 together, ticket 687's check)
@@ -167,7 +173,9 @@ function itemKey(s, down) {
   if (!down) return;
   const id = itemIn(s);
   if (!id) return;
-  if (itemOf(id).kind === "tool") itemToolUse(id);
+  if (itemOf(id).kind === "craft") flightToggle(id);   // (ticket 691)
+  else if (flight) return;   // (flying, only a craft's button does anything: landing)
+  else if (itemOf(id).kind === "tool") itemToolUse(id);
   else if (id === "bubbles") blowGo();
   else if (id === "fire") fireGo();
 }
@@ -220,9 +228,11 @@ function itemsRender() {
     return el("div", { class: "items-tile" + (has ? "" : " missing") + (i === itemsAt ? " at" : ""), "data-item": id }, [
       el("div", { class: "items-icon", "aria-hidden": "true" }, icon),
       el("div", { class: "items-name" }, name),
-      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
-      el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
-        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))))]);
+      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "craft" ? "press to fly, again to land" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
+      el("div", { class: "items-pick" }, [...SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
+        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))),
+        // (ticket 691: a craft flown at once, from here)
+        ...(kind === "craft" ? [el("button", { type: "button", class: "items-fly", title: `fly ${name}`, onclick: () => flightStart(id) }, "🛫 fly")] : [])])]);
   });
   itemsEl.replaceChildren(
     el("div", { class: "items-top" }, [el("h2", {}, "🎒 Your items"),

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.486 (2026-11-04)
+
+Everything in 0.0.485, plus:
+
+- **Fly over the world, seen from above** (ticket 691). Two new items, 🎈 the hot-air balloon and 🫧 a big bubble to ride, are in 🎒 your items for anyone: tap 🛫 fly on one, or put it in 🔹 or 🔸 and press that button. The friend takes off from the square of the world they are in, and the picture becomes the whole world from above, a quilt with each square a patch: its place seen from the top (the lake's water, the castle's walls and towers, a house's roof, a forest's treetops, the sea's waves), its paths running on into the next square's, and its things (trees, rocks, chests) from above too. The friend rides in the basket or the bubble, seen from above, its shadow on the ground below. ⬆️ and ⬇️ on the left climb and sink: low, one square fills the picture; high, you see the whole world, clouds drifting between. The arrows (a controller's, the on-screen one's, or the keyboard's) fly about, and so does a tap anywhere on the quilt. Down at the ground over a place, or with 🛬 or the craft's button again, they land there, in its usual view. Page Up and Page Down (or + and -) climb and sink on the keyboard; on a controller, the jumps climb and crouching sinks.
+
 ## 0.0.485 (2026-11-04)
 
 Everything in 0.0.484, plus:

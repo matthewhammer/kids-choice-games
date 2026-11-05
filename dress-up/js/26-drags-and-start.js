@@ -1286,6 +1286,7 @@ function padPoll(t) {
   // (ticket 687) 🎒 your items, open: the controller chooses there, and nothing in the game moves
   if (itemsOpen) { itemsPad(fresh, g, btn); padLoop = requestAnimationFrame(padPoll); return; }
   if (hit("items")) { itemsShow(true); padLoop = requestAnimationFrame(padPoll); return; }
+  if (flight) { flightPad(g, held, hit, btn); padLoop = requestAnimationFrame(padPoll); return; }   // (ticket 691: flying, the controller flies)
   if (hit("back")) { if (!backBtn.hidden) backBtn.click(); }
   if (hit("door")) padDoor();
   if (hit("crawlToggle")) { padCrawl = !padCrawl; padWant = null; }   // (ticket 146: on or off; arrows then crawl)
@@ -1349,6 +1350,7 @@ function padPoll(t) {
   if (hit("enter") && !acted) enterPicture();   // (ticket 145)
   // (ticket 687) 🔹 and 🔸: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
   for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && itemOf(id).kind === "tool" && hit(a)) itemToolUse(id);
+  for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && itemOf(id).kind === "craft" && hit(a)) flightStart(id);   // (ticket 691: a craft's button, taking off)
   blowPad = (slotA === "bubbles" && held("useA")) || (slotB === "bubbles" && held("useB"));
   if (blowPad) blowGo();
   firePad = (slotA === "fire" && held("useA")) || (slotB === "fire" && held("useB"));

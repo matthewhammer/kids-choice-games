@@ -19,7 +19,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dress Up">
-<link rel="stylesheet" href="style.css?v=0.0.485">
+<link rel="stylesheet" href="style.css?v=0.0.486">
 </head>
 <body>
 <div class="app">
@@ -37,6 +37,15 @@
           <button class="items-btn" id="items-btn" title="Your items: choose what 🔹 and 🔸 do (I on the keyboard, start on a controller)" aria-label="Your items" aria-pressed="false">🎒</button>
           <div class="ways-layer" id="ways"></div><div class="ways-layer" id="access-layer"></div>
           <div class="items-screen" id="items-screen" role="dialog" aria-label="Your items" hidden></div>
+          <div class="fly-hud" id="fly-hud" hidden>
+            <div class="fly-where" aria-live="polite"></div>
+            <div class="fly-side">
+              <button type="button" id="fly-up" title="Climb (Page Up or + on the keyboard, a jump button on a controller)" aria-label="Climb" aria-pressed="false">⬆️</button>
+              <div class="fly-meter" aria-hidden="true"><div class="fly-level"></div></div>
+              <button type="button" id="fly-down" title="Sink (Page Down or - on the keyboard, crouch on a controller); down at the ground, land" aria-label="Sink" aria-pressed="false">⬇️</button>
+              <button type="button" id="fly-land" title="Land here" aria-label="Land here">🛬</button>
+            </div>
+          </div>
         </div>
         <div class="bar">
           <div class="caption" id="mood" title="Drag the mouth or the eyebrows on the face, too!"></div>
@@ -82,36 +91,37 @@
 </div>
 
 <!-- (ticket 178) the game's script, in parts, run in this order; each carries the version, so a cached part never meets a newer page -->
-<script src="js/01-state.js?v=0.0.485"></script>
-<script src="js/02-helpers.js?v=0.0.485"></script>
-<script src="js/03-face.js?v=0.0.485"></script>
-<script src="js/04-hair.js?v=0.0.485"></script>
-<script src="js/05-ghost.js?v=0.0.485"></script>
-<script src="js/06-costumes.js?v=0.0.485"></script>
-<script src="js/07-underwear.js?v=0.0.485"></script>
-<script src="js/08-body.js?v=0.0.485"></script>
-<script src="js/09-backgrounds.js?v=0.0.485"></script>
-<script src="js/10-nature.js?v=0.0.485"></script>
-<script src="js/11-houses-and-huts.js?v=0.0.485"></script>
-<script src="js/12-clearing-and-castle.js?v=0.0.485"></script>
-<script src="js/13-castle-rooms-and-map.js?v=0.0.485"></script>
-<script src="js/14-outdoors.js?v=0.0.485"></script>
-<script src="js/15-place-picker.js?v=0.0.485"></script>
-<script src="js/16-objects-and-solids.js?v=0.0.485"></script>
-<script src="js/17-moving-and-climbing.js?v=0.0.485"></script>
-<script src="js/18-drawing.js?v=0.0.485"></script>
-<script src="js/19-music.js?v=0.0.485"></script>
-<script src="js/20-controls.js?v=0.0.485"></script>
-<script src="js/21-size-and-divider.js?v=0.0.485"></script>
-<script src="js/22-full-screen.js?v=0.0.485"></script>
-<script src="js/23-heads-up-display.js?v=0.0.485"></script>
-<script src="js/24-surprise-save-start-over.js?v=0.0.485"></script>
-<script src="js/25-world.js?v=0.0.485"></script>
-<script src="js/25-scripting.js?v=0.0.485"></script>
-<script src="js/25-fumola.js?v=0.0.485"></script>
-<script src="js/25-friends.js?v=0.0.485"></script>
-<script src="js/25-recordings.js?v=0.0.485"></script>
-<script src="js/25-inventory.js?v=0.0.485"></script>
-<script src="js/26-drags-and-start.js?v=0.0.485"></script>
+<script src="js/01-state.js?v=0.0.486"></script>
+<script src="js/02-helpers.js?v=0.0.486"></script>
+<script src="js/03-face.js?v=0.0.486"></script>
+<script src="js/04-hair.js?v=0.0.486"></script>
+<script src="js/05-ghost.js?v=0.0.486"></script>
+<script src="js/06-costumes.js?v=0.0.486"></script>
+<script src="js/07-underwear.js?v=0.0.486"></script>
+<script src="js/08-body.js?v=0.0.486"></script>
+<script src="js/09-backgrounds.js?v=0.0.486"></script>
+<script src="js/10-nature.js?v=0.0.486"></script>
+<script src="js/11-houses-and-huts.js?v=0.0.486"></script>
+<script src="js/12-clearing-and-castle.js?v=0.0.486"></script>
+<script src="js/13-castle-rooms-and-map.js?v=0.0.486"></script>
+<script src="js/14-outdoors.js?v=0.0.486"></script>
+<script src="js/15-place-picker.js?v=0.0.486"></script>
+<script src="js/16-objects-and-solids.js?v=0.0.486"></script>
+<script src="js/17-moving-and-climbing.js?v=0.0.486"></script>
+<script src="js/18-drawing.js?v=0.0.486"></script>
+<script src="js/19-music.js?v=0.0.486"></script>
+<script src="js/20-controls.js?v=0.0.486"></script>
+<script src="js/21-size-and-divider.js?v=0.0.486"></script>
+<script src="js/22-full-screen.js?v=0.0.486"></script>
+<script src="js/23-heads-up-display.js?v=0.0.486"></script>
+<script src="js/24-surprise-save-start-over.js?v=0.0.486"></script>
+<script src="js/25-world.js?v=0.0.486"></script>
+<script src="js/25-scripting.js?v=0.0.486"></script>
+<script src="js/25-fumola.js?v=0.0.486"></script>
+<script src="js/25-friends.js?v=0.0.486"></script>
+<script src="js/25-recordings.js?v=0.0.486"></script>
+<script src="js/25-inventory.js?v=0.0.486"></script>
+<script src="js/25-flight.js?v=0.0.486"></script>
+<script src="js/26-drags-and-start.js?v=0.0.486"></script>
 </body>
 </html>
