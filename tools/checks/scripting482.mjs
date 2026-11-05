@@ -67,6 +67,8 @@ try {
     Object.assign(B, { kind: "castleroom", castle: "N", castleRoom: 3, figX: -200, figY: 80, things: [], castleLeverL_3N: true, castleLeverR_3N: true });
     changed(); await w(400);
     window.__G = { gaps: [], last: 0, on: true, t0: performance.now(), lib: null };
+    // (diag-693: every message from Hazel's frames, by when and its type)
+    window.__F = []; addEventListener("message", e => { if (e.origin === "https://build.hazel.org") __F.push([Math.round(performance.now() - __G.t0), (e.data || {}).type, e.source === (scriptFrame && scriptFrame.iframe.contentWindow) ? "prog" : "other"]); });
     const g = t => { if (!__G.on) return; if (__G.last) __G.gaps.push(+(t - __G.last).toFixed(1)); __G.last = t; if (__G.lib == null && window.Hazel) __G.lib = Math.round(performance.now() - __G.t0); requestAnimationFrame(g); };
     requestAnimationFrame(g);
     state.scripts = { on: false, all: "hazel", common: null, rooms: {} };   // (ticket 566: every room on Hazel, so each shows its editor)
@@ -103,6 +105,15 @@ try {
   // (ticket 578: the tiles that take edits are embed-editable's build, f849f43; the library stays js-library-embed's)
   ok("Hazel's frame (index.html#embed on embed-editable's build) says ready", src === "https://build.hazel.org/embed-editable/index.html#embed" && T.phase === "ready", [src, T.phase]);
   ok("the frame shows the shipped program as tiles (its modules and on_event among them), with no error mark, and its status says fine", !!look && look.tokens > 20 && look.words && look.marks === 0 && !!st0 && st0.ok === true, [look, st0]);
+  // (diag-693: with no tiles, what the page and the frame say)
+  {
+    const P = JSON.parse(await ev(`JSON.stringify({ msgs: window.__F || null, phase: scriptFrame && scriptFrame.phase, sent: scriptFrame && scriptFrame.sent ? scriptFrame.sent.length : null, status: scriptFrame && scriptFrame.status,
+      quiet: scriptFrame && scriptFrame.quiet, oops: scriptFrame && scriptFrame.oops, crashes: scriptFrame && scriptFrame.crashes && scriptFrame.crashes.length, inView: scriptFrame && scriptFrame.inView,
+      rect: scriptFrame && (b => [b.left, b.top, b.width, b.height].map(Math.round))(scriptFrame.iframe.getBoundingClientRect()), display: scriptFrame && getComputedStyle(scriptFrame.iframe).display,
+      vis: scriptFrame && getComputedStyle(scriptFrame.iframe).visibility, frames: document.querySelectorAll("iframe").length })`));
+    const Q = await frameEv(`JSON.stringify({ text: document.body ? document.body.innerText.slice(0, 300) : null, els: document.querySelectorAll("*").length, code: document.querySelectorAll(".code-container").length, title: document.title, hidden: document.hidden, vis: document.visibilityState })`);
+    console.log(`  DIAG ${look && look.tokens > 0 ? "tiles" : "NO TILES"} ${JSON.stringify({ page: P, frame: Q ? JSON.parse(Q) : null })}`);
+  }
   const Z = JSON.parse(await ev(`JSON.stringify({ height: scriptFrame && scriptFrame.height, style: scriptFrame && parseInt(scriptFrame.iframe.style.height) })`));
   const row = parseFloat(look && look.row) || 30;
   ok("size: the frame as tall as Hazel says its tiles are (taller than its first 120 px, within a row of its content)", Z.height > 120 && Z.style === Z.height && !!look && Math.abs(look.scroll - Z.height) <= row + 2, [Z, look]);
