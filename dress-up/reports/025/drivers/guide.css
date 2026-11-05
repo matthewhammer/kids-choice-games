@@ -1,0 +1,53 @@
+
+  :root { --bg: #f4ecd8; --paper: #fffaf0; --ink: #231f1a; --muted: #6b6052; --line: #c9b99a; --accent: #b4361d; --alt: #1d5fb4; --good: #2f7d32; --bad: #b4361d; --tip: #fff3c4; --warn: #ffe0d6; --code: #1d1b16; --codeink: #e8e2d0; --link: #1d5fb4; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; } }
+  :root[data-theme="dark"] { --bg: #16140f; --paper: #1f1c16; --ink: #ece4d2; --muted: #a89c86; --line: #4a4234; --accent: #ff7a4d; --alt: #7fb2ff; --good: #7bd17f; --bad: #ff7a4d; --tip: #3a3218; --warn: #3a2018; --code: #0d0c09; --codeink: #e8e2d0; --link: #9cc3ff; }
+  * { box-sizing: border-box; }
+  /* (Matthew, 2026-10-24: "This serif font choice ... is very close to actual manuals I read --- but I find it hard to read, and let's choose
+     a nicer looking one, that's a bit bigger") Literata, a serif made for long reading, larger */
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 19px/1.62 "Literata", Georgia, serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  a { color: var(--link); }
+  .series { font: 15px/1.4 system-ui, sans-serif; color: var(--muted); }
+  .cover { border: 4px double var(--ink); background: var(--paper); padding: 28px 22px; margin: 18px 0 30px; text-align: center; }
+  .cover .pub { font-family: "VT323", monospace; font-size: 1.3em; letter-spacing: 0.15em; color: var(--muted); }
+  h1 { font-family: "Press Start 2P", monospace; font-size: clamp(1.1em, 4.2vw, 1.9em); line-height: 1.5; margin: 14px 0; color: var(--accent); text-shadow: 3px 3px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+  .cover .edition { font-family: "VT323", monospace; font-size: 1.5em; }
+  h2 { font-family: "Press Start 2P", monospace; font-size: 1em; line-height: 1.6; margin: 48px 0 14px; padding: 10px 12px; background: var(--ink); color: var(--paper); }
+  h2 .ch { color: var(--accent); margin-right: 10px; }
+  h3 { font-family: "VT323", monospace; font-size: 1.6em; margin: 26px 0 6px; border-bottom: 2px dotted var(--line); }
+  .box { border: 3px solid var(--ink); padding: 10px 14px; margin: 16px 0; background: var(--paper); }
+  .box .box-h { font-family: "Press Start 2P", monospace; font-size: 0.7em; margin-bottom: 6px; }
+  .box.tip { background: var(--tip); } .box.warn { background: var(--warn); border-color: var(--bad); }
+  .box.warn .box-h { color: var(--bad); }
+  pre.code { background: var(--code); color: var(--codeink); padding: 10px 12px; overflow-x: auto; font: 14px/1.45 "VT323", ui-monospace, monospace; font-size: 1.05em; border-left: 6px solid var(--accent); white-space: pre-wrap; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+  figure.shot { margin: 18px 0; border: 3px solid var(--ink); background: var(--paper); padding: 6px; }
+  figure.shot img { display: block; width: 100%; height: auto; image-rendering: auto; }
+  figure.shot figcaption { font: 14px/1.4 system-ui, sans-serif; color: var(--muted); padding: 6px 4px 2px; }
+  figure.half { max-width: 520px; }
+  /* (Matthew, 2026-10-24: "center the screenshot, under title for report") */
+  .cover figure.shot { margin-left: auto; margin-right: auto; }
+  .toc { columns: 2; font-family: "VT323", monospace; font-size: 1.3em; border: 2px dashed var(--line); padding: 10px 16px; }
+  .toc a { text-decoration: none; display: inline-block; padding: 0 6px; margin: 1px 0; }
+  /* (Matthew, 2026-10-24: "invert colors of 'main menu' (report contents 1--12), when we do hover over") a menu line lit as a game's is */
+  .toc a:hover, .toc a:focus-visible { background: var(--link); color: var(--bg); outline: none; } @media (max-width: 560px) { .toc { columns: 1; } }
+  ol.steps li { margin: 6px 0; }
+  table.feat { width: 100%; border-collapse: collapse; font: 14px/1.4 system-ui, sans-serif; }
+  table.feat td.n { text-align: right; } table.feat th, table.feat td { border: 1px solid var(--line); padding: 5px 7px; text-align: left; vertical-align: top; }
+  table.feat th { background: var(--ink); color: var(--paper); font-family: "VT323", monospace; font-size: 1.2em; font-weight: normal; }
+  td.st { font-family: "Press Start 2P", monospace; font-size: 0.6em; white-space: nowrap; }
+  td.st-done { color: var(--good); } td.st-check { color: var(--alt); } td.st-branch { color: #b8860b; } td.st-next { color: var(--bad); }
+  .scroll { overflow-x: auto; }
+  /* (Matthew, 2026-10-24: "the buttons shown in the text should be equally round to the buttons in the actual GUI") a button named in the
+     text drawn as the game draws its chips */
+  .key { display: inline-block; border: 1px solid var(--line); border-radius: 10px; padding: 1px 10px; font: 600 0.82em/1.5 system-ui, "Segoe UI", sans-serif; background: var(--paper); white-space: nowrap; vertical-align: 1px; }
+  .missing { color: var(--bad); font-family: "VT323", monospace; }
+  .wip { color: #b45309; font-weight: 600; }
+  .ver { font: 600 12px/1.4 system-ui, sans-serif; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; white-space: nowrap; }
+  button.theme { font: 13px system-ui; border: 1px solid var(--line); background: var(--paper); color: var(--muted); border-radius: 8px; padding: 1px 8px; cursor: pointer; position: fixed; top: 8px; right: 8px; }
+  .grid { position: relative; aspect-ratio: 16 / 9; max-width: 640px; margin: 16px auto; border: 3px solid var(--ink); background: linear-gradient(var(--paper), var(--tip)); font: 600 14px/1 system-ui, sans-serif; }
+  .grid .v { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--line); } .grid .v span { position: absolute; top: 4px; left: 3px; }
+  .grid .h { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--line); } .grid .h span { position: absolute; right: 4px; top: 3px; }
+  .grid .dot { position: absolute; transform: translate(-50%, -50%); background: var(--accent); color: var(--paper); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .card { border: 3px double var(--ink); background: var(--paper); padding: 8px 14px; columns: 2; } .card p { margin: 4px 0; break-inside: avoid; } @media (max-width: 560px) { .card { columns: 1; } }

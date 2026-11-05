@@ -22,7 +22,8 @@ for (let i = 0; i < 40; i++) { const t = await send("Runtime.evaluate", { expres
 const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: true, expression: `(async () => {
   const h = s => { let x = 0; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) | 0; return (x >>> 0).toString(16); };
   const tick = () => new Promise(r => setTimeout(r, 60)), out = {};
-  const reset = () => { for (const [p, v] of Object.entries(DEFAULTS)) if (state[p] && typeof v === "object") { for (const key of Object.keys(state[p])) delete state[p][key]; Object.assign(state[p], structuredClone(v)); }
+  // (a list, the 🎒 backpack, replaced whole: its entries deleted one by one would leave holes, which the items read as undefined: ticket 692)
+  const reset = () => { for (const [p, v] of Object.entries(DEFAULTS)) if (Array.isArray(v)) state[p] = structuredClone(v); else if (state[p] && typeof v === "object") { for (const key of Object.keys(state[p])) delete state[p][key]; Object.assign(state[p], structuredClone(v)); }
     const B = state.background; Object.assign(B, { lfoFast: "none", lfoSlow: "none", lfoWings: "none", fairyHouseLfo: "none" });
     for (const key of Object.keys(B)) if (/^castle(Cat|Horse)\\d+Lfo/.test(key)) B[key] = "none";
     state.costume.wingLfo = "none"; for (const key of Object.keys(state.visible || {})) if (key.startsWith("lfo_")) state.visible[key] = "none"; };
