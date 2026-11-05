@@ -68,6 +68,7 @@ jobs:
           done
           curl -sf http://127.0.0.1:9333/json/version | grep -i '"Browser"'
       - name: The safety net against main (every picture's markup, and the structure)
+        continue-on-error: true   # (diag-692 only: its sweep stopped the run before the report's pictures)
         shell: bash
         run: |
           node tools/sweep.mjs 9333 "$MAIN_PAGE" out/sweep-main.json
