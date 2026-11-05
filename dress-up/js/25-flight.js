@@ -52,38 +52,218 @@ const flyPool = (x, y, rx, ry, deep = "#2f6fb0", shore = "#7fb3d9") => flyE(x, y
 const FT = FLY_T, FTOP = 0.36 * FLY_T;   // (the far third of a square is where its scene's own backdrop stands: its landmarks)
 // Each place from above: its ground, then its landmarks, in a square's units. (The insides put in a square, and the places of
 // their own, have a roof or a floor of their own: flyLookOf.)
+// Each place from above, as its own scene draws it (its landmarks where they stand in the scene: across by their share of its
+// width, X; its far things at the top of the square, its near ones at the bottom), from the place's own settings (o, the
+// background's, shared by every square of that place) and the square's own (cell: a crossing's floor and ways, a cave's kind).
+// First its ground, one shape (its paths go just over it); then its landmarks; its finer things in flyNear, seen only low down.
+const flyX = s => FT * (0.5 + s);
+// (pieces the places share: a leafy tree's crown, a pine's, a stone, a palm, an umbrella, a horse, a hen, a tent)
+const flyOak = (x, y, r, c = "#3f7a32") => flyC(x + 0.3 * r, y + 0.35 * r, r, FLY_SHADE) + flyC(x, y, r, c) + flyC(x - 0.3 * r, y - 0.3 * r, 0.45 * r, lighter(c));
+const flyPine = (x, y, r) => flyC(x + 0.3 * r, y + 0.35 * r, r, FLY_SHADE) + flyC(x, y, r, "#2f5a2c") + flyC(x, y, 0.5 * r, "#3f7038");
+const flyStone = (x, y, r, c = "#8f8a80", seed = 1) => flyPath(flyPoly([0, 1, 2, 3, 4, 5].map(i => { const a = i * Math.PI / 3, q = r * (0.78 + 0.3 * sceneR(seed, i)); return [x + q * Math.cos(a), y + 0.8 * q * Math.sin(a)]; })), c, ` stroke="${darker(c)}" stroke-width="3"`);
+const flyPalm = (x, y, r) => flyC(x + 0.3 * r, y + 0.3 * r, 0.8 * r, FLY_SHADE) + [0, 60, 120].map(a => flyE(x, y, r, 0.24 * r, "#3f8f3a", ` transform="rotate(${a} ${f1(x)} ${f1(y)})"`)).join("") + flyC(x, y, 0.16 * r, "#8a6a3a");
+const flyUmbrella = (x, y, r, c1, c2) => flyC(x + 12, y + 14, r, FLY_SHADE) + flyC(x, y, r, c1) + flyPath([0, 1, 2, 3].map(i => { const a = i * Math.PI / 2, b = a + Math.PI / 4;
+  return `M${f1(x)} ${f1(y)} L${f1(x + r * Math.cos(a))} ${f1(y + r * Math.sin(a))} A${f1(r)} ${f1(r)} 0 0 1 ${f1(x + r * Math.cos(b))} ${f1(y + r * Math.sin(b))} Z`; }).join(" "), c2);
+const flyHorse = (x, y, coat, d = 1) => flyE(x + 6, y + 8, 46, 20, FLY_SHADE) + flyE(x, y, 44, 19, coat) + flyE(x + d * 52, y - 4, 18, 11, coat) +
+  `<path d="M${f1(x + d * 20)} ${f1(y - 14)} L${f1(x + d * 48)} ${f1(y - 10)} M${f1(x - d * 44)} ${f1(y)} q${f1(-d * 16)} 6 ${f1(-d * 22)} 18" stroke="${darker(coat)}" stroke-width="7" stroke-linecap="round" fill="none"/>`;
+const flyHen = (x, y) => flyE(x, y, 12, 9, "#f8f4ea") + flyC(x + 9, y - 3, 3.5, "#d9372b");
+const flyTent = (x, y, c, k = 1) => flyPath(flyPoly([[x - 66 * k, y + 54 * k], [x - 66 * k, y - 42 * k], [x + 74 * k, y - 42 * k], [x + 74 * k, y + 54 * k]]), FLY_SHADE) +
+  flyPath(flyPoly([[x - 70 * k, y - 50 * k], [x, y - 50 * k], [x, y + 50 * k], [x - 70 * k, y + 50 * k]]), lighter(c)) + flyPath(flyPoly([[x, y - 50 * k], [x + 70 * k, y - 50 * k], [x + 70 * k, y + 50 * k], [x, y + 50 * k]]), c);
+// (a stream's bed and its ripples: d its middle line, w its width)
+const flyStream = (d, w, deep = "#3f86c9") => flyPath(d, "none", ` stroke="${deep}" stroke-width="${f1(w)}" stroke-linecap="round" stroke-linejoin="round"`);
+const flyRipples = d => flyPath(d, "none", ` stroke="#9fd0f5" stroke-width="4" stroke-dasharray="16 28"`);
+// (the woods along the square's far edge: crowns in a band)
+const flyFarWoods = (key, n = 9, salt = 0, cols = ["#2f5f2a", "#3d6e30", "#4f8f5a"]) => flyCrowns(key, n, [20, 6, FT - 20, 0.16 * FT], 40, 66, cols, salt);
 const FLY_LOOKS = {
-  forest: k => flyRect(0, 0, FT, FT, "#4f7a34") + flyCrowns(k, 16, [30, 20, FT - 30, FTOP + 60], 55, 95, ["#2f5f2a", "#3d6e30", "#47803a"]) + flyCrowns(k, 6, [20, FTOP, 160, FT - 40], 50, 80, ["#36662d", "#2f5f2a"], 60) + flyCrowns(k, 6, [FT - 160, FTOP, FT - 20, FT - 40], 50, 80, ["#36662d", "#3d6e30"], 90),
-  clearing: k => flyRect(0, 0, FT, FT, "#6f9a3e") + flyCrowns(k, 12, [20, 10, FT - 20, FTOP - 40], 55, 90, ["#2f5f2a", "#3d6e30"]) + flyCrowns(k, 5, [10, FTOP, 120, FT - 20], 50, 80, ["#36662d"], 60) + flyCrowns(k, 5, [FT - 120, FTOP, FT - 10, FT - 20], 50, 80, ["#36662d"], 90) + flyC(FT / 2 + 10, FTOP + 2, 72, FLY_SHADE) + flyC(FT / 2, FTOP - 8, 70, "#c9a45a") + flyC(FT / 2, FTOP - 8, 22, "#a8843f"),
-  fairyforest: k => flyRect(0, 0, FT, FT, "#5d8f54") + flyCrowns(k, 14, [30, 20, FT - 30, FTOP + 40], 50, 85, ["#3f7f6a", "#6f5aa8", "#3f8f5a"]) + [0, 1, 2, 3, 4, 5, 6, 7].map(i => flyC(80 + (FT - 160) * flyR(k, 200 + i), FTOP + (FT - FTOP - 60) * flyR(k, 220 + i), 7, "#fff7a8")).join(""),
-  woodpath: k => flyRect(0, 0, FT, FT, "#3f6b2e") + flyCrowns(k, 9, [10, 10, 0.34 * FT, FT - 10], 55, 90, ["#2f5f2a", "#3d6e30"]) + flyCrowns(k, 9, [0.66 * FT, 10, FT - 10, FT - 10], 55, 90, ["#2f5f2a", "#3d6e30"], 40),
-  crossing: k => flyRect(0, 0, FT, FT, "#5e7f36") + flyCrowns(k, 3, [10, 10, 200, 200], 55, 85, ["#2f5f2a", "#3d6e30"]) + flyCrowns(k, 3, [FT - 200, 10, FT - 10, 200], 55, 85, ["#2f5f2a", "#3d6e30"], 20) + flyCrowns(k, 3, [10, FT - 200, 200, FT - 10], 55, 85, ["#36662d"], 40) + flyCrowns(k, 3, [FT - 200, FT - 200, FT - 10, FT - 10], 55, 85, ["#36662d"], 60),
-  mountains: k => flyRect(0, 0, FT, FT, "#8c8a6c") + [[0.22, 0.2, 170], [0.55, 0.14, 210], [0.84, 0.24, 150]].map(([u, v, r]) => { const x = u * FT, y = v * FT;
-    return flyPath(flyPoly([[x - r, y + 0.6 * r], [x, y - 0.75 * r], [x + 0.1 * r, y + 0.9 * r]]), "#b3aa98") + flyPath(flyPoly([[x, y - 0.75 * r], [x + r, y + 0.55 * r], [x + 0.1 * r, y + 0.9 * r]]), "#7a7262") + flyC(x + 0.02 * r, y - 0.42 * r, 0.24 * r, "#f4f6f8"); }).join("") + flyCrowns(k, 4, [40, FTOP + 60, FT - 40, FT - 40], 40, 60, ["#4f6b3a"], 30),
-  pasture: k => flyRect(0, 0, FT, FT, "#93bf5c") + flyPath(`M40 ${f1(FTOP)} H${FT - 40}`, "none", ` stroke="#8a6a3a" stroke-width="10" stroke-dasharray="40 24"`) + [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => flyE(60 + (FT - 120) * flyR(k, i), 60 + (FT - 120) * flyR(k, 30 + i), 26, 12, "#7aa94a")).join(""),
-  lake: k => flyRect(0, 0, FT, FT, "#6f9e45") + flyCrowns(k, 6, [20, 10, FT - 20, 120], 50, 80, ["#2f5f2a", "#3d6e30"]) + flyPool(FT / 2, 0.42 * FT, 0.38 * FT, 0.24 * FT) + flyE(0.44 * FT, 0.36 * FT, 0.16 * FT, 0.06 * FT, "#4f8fd0") + flyRect(0.62 * FT, 0.58 * FT, 26, 90, "#8a5a2b"),
-  sea: k => flyRect(0, 0, FT, FT, "#2d6fb3") + [0, 1, 2, 3, 4, 5, 6].map(i => { const x = 60 + (FT - 160) * flyR(k, i), y = 60 + (FT - 120) * flyR(k, 20 + i); return `<path d="M${f1(x)} ${f1(y)} q25 -16 50 0 q25 16 50 0" fill="none" stroke="#9fd0f5" stroke-width="7" stroke-linecap="round"/>`; }).join(""),
-  deepsea: k => flyRect(0, 0, FT, FT, "#173f6e") + [0, 1, 2, 3].map(i => flyE(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 9 + i), 90, 50, "#1d4c82")).join(""),
-  underwater: k => flyRect(0, 0, FT, FT, "#1f5d93") + [0, 1, 2, 3, 4].map(i => flyE(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 9 + i), 22, 10, "#ffb347")).join(""),
-  beach: k => flyRect(0, 0, FT, FT, "#ead49c") + flyRect(0, 0, FT, FTOP - 20, "#2d6fb3") + `<path d="M0 ${f1(FTOP - 20)} q100 30 200 0 t200 0 t200 0 t200 0" fill="none" stroke="#f4fbff" stroke-width="16"/>` + flyE(0.7 * FT, 0.75 * FT, 60, 34, "#d8bd7d"),
-  waterfall: k => flyRect(0, 0, FT, FT, "#3f7f3a") + flyRect(0, 0, FT, 90, "#6b6355") + flyRect(0.36 * FT, 0, 0.28 * FT, 110, "#cfe9fb") + flyPool(FT / 2, 0.3 * FT, 0.2 * FT, 0.12 * FT) + flyPath(`M${0.45 * FT} ${0.38 * FT} C${0.4 * FT} ${0.6 * FT} ${0.6 * FT} ${0.7 * FT} ${0.5 * FT} ${FT} H${0.6 * FT} C${0.7 * FT} ${0.7 * FT} ${0.5 * FT} ${0.6 * FT} ${0.56 * FT} ${0.38 * FT} Z`, "#3f86c9") + flyCrowns(k, 8, [10, 100, 0.3 * FT, FT - 10], 50, 85, ["#2a6a30", "#357a35"]) + flyCrowns(k, 8, [0.7 * FT, 100, FT - 10, FT - 10], 50, 85, ["#2a6a30", "#357a35"], 40),
-  witch: k => flyRect(0, 0, FT, FT, "#3f4a30") + flyCrowns(k, 10, [20, 10, FT - 20, FTOP], 45, 80, ["#4a4a3a", "#3a3f2e", "#55503f"]) + flyRoof(0.38 * FT, FTOP - 130, 0.24 * FT, 150, "#4a3456") + flyC(0.66 * FT, FTOP + 60, 34, "#1f1f22") + flyC(0.66 * FT, FTOP + 60, 22, "#5fbf4a"),
-  cemetery: k => flyRect(0, 0, FT, FT, "#6e7d58") + flyCrowns(k, 5, [20, 10, FT - 20, 140], 45, 75, ["#4a5a3a", "#55503f"]) + [0, 1, 2].map(r => [0, 1, 2, 3, 4].map(c => flyRect(150 + c * 110, FTOP + 40 + r * 120, 50, 26, "#a8a8a0", ` stroke="#7a7a72" stroke-width="4"`)).join("")).join("") + flyRect(40, 40, FT - 80, FT - 80, "none", ` stroke="#2a2a2a" stroke-width="6" stroke-dasharray="6 18"`),
-  house: k => flyRect(0, 0, FT, FT, "#7caa4c") + flyRoof(0.27 * FT, 40, 0.46 * FT, 0.3 * FT, "#a8463a") + flyRect(0.47 * FT, 0.34 * FT, 0.06 * FT, 0.2 * FT, "#c9b48a") + flyCrowns(k, 3, [20, 30, 0.22 * FT, FTOP], 55, 80, ["#3d6e30"]) + flyCrowns(k, 3, [0.78 * FT, 30, FT - 20, FTOP], 55, 80, ["#3d6e30"], 20),
-  farmyard: k => flyRect(0, 0, FT, FT, "#8fae56") + flyRoof(0.12 * FT, 40, 0.34 * FT, 0.26 * FT, "#b03a2e") + flyRect(0.55 * FT, 40, 0.38 * FT, 0.5 * FT, "#8a6a3a") + [0, 1, 2, 3, 4, 5].map(i => flyRect(0.57 * FT, 60 + i * 0.08 * FT, 0.34 * FT, 14, "#5f9a3a")).join(""),
-  treehouse: (k, o) => flyTreehouse(k, o),
-  campsite: k => flyRect(0, 0, FT, FT, "#7a9a48") + flyCrowns(k, 9, [20, 10, FT - 20, 150], 50, 80, ["#2f5f2a", "#3d6e30"]) + [[0.25, 0.3, "#d9822b"], [0.5, 0.24, "#3f7fbf"], [0.75, 0.3, "#c0392b"]].map(([u, v, c]) => { const x = u * FT, y = v * FT;
-    return flyPath(flyPoly([[x - 70, y + 50], [x - 70, y - 40], [x + 70, y - 40], [x + 70, y + 50]]), FLY_SHADE) + flyPath(flyPoly([[x - 70, y - 50], [x, y - 50], [x, y + 50], [x - 70, y + 50]]), lighter(c)) + flyPath(flyPoly([[x, y - 50], [x + 70, y - 50], [x + 70, y + 50], [x, y + 50]]), c); }).join("") + flyC(FT / 2, 0.6 * FT, 44, "#8a8a80") + flyC(FT / 2, 0.6 * FT, 28, "#ff8a1c") + flyC(FT / 2, 0.6 * FT, 12, "#ffd84a"),
-  castle: (k, o) => flyCastle(k, o),
-  hut: k => flyRect(0, 0, FT, FT, "#7a9a48") + flyC(FT / 2 + 14, FTOP - 30, 120, FLY_SHADE) + flyC(FT / 2, FTOP - 40, 120, "#c9a45a") + flyC(FT / 2, FTOP - 40, 70, "#b8913f") + flyC(FT / 2, FTOP - 40, 20, "#8a6a2a") + flyCrowns(k, 6, [20, 10, FT - 20, 160], 45, 75, ["#3d6e30"]),
-  desert: k => flyRect(0, 0, FT, FT, "#e3c07a") + [0, 1, 2, 3].map(i => `<path d="M${f1(40 + 120 * flyR(k, i))} ${f1(120 + i * 170)} q160 -60 320 0 t320 0" fill="none" stroke="#f0d79a" stroke-width="18" stroke-linecap="round"/>`).join("") + flyPath(flyPoly([[0.2 * FT, 0.2 * FT], [0.4 * FT, 0.05 * FT], [0.5 * FT, 0.25 * FT]]), "#c9a060"),
-  garden: k => flyRect(0, 0, FT, FT, "#7caa4c") + [0, 1, 2].map(r => [0, 1].map(c => flyRect(110 + c * 320, FTOP + r * 150 - 40, 260, 100, "#7a5232") + [0, 1, 2, 3, 4].map(i => flyC(140 + c * 320 + i * 50, FTOP + r * 150 + 10, 14, ["#e84a6f", "#ffd84a", "#5fbf4a"][(i + r) % 3])).join("")).join("")).join(""),
-  spring: k => flyRect(0, 0, FT, FT, "#6f9e45") + flyCrowns(k, 7, [20, 10, FT - 20, 150], 50, 80, ["#2f5f2a", "#3d6e30"]) + [0, 1, 2, 3, 4, 5, 6, 7].map(i => flyC(FT / 2 + 130 * Math.cos(i * 0.785), 0.45 * FT + 90 * Math.sin(i * 0.785), 26, "#9a968c")).join("") + flyPool(FT / 2, 0.45 * FT, 100, 66, "#3f8fd9", "#a9d6f5"),
-  dungeon: k => flyRect(0, 0, FT, FT, "#4a4652") + flyRect(60, 60, FT - 120, FT - 120, "#6a6472") + `<path d="M60 ${FT / 2} H${FT - 60} M${FT / 2} 60 V${FT - 60}" stroke="#57525e" stroke-width="4"/>`,
-  cavecross: k => flyRect(0, 0, FT, FT, "#3c3a40") + flyE(FT / 2, FT / 2, 0.34 * FT, 0.3 * FT, "#57535c"),
+  // (the forest: two rows of pines across the back; the meadow, a pale oval in its middle, flowers; four big leafy trees, two
+  // each side, one at the edge and one nearer the middle)
+  forest: k => flyRect(0, 0, FT, FT, "#5f8f3e") + flyCrowns(k, 9, [20, 6, FT - 20, 0.12 * FT], 40, 60, ["#2f5a2c", "#3a6a33"]) + flyCrowns(k, 8, [20, 0.1 * FT, FT - 20, 0.24 * FT], 44, 64, ["#2f5a2c", "#3f7038"], 30) +
+    flyE(FT / 2, 0.6 * FT, 0.24 * FT, 0.14 * FT, "#93b866") + flyOak(flyX(-0.45), 0.52 * FT, 92) + flyOak(flyX(-0.27), 0.7 * FT, 80, "#47803a") + flyOak(flyX(0.45), 0.5 * FT, 92) + flyOak(flyX(0.28), 0.72 * FT, 80, "#47803a") +
+    flyNear(flyFlowers(k, 16, [flyX(-0.2), 0.42 * FT, flyX(0.2), 0.9 * FT])),
+  // (the clearing: woods round its back, four oaks at its sides; sand paths fanning from the near middle to what it shows far
+  // off (each its own setting): the house, the tree house, the castle, the witch's hut, the healer's round hut; flowers)
+  clearing: (k, o) => { const far = [["seeHouse", -0.36, 0.3], ["seeTree", -0.2, 0.2], ["seeCastle", 0.1, 0.18], ["seeWitch", 0.25, 0.26], ["seeHealer", 0.36, 0.42]].filter(([s]) => o[s] !== false);
+    let t = flyRect(0, 0, FT, FT, "#6f9a3e") + flyPath(far.map(([, s, v]) => `M${FT / 2} ${0.95 * FT} L${f1(flyX(s))} ${f1(v * FT + 40)}`).join(" "), "none", ` stroke="#d9c08a" stroke-width="30" stroke-linecap="round"`) +
+      flyFarWoods(k, 10) + flyOak(flyX(-0.46), 0.5 * FT, 70) + flyOak(flyX(-0.45), 0.8 * FT, 64) + flyOak(flyX(0.46), 0.62 * FT, 70) + flyOak(flyX(0.45), 0.86 * FT, 64);
+    for (const [s, x, v] of far) { const cx = flyX(x), cy = v * FT;
+      t += s === "seeHouse" ? flyRoof(cx - 46, cy - 30, 92, 60, "#3d2b22") : s === "seeTree" ? flyOak(cx, cy, 66) : s === "seeCastle" ? flyRect(cx - 50, cy - 34, 100, 68, "#b8b8c4") + [[-50, -34], [50, -34], [-50, 34], [50, 34]].map(([dx, dy]) => flyC(cx + dx, cy + dy, 16, "#3b5ea8")).join("")
+        : s === "seeWitch" ? flyRoof(cx - 36, cy - 26, 72, 52, "#6b4a2b") : flyCone(cx, cy, 40, "#c9a45a"); }
+    return t + flyNear(flyFlowers(k, 16, [flyX(-0.4), 0.55 * FT, flyX(0.4), 0.95 * FT])); },
+  // (the fairy forest: pines and oaks in two rows at the back; the great tree at the left, the fairy house in its trunk (its
+  // round green door, its lit windows, lanterns on its branches) unless hidden; the toadstool ring to the right of the middle
+  // (its mushrooms setting); a bush at the right edge, stones; the fairies' lights)
+  fairyforest: (k, o) => { const n = Math.max(4, Math.min(20, Math.round(o.mushrooms ?? 14))), rx = 0.24 * FT, ry = 0.08 * FT, rcx = flyX(0.06), rcy = 0.7 * FT;
+    return flyRect(0, 0, FT, FT, "#5d8f54") + flyCrowns(k, 9, [20, 6, FT - 20, 0.14 * FT], 40, 60, ["#3f7f6a", "#2f6b4a"]) + flyCrowns(k, 7, [20, 0.12 * FT, FT - 20, 0.26 * FT], 44, 64, ["#4f8f5a", "#6f5aa8"], 30) +
+      flyOak(flyX(-0.3), 0.42 * FT, 130, "#3f7f5a") + ((o.fairyHouseSeen ?? 100) > 0 ? flyC(flyX(-0.3), 0.42 * FT + 118, 26, "#3f9a4a", ` stroke="#2a6a30" stroke-width="5"`) : "") + flyOak(flyX(0.47), 0.56 * FT, 56) +
+      flyNear([...Array(n)].map((_, i) => { const a = i / n * 2 * Math.PI; return flyC(rcx + rx * Math.cos(a), rcy + ry * Math.sin(a), 11, "#d9372b") + flyC(rcx + rx * Math.cos(a) - 3, rcy + ry * Math.sin(a) - 3, 3, "#ffffff"); }).join("") +
+        flyStone(flyX(-0.4), 0.8 * FT, 22, "#9a968c", 3) + flyStone(flyX(0.2), 0.84 * FT, 18, "#9a968c", 5) + [0, 1, 2, 3, 4, 5].map(i => flyC(flyX(-0.3) + 160 * Math.cos(i * 1.1), 0.42 * FT + 120 * Math.sin(i * 1.1), 7, "#fff7a8")).join("")); },
+  // (the wood path: thick woods either side, and the path winding from the near middle off to the far trees, drifting a
+  // little to the right and narrowing; four trunks with ferns, four red mushrooms)
+  woodpath: k => flyRect(0, 0, FT, FT, "#3f6b2e") + flyPath(`M${flyX(0)} ${FT} C${flyX(-0.06)} ${0.7 * FT} ${flyX(0.1)} ${0.45 * FT} ${flyX(0.06)} 0`, "none", ` stroke="#b8955c" stroke-width="64" stroke-linecap="round"`) +
+    flyCrowns(k, 8, [10, 10, 0.32 * FT, FT - 10], 55, 90, ["#2f5f2a", "#3d6e30"]) + flyCrowns(k, 8, [0.7 * FT, 10, FT - 10, FT - 10], 55, 90, ["#2f5f2a", "#3d6e30"], 40) +
+    flyNear([-0.46, -0.3, 0.33, 0.47].map((s, i) => flyC(flyX(s), (0.55 + 0.1 * i) * FT, 22, "#5e3d22") + flyE(flyX(s) + 24, (0.55 + 0.1 * i) * FT + 18, 26, 12, "#5fa84a")).join("") +
+      [-0.38, -0.25, 0.27, 0.4].map((s, i) => flyC(flyX(s), (0.78 - 0.06 * i) * FT, 10, "#d9372b")).join("")),
+  // (the crossing: its own floor colour with leaf litter, woods in its corners; its paths are its ways, drawn as every square's)
+  crossing: (k, o, cell = {}) => flyRect(0, 0, FT, FT, cell.crossFloor || "#76843a") + flyCrowns(k, 3, [10, 10, 200, 200], 55, 85, ["#2f5f2a", "#3d6e30"]) + flyCrowns(k, 3, [FT - 200, 10, FT - 10, 200], 55, 85, ["#2f5f2a", "#3d6e30"], 20) +
+    flyCrowns(k, 3, [10, FT - 200, 200, FT - 10], 55, 85, ["#36662d"], 40) + flyCrowns(k, 3, [FT - 200, FT - 200, FT - 10, FT - 10], 55, 85, ["#36662d"], 60) +
+    flyNear([...Array(14)].map((_, i) => flyE(60 + (FT - 120) * flyR(k, 300 + i), 60 + (FT - 120) * flyR(k, 330 + i), 8, 4, ["#a8743f", "#c9822b", "#8a6a2a"][i % 3], ` transform="rotate(${Math.round(180 * flyR(k, 360 + i))} ${f1(60 + (FT - 120) * flyR(k, 300 + i))} ${f1(60 + (FT - 120) * flyR(k, 330 + i))})"`)).join("")),
+  // (the mountain trail: the peaks at the back, snow on their tops, and down in the far valley a lake and a village (farLake);
+  // the dirt trail from the near middle curving off to the far left; grey rocks with tufts, and pines, at the sides)
+  mountains: (k, o) => flyRect(0, 0, FT, FT, "#8c8a6c") + [[0.2, 0.14, 150], [0.52, 0.1, 180], [0.84, 0.16, 140]].map(([u, v, r]) => { const x = u * FT, y = v * FT;
+      return flyPath(flyPoly([[x - r, y + 0.6 * r], [x, y - 0.75 * r], [x + 0.1 * r, y + 0.9 * r]]), "#b3aa98") + flyPath(flyPoly([[x, y - 0.75 * r], [x + r, y + 0.55 * r], [x + 0.1 * r, y + 0.9 * r]]), "#7a7262") + flyC(x + 0.02 * r, y - 0.42 * r, 0.24 * r, "#f4f6f8"); }).join("") +
+    (o.farLake !== false ? flyE(flyX(0.04), 0.34 * FT, 90, 34, "#4f8fd0") + flyRect(flyX(0.12), 0.3 * FT, 22, 16, "#a8463a") + flyRect(flyX(0.17), 0.33 * FT, 18, 14, "#c9a45a") : "") +
+    flyPath(`M${flyX(0)} ${FT} C${flyX(0.05)} ${0.75 * FT} ${flyX(-0.3)} ${0.65 * FT} ${flyX(-0.42)} ${0.42 * FT}`, "none", ` stroke="#b8955c" stroke-width="50" stroke-linecap="round"`) +
+    [-0.46, -0.4, 0.4, 0.48].map((s, i) => flyPine(flyX(s), (0.5 + 0.12 * i) * FT, 40)).join("") +
+    flyNear([-0.42, -0.3, -0.18, 0.2, 0.3, 0.44, 0.36, -0.36].map((s, i) => flyStone(flyX(s), (0.55 + 0.05 * i) * FT, 20, ["#8f8a80", "#b4afa4", "#7a7262"][i % 3], 10 + i) + flyC(flyX(s) + 18, (0.55 + 0.05 * i) * FT + 14, 6, "#6f8a3a")).join("") +
+      [-0.5, -0.36, 0.36, 0.5].map((s, i) => flyPine(flyX(s), (0.62 + 0.08 * i) * FT, 32)).join("")),
+  // (the pasture: the rail fence across the back with its shut gate near the middle, a bird on its post; the big tree at the
+  // left, the trough farther back; its horses (bay, grey and chestnut, as many as pastureHorses); flowers)
+  pasture: (k, o) => { const nh = Math.max(0, Math.min(3, Math.round(o.pastureHorses ?? 3))), nf = Math.max(0, Math.min(24, Math.round(o.pastureFlowers ?? 10)));
+    return flyRect(0, 0, FT, FT, "#93bf5c") + flyPath(`M0 ${0.24 * FT} H${flyX(0.0)} M${flyX(0.07)} ${0.24 * FT} H${FT}`, "none", ` stroke="#8a6a3a" stroke-width="9"`) + flyFarWoods(k, 6, 10, ["#4f8f5a", "#5c9c63"]) +
+      flyRect(flyX(0.0), 0.24 * FT - 6, flyX(0.07) - flyX(0), 12, "#a8743f") + flyOak(flyX(-0.4), 0.42 * FT, 96) + flyRect(flyX(-0.3) - 40, 0.3 * FT, 80, 22, "#7a8a9a", ` rx="6"`) +
+      [[0.18, 0.62, "#7b4a2a"], [0.335, 0.74, "#b8b8b0"], [-0.12, 0.68, "#a0522d"]].slice(0, nh).map(([s, v, c], i) => flyHorse(flyX(s), v * FT, c, i % 2 ? -1 : 1)).join("") +
+      flyNear(flyC(flyX(0.0), 0.24 * FT, 7, "#3a3a4a") + flyFlowers(k, nf, [40, 0.5 * FT, FT - 40, FT - 30])); },
+  // (the lake: woods along its far shore, oaks and pines; the water across the middle, lily pads on it, its ducks (o.ducks);
+  // the near shore's dirt with a sandy beach in the middle, pebbles on it; cattails each side (o.cattails))
+  lake: (k, o) => { const nd = Math.max(0, Math.min(8, Math.round(o.ducks ?? 5))), nc = Math.max(0, Math.min(16, Math.round(o.cattails ?? 14)));   // (from above, at most 8 ducks and 16 cattails)
+    return flyRect(0, 0, FT, FT, "#7a8a4a") + flyFarWoods(k, 10, 0, ["#2f5f2a", "#3d6e30", "#2f5a2c"]) + flyRect(0, 0.18 * FT, FT, 0.48 * FT, "#3f86c9") + flyRect(0, 0.18 * FT, FT, 0.06 * FT, "#2f6fb0") +
+      flyE(FT / 2, 0.72 * FT, 0.24 * FT, 0.07 * FT, "#e2cf98") +
+      flyNear([...Array(7)].map((_, i) => flyC(60 + (FT - 120) * flyR(k, 400 + i), 0.3 * FT + 0.3 * FT * flyR(k, 410 + i), 14, "#5fa84a")).join("") +
+        [...Array(nd)].map((_, i) => { const x = 100 + (FT - 200) * flyR(k, 420 + i), y = 0.32 * FT + 0.26 * FT * flyR(k, 430 + i); return flyE(x, y, 13, 8, i % 2 ? "#f8f4ea" : "#8a6a4a") + flyC(x + 11, y - 2, 6, i % 2 ? "#f8f4ea" : "#2f6b3a") + flyC(x + 17, y - 2, 2.5, "#f2a12e"); }).join("") +
+        [...Array(nc)].map((_, i) => { const left = i % 2 === 0, x = left ? 30 + 160 * flyR(k, 440 + i) : FT - 30 - 160 * flyR(k, 440 + i), y = 0.66 * FT + 0.05 * FT * flyR(k, 470 + i); return flyC(x, y, 5, "#6b4a2b"); }).join("") +
+        [...Array(6)].map((_, i) => flyC(FT / 2 - 120 + 240 * flyR(k, 480 + i), 0.7 * FT + 40 * flyR(k, 490 + i), 5, "#a8a49a")).join("")); },
+  // (open water: waves all over it, the sun's glitter on the right)
+  sea: k => flyRect(0, 0, FT, FT, "#2d6fb3") + [0, 1, 2, 3, 4, 5, 6].map(i => { const x = 60 + (FT - 160) * flyR(k, i), y = 60 + (FT - 120) * flyR(k, 20 + i); return `<path d="M${f1(x)} ${f1(y)} q25 -16 50 0 q25 16 50 0" fill="none" stroke="#9fd0f5" stroke-width="7" stroke-linecap="round"/>`; }).join("") +
+    flyNear([...Array(10)].map((_, i) => flyRect(flyX(0.25) + 160 * flyR(k, 50 + i) - 80, 0.3 * FT + 0.4 * FT * flyR(k, 60 + i), 26, 5, "#fff7c2", ` opacity="0.8"`)).join("")),
+  // (the deep sea's floor: dark sand with ridges at the back, dark rocks at the sides, kelp in clumps both sides, a vent
+  // bubbling on the left)
+  deepsea: k => flyRect(0, 0, FT, FT, "#4f5f72") + flyPath([0, 1, 2].map(i => `M30 ${40 + i * 40} q${FT / 4} -20 ${FT / 2} 0 t${FT / 2 - 60} 0`).join(" "), "none", ` stroke="#3c4a5c" stroke-width="10"`) +
+    [-0.46, -0.36, 0.36, 0.44].map((s, i) => flyStone(flyX(s), (0.4 + 0.15 * i) * FT, 44, "#3a3f4a", 20 + i)).join("") + flyC(flyX(-0.2), 0.6 * FT, 24, "#2a2f38") +
+    flyNear([-0.42, -0.3, 0.3, 0.42].map((s, i) => flyCrowns(k, 3, [flyX(s) - 40, (0.62 + 0.06 * i) * FT, flyX(s) + 40, (0.72 + 0.06 * i) * FT], 12, 20, ["#2f8f4e", "#3f9f5e"], 600 + 9 * i)).join("") +
+      [0, 1, 2].map(i => flyC(flyX(-0.2) + 14 * i - 14, 0.6 * FT - 30 - 18 * i, 6 - i, "#cfe9fb", ` opacity="0.7"`)).join("")),
+  // (under the lake: the sandy bottom seen through the water, far kelp at the back; blue-grey rocks and seaweed at the sides;
+  // the shipwreck at the left, tilted, its chest; the picnic table and its bench at the right, a shark at each end; a clam; fish)
+  underwater: k => flyRect(0, 0, FT, FT, "#9fb49a") + flyPath([...Array(9)].map((_, i) => `M${40 + i * 90} 10 v70`).join(" "), "none", ` stroke="#3f8f5a" stroke-width="12" stroke-linecap="round"`) +
+    flyPath(`M${flyX(-0.42)} ${0.5 * FT} L${flyX(-0.18)} ${0.4 * FT} L${flyX(-0.12)} ${0.5 * FT} L${flyX(-0.36)} ${0.62 * FT} Z`, "#6e4a26", ` stroke="#3e2a16" stroke-width="6"`) + flyRect(flyX(0.18), 0.6 * FT, 130, 70, "#8a5a2b") +
+    [-0.46, -0.4, 0.42, 0.46, -0.08].map((s, i) => flyStone(flyX(s), (0.3 + 0.13 * i) * FT, 30, "#7a8a9a", 30 + i)).join("") +
+    flyNear(flyRect(flyX(-0.32), 0.48 * FT, 34, 22, "#8a5a2b", ` stroke="#e8b923" stroke-width="3"`) + flyRect(flyX(0.18), 0.74 * FT, 130, 18, "#6e4a26") +
+      [flyX(0.16), flyX(0.36)].map((x, i) => flyE(x, 0.66 * FT + 50 * i, 36, 10, "#8a96a6") + flyPath(`M${f1(x - 36)} ${f1(0.66 * FT + 50 * i)} l-14 -10 v20 Z`, "#8a96a6")).join("") +
+      flyE(flyX(0.08), 0.86 * FT, 16, 10, "#f8e1c7") + [0, 1, 2, 3].map(i => flyE(80 + (FT - 160) * flyR(k, 500 + i), 0.2 * FT + 0.3 * FT * flyR(k, 510 + i), 14, 7, "#ffb347")).join("")),
+  // (the beach: the ocean the far band, its foam where it meets the sand; striped blankets, purple and yellow on the left and
+  // green and white on the right; a palm at each side; an umbrella and a chair each side; a sand castle each side)
+  beach: k => flyRect(0, 0, FT, FT, "#ead49c") + flyRect(0, 0, FT, 0.3 * FT, "#2d6fb3") + `<path d="M0 ${f1(0.3 * FT)} q100 26 200 0 t200 0 t200 0 t200 0" fill="none" stroke="#f4fbff" stroke-width="16"/>` +
+    flyPalm(flyX(-0.46), 0.55 * FT, 80) + flyPalm(flyX(0.46), 0.6 * FT, 80) + flyUmbrella(flyX(-0.3), 0.5 * FT, 54, "#e53935", "#ffffff") + flyUmbrella(flyX(0.3), 0.52 * FT, 54, "#3b82f6", "#f2c12e") +
+    [[-0.2, "#7c3aed", "#f2c12e"], [0.2, "#22c55e", "#ffffff"]].map(([s, a, b]) => flyRect(flyX(s) - 44, 0.64 * FT, 88, 120, a) + flyPath([0, 1, 2].map(i => `M${f1(flyX(s) - 44)} ${f1(0.64 * FT + 20 + i * 36)} h88`).join(" "), "none", ` stroke="${b}" stroke-width="12"`)).join("") +
+    flyNear([-0.3, 0.3].map(s => flyRect(flyX(s) - 20, 0.82 * FT, 40, 40, "#d8bd7d", ` stroke="#b89a5a" stroke-width="3"`) + [[-20, 0], [20, 0], [-20, 40], [20, 40]].map(([dx, dy]) => flyC(flyX(s) + dx, 0.82 * FT + dy, 8, "#cfb070")).join("")).join("") +
+      [-0.3, 0.3].map(s => flyRect(flyX(s) + 40, 0.52 * FT, 24, 44, "#ffffff", ` stroke="#8a8a8a" stroke-width="2"`)).join("")),
+  // (the jungle waterfall: the mossy cliff across the back, the falls down it in the middle (as wide as fallWidth), its pool
+  // below, the mist over the pool's foot; jungle trees each side, flowers, vines down the cliff, parrots)
+  waterfall: (k, o) => { const fw = 60 * clamp((o.fallWidth ?? 100) / 100, 0.3, 3);
+    return flyRect(0, 0, FT, FT, "#3f7f3a") + flyRect(flyX(-0.36), 0, flyX(0.38) - flyX(-0.36), 0.22 * FT, "#6b6355") + flyRect(flyX(-0.36), 0.18 * FT, flyX(0.38) - flyX(-0.36), 0.05 * FT, "#5a8a3a") +
+      flyRect(FT / 2 - fw, 0, 2 * fw, 0.26 * FT, "#cfe9fb") + flyPool(FT / 2, 0.42 * FT, 0.22 * FT, 0.12 * FT) + flyE(FT / 2, 0.3 * FT, 0.14 * FT, 0.05 * FT, "#ffffff", ` opacity="${(0.2 + 0.5 * clamp((o.mist ?? 60) / 100, 0, 1)).toFixed(2)}"`) +
+      flyOak(flyX(-0.43), 0.55 * FT, 100, "#2a6a30") + flyOak(flyX(0.43), 0.58 * FT, 100, "#2a6a30") + flyCrowns(k, 6, [10, 0.7 * FT, FT - 10, FT - 10], 40, 64, ["#2a6a30", "#357a35"]) +
+      flyNear([...Array(Math.max(0, Math.min(16, Math.round(o.vines ?? 8))))].map((_, i) => flyRect(flyX(-0.34) + (flyX(0.36) - flyX(-0.34)) * flyR(k, 520 + i), 0.02 * FT, 6, 0.18 * FT, "#4f8f3a")).join("") +
+        [...Array(Math.max(0, Math.min(4, Math.round(o.parrots ?? 2))))].map((_, i) => flyE(flyX(i % 2 ? 0.43 : -0.43) + 30, 0.5 * FT + 20 * i, 10, 6, ["#d9372b", "#3b82f6", "#f2c12e", "#22c55e"][i])).join("") + flyFlowers(k, 10, [20, 0.64 * FT, FT - 20, FT - 20])); },
+  // (the witch's woods: two rows of dead trees at the back; the log hut on its dark mound, its roof brown, its red door, farther
+  // or nearer (hutNear); the palisade of stakes across, a skull on every fourth; the giant dead tree at the far left, a smaller
+  // one at the right edge; skeleton arms out of the ground; the green cauldron over its fire)
+  witch: (k, o) => { const nr = clamp((o.hutNear ?? 0) / 100, 0, 1), hy = (0.2 + 0.12 * nr) * FT, hs = 1 + 0.4 * nr;
+    const dead = (x, y, r) => `<path d="M${f1(x - r)} ${f1(y)} H${f1(x + r)} M${f1(x)} ${f1(y - r)} V${f1(y + r)} M${f1(x - 0.7 * r)} ${f1(y - 0.7 * r)} L${f1(x + 0.7 * r)} ${f1(y + 0.7 * r)} M${f1(x + 0.7 * r)} ${f1(y - 0.7 * r)} L${f1(x - 0.7 * r)} ${f1(y + 0.7 * r)}" stroke="#4a3f36" stroke-width="${f1(0.14 * r)}" stroke-linecap="round"/>`;
+    return flyRect(0, 0, FT, FT, "#3f4a30") + [...Array(8)].map((_, i) => dead(50 + i * 100, 40 + 30 * (i % 2), 34)).join("") +
+      flyE(flyX(0.19), hy + 20, 150 * hs, 90 * hs, "#2f3626") + flyRoof(flyX(0.19) - 70 * hs, hy - 40 * hs, 140 * hs, 90 * hs, "#6b4a2b") + flyRect(flyX(0.19) - 12, hy + 50 * hs, 24, 12, "#a8322a") +
+      flyPath(`M0 ${0.48 * FT} H${FT}`, "none", ` stroke="#6e5a44" stroke-width="12" stroke-dasharray="10 8"`) + dead(flyX(-0.42), 0.34 * FT, 110) + dead(flyX(0.46), 0.6 * FT, 60) +
+      flyC(flyX(0.32), 0.72 * FT, 34, "#8a8a80") + flyC(flyX(0.32), 0.72 * FT, 26, "#1f1f22") + flyC(flyX(0.32), 0.72 * FT, 18, "#5fbf4a") +
+      flyNear([...Array(14)].map((_, i) => flyC(18 + i * 72, 0.48 * FT, 6, "#f4efe0")).join("") + [-0.14, 0.12, -0.44, 0.45].map((s, i) => flyPath(`M${f1(flyX(s))} ${f1((0.62 + 0.07 * i) * FT)} l14 -10 l8 4 M${f1(flyX(s) + 14)} ${f1((0.62 + 0.07 * i) * FT - 10)} l4 -10`, "none", ` stroke="#f4efe0" stroke-width="5" stroke-linecap="round"`)).join("")); },
+  // (the cemetery: small far stones in a row; the near stones (a tall stag stone, headstones, a Celtic cross); the brook from
+  // far right winding down to the near edge, widening, stones along it, the weeping willow on its bank; bushes, pink, green,
+  // yellow and white; flowers)
+  cemetery: k => flyRect(0, 0, FT, FT, "#6e7d58") + flyFarWoods(k, 7, 0, ["#4a5a3a", "#55503f"]) + flyStream(`M${flyX(0.2)} ${0.2 * FT} C${flyX(0.3)} ${0.4 * FT} ${flyX(0.32)} ${0.6 * FT} ${flyX(0.4)} ${FT}`, 40) +
+    flyC(flyX(0.38), 0.34 * FT, 90, "#8fbf6a") + flyPath([...Array(7)].map((_, i) => `M${f1(flyX(0.38) - 70 + 23 * i)} ${f1(0.34 * FT - 60)} v120`).join(" "), "none", ` stroke="#6f9f4a" stroke-width="6"`) +
+    [-0.42, -0.3, -0.18, -0.04, 0.1].map(s => flyRect(flyX(s) - 14, 0.3 * FT, 28, 12, "#a8a8a0", ` stroke="#7a7a72" stroke-width="3"`)).join("") +
+    [[-0.36, 40, 16], [-0.2, 30, 14], [0.26, 34, 34], [0.44, 30, 14]].map(([s, w, h]) => flyRect(flyX(s) - w / 2, 0.62 * FT, w, h, "#b4b4ac", ` stroke="#7a7a72" stroke-width="3"`)).join("") +
+    flyNear(flyRipples(`M${flyX(0.2)} ${0.2 * FT} C${flyX(0.3)} ${0.4 * FT} ${flyX(0.32)} ${0.6 * FT} ${flyX(0.4)} ${FT}`) + [[-0.47, "#f472b6"], [-0.12, "#4f8a3a"], [-0.28, "#f2c12e"], [0.36, "#f8f4ea"]].map(([s, c], i) => flyC(flyX(s), (i === 2 ? 0.4 : 0.76) * FT, 26, c)).join("") +
+      flyFlowers(k, 14, [30, 0.5 * FT, flyX(0.15), FT - 20])),
+  // (the house and yard: the house a little left of the middle, its dark brown roof and its brick chimney on the right; the
+  // garage to its right, its roof dark brown too; the driveway from the garage toward us on the right, the stone walk from the
+  // door to us in the middle; bushes and a flower bed along the front; an oak each side (treeSize); toys on the lawn (toys))
+  house: (k, o) => { const hs = clamp((o.houseSize ?? 100) / 100, 0.5, 1.6), ts = clamp((o.treeSize ?? 100) / 100, 0.4, 2), nt = Math.max(0, Math.min(16, Math.round(o.toys ?? 6)));
+    const hx = flyX(-0.08), hw = 0.34 * FT * hs, hh = 0.24 * FT * hs, hy = 0.12 * FT;
+    return flyRect(0, 0, FT, FT, "#7caa4c") + flyRect(flyX(0.26) - 50, hy + 0.2 * FT, 100, FT - hy - 0.2 * FT, "#a8a8a8") + flyRoof(hx - hw / 2, hy, hw, hh, "#3d2b22") + flyRect(hx + 0.28 * hw, hy + 10, 24, 30, "#a8463a") +
+      flyRoof(flyX(0.26) - 70, hy + 0.06 * FT, 140, 0.14 * FT, "#3d2b22") + flyOak(flyX(-0.42), 0.42 * FT, 90 * ts) + flyOak(flyX(0.44), 0.36 * FT, 84 * ts) +
+      flyNear([...Array(5)].map((_, i) => flyC(hx, hy + hh + 30 + i * 54, 14, "#b4afa4")).join("") + flyRect(hx - hw / 2, hy + hh + 6, hw, 18, "#7a5232") + flyFlowers(k, Math.min(24, Math.round((o.flowers ?? 18) / 2)), [hx - hw / 2, hy + hh + 6, hx + hw / 2, hy + hh + 24]) +
+        flyBushes(k, 4, [hx - hw / 2, hy + hh + 24, hx + hw / 2, hy + hh + 50], 540) +
+        [...Array(nt)].map((_, i) => { const x = (i % 2 ? flyX(-0.35) : flyX(0.05)) + 140 * flyR(k, 560 + i), y = 0.6 * FT + 0.3 * FT * flyR(k, 580 + i); return flyC(x, y, 9, ["#e53935", "#3b82f6", "#f2c12e", "#22c55e"][i % 4], ` stroke="#ffffff" stroke-width="2"`); }).join("")); },
+  // (the farm yard: crop strips behind the post-and-rail fence at the back; the red barn left of the middle; the farmhouse at
+  // the right, white, its roof dark red; the windpump at the left, its trough; the red tractor; the haystack; three hens; the
+  // packed earth with wheel ruts)
+  farmyard: k => flyRect(0, 0, FT, FT, "#b8955c") + [0, 1, 2, 3].map(i => flyRect(0, i * 0.05 * FT, FT, 0.05 * FT, ["#8fae56", "#c9b45a", "#7a9a48", "#d8c070"][i])).join("") +
+    flyPath(`M0 ${0.21 * FT} H${FT}`, "none", ` stroke="#6e4a26" stroke-width="8"`) + flyRoof(flyX(-0.17) - 90, 0.28 * FT, 180, 140, "#b03a2e") + flyRoof(flyX(0.36) - 70, 0.26 * FT, 140, 110, "#8e3b2f") +
+    flyPath(`M${flyX(-0.31) - 34} ${0.36 * FT} l68 68 M${flyX(-0.31) + 34} ${0.36 * FT} l-68 68`, "none", ` stroke="#8a8f98" stroke-width="7"`) + flyRect(flyX(-0.31) + 40, 0.46 * FT, 70, 24, "#7a8a9a") +
+    flyRect(flyX(0.13) - 34, 0.6 * FT, 68, 44, "#d9372b") + flyC(flyX(0.38), 0.68 * FT, 46, "#e8c35a") +
+    flyNear(flyPath(`M${flyX(-0.05)} ${FT} C${flyX(-0.05)} ${0.7 * FT} ${flyX(0)} ${0.55 * FT} ${flyX(0.05)} ${0.44 * FT} M${flyX(0.03)} ${FT} C${flyX(0.03)} ${0.7 * FT} ${flyX(0.08)} ${0.55 * FT} ${flyX(0.13)} ${0.44 * FT}`, "none", ` stroke="#8a6a3a" stroke-width="6"`) +
+      [[-34, -22], [34, -22], [-34, 22], [34, 22]].map(([dx, dy]) => flyC(flyX(0.13) + dx, 0.6 * FT + 22 + dy, 9, "#1f1f22")).join("") + [0, 1, 2].map(i => flyHen(flyX(-0.1) + 60 * i, 0.78 * FT + 20 * (i % 2))).join("")),
+  // (the camp site: pines in a row at the back; its tents (tents: orange at the left, blue at the right, green), the ring of
+  // stones and the fire (fireOn), a pot of soup or sausages over it (campFood); logs to sit on, left, right and near)
+  campsite: (k, o) => { const n = Math.max(0, Math.min(3, Math.round(o.tents ?? 2))), fire = o.fireOn !== false, fx = FT / 2, fy = 0.62 * FT;
+    return flyRect(0, 0, FT, FT, "#7a9a48") + flyCrowns(k, 9, [20, 6, FT - 20, 0.16 * FT], 44, 66, ["#2f5a2c", "#3a6a33"]) +
+      [[-0.32, 0.36, "#d9822b"], [0.33, 0.38, "#3b82f6"], [-0.12, 0.28, "#22c55e"]].slice(0, n).map(([s, v, c]) => flyTent(flyX(s), v * FT, c)).join("") +
+      flyC(fx, fy, 44, "#8a8a80") + flyC(fx, fy, 32, fire ? "#ff8a1c" : "#4a3f36") + (fire ? flyC(fx, fy, 14, "#ffd84a") : "") +
+      [[-150, 0, 0], [150, 0, 0], [0, 100, 90]].map(([dx, dy, a]) => flyRect(fx + dx - 50, fy + dy - 14, 100, 28, "#8a5a2b", ` rx="12" transform="rotate(${a + 90} ${f1(fx + dx)} ${f1(fy + dy)})"`)).join("") +
+      flyNear(o.campFood === "soup" ? flyC(fx, fy, 20, "#2a2a2a") + flyC(fx, fy, 14, "#c9822b") : o.campFood === "sausages" ? flyPath(`M${fx - 40} ${fy - 10} l80 8 M${fx - 40} ${fy + 10} l80 -8`, "none", ` stroke="#a8743f" stroke-width="4"`) : ""); },
+  // (the grass hut: a far row of woods; the round stick huts, thatched (hutRooms of them in a ring, hutCluster's, a bigger one
+  // in the middle with hutCenter); the sand path from the door toward us, flowers either side; the woodpile at the right)
+  hut: (k, o) => { const n = Math.max(1, Math.min(6, Math.round(o.hutRooms ?? 1))), c = o.hutCenter === true, cx = FT / 2, cy = 0.4 * FT;
+    const spots = n === 1 ? [[cx, cy]] : [...Array(n)].map((_, i) => { const a = Math.PI * (1.15 + 0.7 * i / Math.max(1, n - 1)); return [cx + 210 * Math.cos(a) * -1, cy + 120 * Math.sin(a) + 60]; });
+    return flyRect(0, 0, FT, FT, "#7a9a48") + flyPath(`M${cx} ${cy + 90} L${cx} ${FT}`, "none", ` stroke="#d9c08a" stroke-width="44" stroke-linecap="round"`) + flyFarWoods(k, 8) +
+      (c ? flyCone(cx, cy - 20, 130, "#c9c25a") : "") + spots.map(([x, y]) => flyCone(x, y, n === 1 ? 120 : 80, "#c9c25a") + flyC(x, y, n === 1 ? 70 : 46, "#a8a23e", ` opacity="0.7"`)).join("") +
+      [0, 1, 2, 3, 4].map(i => flyC(flyX(0.32) + 16 * (i % 3), 0.64 * FT + 14 * Math.floor(i / 3), 8, "#a8743f", ` stroke="#6e4a26" stroke-width="2"`)).join("") +
+      flyNear(flyFlowers(k, 14, [cx - 160, 0.6 * FT, cx + 160, FT - 20])); },
+  // (the desert: rippled sand, dunes at the back (or mesas, desertFar); its cacti where the scene stands them: saguaros, a Joshua
+  // tree, an agave, an ocotillo, a prickly pear, a barrel cactus; rocks; the lizard on its stone; a tumbleweed)
+  desert: (k, o) => flyRect(0, 0, FT, FT, "#e3c07a") + (o.desertFar === "mesas" ? [[0.18, 140], [0.55, 200], [0.86, 120]].map(([u, w]) => flyRect(u * FT - w / 2, 10, w, 90, "#c26a48", ` rx="20"`) + flyRect(u * FT - w / 2 + 14, 16, w - 28, 50, "#d98a60", ` rx="14"`)).join("")
+      : [0, 1].map(i => `<path d="M${f1(20 + 60 * i)} ${f1(50 + i * 60)} q160 -50 320 0 t320 0" fill="none" stroke="#f0d79a" stroke-width="24" stroke-linecap="round"/>`).join("")) +
+    [[-0.12, 0.32, "saguaro"], [0.33, 0.34, "joshuatree"], [-0.2, 0.46, "agave"], [0.17, 0.52, "ocotillo"], [0.38, 0.8, "pricklypear"], [-0.43, 0.82, "saguaro"], [-0.24, 0.9, "barrelcactus"]].map(([s, v, kind]) => flyThingSvg({ kind, x: s * 811.8, z: 240 + 170 * (v - FTOP / FT) / (1 - FTOP / FT - 30 / FT), size: kind === "saguaro" ? 140 : 110 })).join("") +
+    flyStone(flyX(0.1), 0.42 * FT, 26, "#c9a070", 41) + flyStone(flyX(0.02), 0.3 * FT, 22, "#b8905a", 42) +
+    flyNear(flyStone(flyX(0.18), 0.66 * FT, 16, "#b8905a", 43) + flyE(flyX(0.18) + 4, 0.66 * FT - 4, 12, 4, "#5f9a3a") + flyC(flyX(-0.05), 0.72 * FT, 20, "none", ` stroke="#a8743f" stroke-width="4" stroke-dasharray="5 4"`) +
+      flyPath(`M${flyX(-0.3)} ${0.6 * FT} q20 -10 40 0 t40 0 t40 0`, "none", ` stroke="#c9a060" stroke-width="3" stroke-dasharray="3 6"`)),
+  // (the garden: the white picket fence across the back, the rose arbor in its middle, the tall flowers along it; the stepping
+  // stones from the arbor toward us; the beds either side of them (gardenBeds), in rows; the shed at the left, its green roof,
+  // its rain barrel; the apple tree at the right, the bench; the wheelbarrow)
+  garden: (k, o) => { const nb = Math.max(0, Math.min(6, Math.round(o.gardenBeds ?? 4)));
+    return flyRect(0, 0, FT, FT, "#7caa4c") + flyPath(`M0 ${0.12 * FT} H${FT}`, "none", ` stroke="#f8f4ea" stroke-width="10" stroke-dasharray="10 8"`) + flyPath(`M${FT / 2 - 50} ${0.12 * FT} a50 30 0 0 1 100 0`, "none", ` stroke="#e85d75" stroke-width="12"`) +
+      flyRoof(flyX(-0.33) - 70, 0.2 * FT, 140, 110, "#4f8a4a") + flyC(flyX(-0.33) + 84, 0.2 * FT + 100, 20, "#4a6a8a") + flyOak(flyX(0.31), 0.32 * FT, 86, "#4f8a32") + flyRect(flyX(0.4) - 18, 0.56 * FT, 36, 70, "#8a5a2b") +
+      [...Array(nb)].map((_, i) => { const left = i % 2 === 0, j = Math.floor(i / 2), x = left ? flyX(-0.3) : flyX(0.08), y = 0.5 * FT + j * 0.15 * FT; return flyRect(x, y, flyX(0.3) - flyX(0.08), 0.1 * FT, "#7a5232"); }).join("") +
+      flyNear([...Array(6)].map((_, i) => flyC(FT / 2, 0.2 * FT + i * 0.13 * FT, 16, "#b4afa4")).join("") + flyFlowers(k, 18, [20, 0.13 * FT, FT - 20, 0.17 * FT]) +
+        [...Array(nb)].map((_, i) => { const left = i % 2 === 0, j = Math.floor(i / 2), x = left ? flyX(-0.3) : flyX(0.08), y = 0.5 * FT + j * 0.15 * FT; return flyPath(`M${f1(x + 10)} ${f1(y + 20)} h${f1(flyX(0.3) - flyX(0.08) - 20)} M${f1(x + 10)} ${f1(y + 50)} h${f1(flyX(0.3) - flyX(0.08) - 20)}`, "none", ` stroke="#5fbf4a" stroke-width="10" stroke-dasharray="12 10"`); }).join("") +
+        [0, 1, 2, 3, 4].map(i => flyC(flyX(0.31) - 50 + 25 * i, 0.32 * FT - 30 + 20 * (i % 2), 7, "#d9372b")).join("") + flyRect(flyX(-0.16) - 20, 0.86 * FT, 40, 26, "#5a6f9a", ` rx="6"`)); },
+  // (the spring: woods round its back; the round pool in the middle, ringed by mossy stones, lily pads on it, reeds at both
+  // ends, its frogs (springFrogs) at the edge, its bubbles; the mossy rock and the log, near)
+  spring: (k, o) => { const nf = Math.max(0, Math.min(3, Math.round(o.springFrogs ?? 2))), px = FT / 2, py = 0.48 * FT, rx = 0.19 * FT, ry = 0.13 * FT;
+    return flyRect(0, 0, FT, FT, "#6f9e45") + flyFarWoods(k, 10) + flyCrowns(k, 3, [10, 0.2 * FT, 120, 0.5 * FT], 44, 66, ["#2f5f2a"], 40) + flyCrowns(k, 3, [FT - 120, 0.2 * FT, FT - 10, 0.5 * FT], 44, 66, ["#2f5f2a"], 60) +
+      [...Array(10)].map((_, i) => flyC(px + (rx + 22) * Math.cos(i * 0.628), py + (ry + 18) * Math.sin(i * 0.628), 22, "#8a9a6c")).join("") + flyPool(px, py, rx, ry, "#3f8fd9", "#a9d6f5") +
+      flyStone(flyX(-0.185), 0.78 * FT, 34, "#7f8a6a", 51) + flyRect(flyX(0.185) - 60, 0.76 * FT, 120, 30, "#8a5a2b", ` rx="14"`) +
+      flyNear([0, 1, 2, 3].map(i => flyC(px - rx * 0.6 + rx * 0.4 * i, py - ry * 0.3 + ry * 0.25 * (i % 2), 12, "#5fa84a")).join("") + [-1, 1].map(sd => flyPath([0, 1, 2, 3].map(j => `M${f1(px + sd * (rx + 4) + 6 * j)} ${f1(py - 20 + 12 * j)} v-26`).join(" "), "none", ` stroke="#4f6b3a" stroke-width="4"`)).join("") +
+        [...Array(nf)].map((_, i) => flyE(px + (i ? rx * 0.7 : -rx * 0.8), py + ry * 0.9, 12, 9, "#5fbf4a")).join("") +
+        [...Array(Math.max(0, Math.min(8, Math.round(o.springBubbles ?? 5))))].map((_, i) => flyC(px - 40 + 80 * flyR(k, 600 + i), py - 20 + 40 * flyR(k, 610 + i), 4, "#e0f2fe", ` opacity="0.8"`)).join("") + flyC(flyX(-0.185) - 12, 0.78 * FT - 10, 12, "#6f9a3a")); },
+  // (the dungeon: already seen from above in its own scene: its walls round a tiled floor, open at its ways; torches)
+  dungeon: (k, o, cell = {}) => { const open = ways => FLY_EDGE[ways] ? 1 : 0, ws = worldWays(cell);
+    return flyRect(0, 0, FT, FT, "#3a3640") + flyRect(70, 70, FT - 140, FT - 140, "#6a6472") + flyPath([1, 2, 3, 4, 5].map(i => `M70 ${70 + i * (FT - 140) / 6} H${FT - 70} M${70 + i * (FT - 140) / 6} 70 V${FT - 70}`).join(" "), "none", ` stroke="#57525e" stroke-width="3"`) +
+      // (each way open, a gap in the wall there: a side's middle, or a corner)
+      ws.filter(open).map(w => { const at = e => e === 1 ? FT - 80 : e === 0 ? 0 : FT / 2 - 60, wd = e => e === 0.5 ? 120 : 80, [ex, ey] = FLY_EDGE[w];
+        return flyRect(at(ex), at(ey), wd(ex), wd(ey), "#6a6472"); }).join("") +
+      flyNear([[110, 110], [FT - 110, 110], [110, FT - 110], [FT - 110, FT - 110]].map(([x, y]) => flyC(x, y, 12, "#ff8a1c") + flyC(x, y, 5, "#ffd84a")).join("")); },
+  // (the cave crossing: rock walls round a worn floor, open at its ways; its crystals, moss, ice or stalagmites, crossCave's)
+  cavecross: (k, o, cell = {}) => { const kind = cell.crossCave || "stone", dot = { crystal: "#7fe0f0", moss: "#5fa84a", ice: "#cfe9fb", stone: "#8a8690" }[kind] || "#8a8690";
+    return flyRect(0, 0, FT, FT, "#2a282e") + flyE(FT / 2, FT / 2, 0.36 * FT, 0.32 * FT, "#57535c") + flyNear([...Array(12)].map((_, i) => { const a = i * 0.52, x = FT / 2 + 0.4 * FT * Math.cos(a), y = FT / 2 + 0.36 * FT * Math.sin(a);
+      return kind === "crystal" ? flyPath(flyPoly([[x, y - 14], [x + 8, y], [x, y + 14], [x - 8, y]]), dot) : flyC(x, y, 10, dot); }).join("")); },
   emptyroom: k => flyRect(0, 0, FT, FT, "#d9d9de") + flyRect(50, 50, FT - 100, FT - 100, "#ececf0"),
-  imagination: k => flyRect(0, 0, FT, FT, "#c7b4e8") + [0, 1, 2, 3, 4].map(i => flyE(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 9 + i), 110, 60, "#f4ecff")).join(""),
-  bubblespace: k => flyRect(0, 0, FT, FT, "#bfe3f7") + [0, 1, 2, 3, 4, 5].map(i => flyC(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 9 + i), 30 + 40 * flyR(k, 20 + i), "#ffffff55", ` stroke="#ffffff" stroke-width="4"`)).join(""),
+  // (our imagination: an empty white room, the map board of place pictures on its far wall, a ladder by each column)
+  imagination: k => flyRect(0, 0, FT, FT, "#f4f4f8") + flyRect(0, 0, FT, 0.14 * FT, "#e6e2f0") + flyNear([...Array(12)].map((_, i) => flyRect(40 + i * 62, 24, 50, 40, ["#7caa4c", "#2d6fb3", "#e3c07a", "#b8b8c4", "#6b4a2b", "#c7b4e8"][i % 6])).join("") +
+    [0, 1, 2, 3].map(i => flyRect(90 + i * 190, 70, 12, 40, "#a8743f")).join("")),
+  // (bubble space: its pale blue floor, its bubbles in its own colours)
+  bubblespace: (k, o) => flyRect(0, 0, FT, FT, "#bfe3f7") + [...Array(Math.max(4, Math.min(14, Math.round((o.bubbleCount ?? 30) / 2.5))))].map((_, i) => flyC(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 20 + i), 22 + 36 * flyR(k, 40 + i), "#ffffff40", ` stroke="${o.bubbleAColor || "#ffffff"}" stroke-width="4"`)).join(""),
+  treehouse: (k, o) => flyTreehouse(k, o),
+  castle: (k, o) => flyCastle(k, o),
 };
 FLY_LOOKS.bubbleroom = FLY_LOOKS.bubblespace;
 // (ticket 691, Matthew: "let's add more detail to the top-down views for each square -- the tree house tree? the castle doesn't
@@ -175,8 +355,8 @@ const HOUSE_EARS = { fox: `<path d="MX Y m-30 0 l10 -24 l12 24 Z m40 0 l10 -24 l
 // (the places reached through a door, put in a square: a roof over them; the cave's, rock)
 const FLY_ROOFS = { livingroom: "#a8463a", witchroom: "#4a3456", treeroom: "#8a5a2b", treetop: "#8a5a2b", healerroom: "#c9a45a", tent: "#d9822b",
                     castleroom: "#6a6f80", hutroom: "#c9a45a", hutbed: "#c9a45a", hutpotion: "#c9a45a", hutcenter: "#c9a45a" };
-function flyLookOf(kind, key, o = state.background) {
-  if (FLY_LOOKS[kind]) return FLY_LOOKS[kind](key, o);
+function flyLookOf(kind, key, o = state.background, cell = {}) {
+  if (FLY_LOOKS[kind]) return FLY_LOOKS[kind](key, o, cell || {});
   if (kind === "cave" || kind === "caveroom") return FLY_LOOKS.cavecross(key);
   return flyRect(0, 0, FT, FT, "#7caa4c") + flyRoof(0.2 * FT, 0.16 * FT, 0.6 * FT, 0.5 * FT, FLY_ROOFS[kind] || "#8a6a5a");
 }
@@ -220,7 +400,7 @@ function flyTileSvg(W, key) {
   const cell = W.cells[key], [c, r] = key.split(",").map(Number);
   const things = (cell.things || []).map(flyThingSvg).join("");
   // (its paths just over its ground, the look's first shape: under its water, its roofs and its trees, as a trail goes)
-  const look = flyLookOf(cell.kind, key), cut = look.indexOf("/>") + 2;
+  const look = flyLookOf(cell.kind, key, state.background, cell), cut = look.indexOf("/>") + 2;
   return `<g data-tile="${key}" transform="translate(${c * FT} ${r * FT})">${look.slice(0, cut)}${flyPathsSvg(cell.kind, worldLiveWays(W, key))}${look.slice(cut)}` +
     (things ? `<g class="fly-things">${things}</g>` : "") + `</g>`;
 }

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.488 (2026-11-04)
+
+Everything in 0.0.487, plus:
+
+- **Every place seen from above as its own scene draws it, flying** (ticket 691). Each square now shows what its place's scene has, where it stands there, from the place's own settings: the house's dark brown roof and brick chimney, its garage and driveway, the stone walk, the flower bed and the toys on the lawn; the lake's far woods, its ducks and lily pads, the cattails and the sandy beach; the witch's log hut on its dark mound behind the palisade of stakes and skulls, the giant dead tree, the cauldron over its fire; the cemetery's stones, its brook and weeping willow; the farm's barn, farmhouse, windpump, tractor, haystack and hens; the camp's tents and its fire (a pot of soup or sausages over it); the beach's umbrellas, blankets, palms and sand castles; the waterfall's cliff, falls, pool, vines and parrots; the fairy forest's great tree, its fairy house and the toadstool ring; the pasture's fence and gate, its horses; the garden's fence and rose arbor, its beds, shed and apple tree; the spring's pool ringed with stones, its frogs; the clearing's paths out to the house, the tree house, the castle and the huts it shows; the desert's cacti where they stand; the mountain trail's valley lake and village; under the lake, the shipwreck and the sharks' picnic table; and the dungeon's walls open at its ways.
+
 ## 0.0.487 (2026-11-04)
 
 Everything in 0.0.486, plus:
