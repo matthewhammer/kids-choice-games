@@ -37,7 +37,7 @@ try {
     await swing(); out.bushes = state.background.things.filter(t => t.kind === "bush").length; out.cutAfterBush = cutHere();
     // no costume: the 🎒's sword, held
     state.costume = { ...state.costume, kind: "none" };
-    state.backpack = [...packList(), { id: "sword", got: Date.now() }]; toolHold("sword"); await w(300);
+    state.backpack = [...packList(), { id: "sword", got: Date.now() }]; if (!toolSlotted("sword")) toolHold("sword"); await w(300);   // (ticket 687: the knight's sword, given to the 🎒 and 🔹, may be there already)
     out.packHeld = toolInHand(); out.packDrawn = !!document.querySelector('#figure [data-tool="sword"], #figure-far [data-tool="sword"]');   // (ticket 687: in its own hand, near or far)
     state.background.things = [{ ...(THING_DEFAULTS.saguaro || {}), kind: "saguaro", x: -90, z: 389, seed: 8 }]; changed(); draw(); await w(300);
     await swing(); out.saguaros = state.background.things.filter(t => t.kind === "saguaro").length;

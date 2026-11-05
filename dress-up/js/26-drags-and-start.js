@@ -1602,7 +1602,7 @@ const toolHeld = () => { const P = state.pack || {}; return toolSlotted(P.a) ? P
 function toolInHand() {
   const id = toolHeld();
   if (id) return id;
-  const hands = heldItems(state.body, state.costume.kind, state.costume);
+  const hands = heldWithItems(heldItems(state.body, state.costume.kind, state.costume));   // (ticket 687: the hands as drawn)
   return hands.L === "sword" || hands.R === "sword" ? "sword" : "";
 }
 // (ticket 687: use, the tool of a slot's button; else for a plant tapped the can, for a bee the net, if in a slot; else the one in hand)

@@ -34,6 +34,8 @@ try {
     const turnedIn = g => [...g.slice(g.indexOf(">") + 1).matchAll(/\\stransform="([^"]*)"/g)].some(m => m[1] && !/^translate\\([^)]*\\)$/.test(m[1]));
     const shapes = t => (t.match(/<(path|circle|ellipse|rect|polygon|polyline|line|use|image|text)[\\s>\\/]/g) || []).length;
     state.music.mute = true; state.world.at = null; Object.assign(state.background, { kind: "none", things: [], seat: null }); state.body.sit = false; state.body.horse = "none";
+    // (ticket 687: the costume's own look, as the 92 was set for: the slots empty, so no item of 🎒 your items is in a hand; the items' own budget is items687's)
+    state.pack = { ...state.pack, a: "", b: "" };
     set("body", "pose", "stand"); state.body.anim = "none"; set("costume", "kind", "ninja"); changed(); await w(100);
     const D = DEFAULTS.costume, skin = state.face.color.toLowerCase();
     const rows = TABS.find(t => t[1] === "costume")[2], row = k => rows.find(c => c[1] === k);

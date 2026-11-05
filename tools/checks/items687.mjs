@@ -50,16 +50,31 @@ try {
   const x = JSON.parse(await ev(`JSON.stringify({ swinging, tool: toolHeld() })`));
   await key("keyUp", "x"); await sleep(600);
   ok("X: the net in 🔸, held and swung", x.swinging === "net" && x.tool === "net", x);
-  // the hands: 🔹's 🔥 in the left, 🔸's net in the right, the flame simmering (a few SMIL shapes); a knight keeps the sword and the shield
+  // the hands: 🔹's 🔥 in the left, 🔸's net in the right, the flame simmering by CSS (no SMIL in the friend); a knight put on gives
+  // the 🎒 its sword and shield, in its hands' slots; taken off, they stay; 🔹's 🔥 chosen again shows over the knight's own
   const hands = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), q = sel => document.querySelector("#figure " + sel + ", #figure-far " + sel);
+    const figText = () => [...document.querySelectorAll("#figure, #figure-far")].map(n => n.outerHTML).join("");
     state.body.facing = "front"; changed(); draw(); await w(300);
-    const fire = q('[data-ability="fire"]'), net = q('[data-tool="net"]'), anims = fire ? fire.querySelectorAll("animate, animateTransform").length : 0, hw = heldWithItems(heldItems(state.body, state.costume.kind, state.costume));
-    const keep = state.costume; state.costume = { ...state.costume, kind: "knight" }; changed(); draw(); await w(300);
-    const kh = heldWithItems(heldItems(state.body, "knight", state.costume)), knightFire = !!q('[data-ability="fire"]');
-    state.costume = keep; changed(); draw(); await w(200);
-    return JSON.stringify({ fire: !!fire, net: !!net, anims, hw, kh, knightFire }); })()`));
-  ok("in the hands: 🔥 in the left, simmering, the net in the right", hands.fire && hands.net && hands.anims >= 2 && hands.hw.L === "fire" && hands.hw.R === "net", hands);
-  ok("a knight keeps the sword and the shield: the items not drawn over them", hands.kh.L === "sword" && hands.kh.R === "shield" && !hands.knightFire, hands);
+    const fire = q('[data-ability="fire"]'), net = q('[data-tool="net"]'), simmer = fire ? /simmer-flicker/.test(fire.outerHTML) : false, smil = /<animate|<set\\b/.test(figText());
+    const keepC = state.costume; state.costume = { ...state.costume, kind: "knight" }; changed(); draw(); await w(300);
+    const on = { pack: packList().map(o => o.id), slots: [state.pack.a, state.pack.b], drawn: !!q('[data-tool="sword"]') && !!q('[data-prop="shield"]'), inHand: toolInHand() };
+    itemSet("a", "fire"); await w(150); const over = { L: !!q('[data-ability="fire"]'), shield: !!q('[data-prop="shield"]') };
+    state.costume = keepC; changed(); draw(); await w(300);
+    const off = { pack: packList().map(o => o.id), slots: [state.pack.a, state.pack.b] };
+    state.pack = { ...state.pack, a: "fire", b: "net" }; changed(); draw(); await w(150);
+    return JSON.stringify({ fire: !!fire, net: !!net, simmer, smil, on, over, off }); })()`));
+  ok("in the hands: 🔥 in the left, simmering (CSS, no SMIL in the friend), the net in the right", hands.fire && hands.net && hands.simmer && !hands.smil, hands);
+  ok("a knight put on: its sword and shield in the 🎒 and in its hands' slots, drawn, the sword the tool in hand", hands.on.pack.includes("sword") && hands.on.pack.includes("shield") && hands.on.slots[0] === "sword" && hands.on.slots[1] === "shield" && hands.on.drawn && hands.on.inHand === "sword", hands);
+  ok("🔥 chosen for 🔹 shows in the left hand over the knight's own sword; the shield stays in the right", hands.over.L && hands.over.shield, hands);
+  // the held items' own budget (the costume checks count the costume's look with the slots empty): 🫧 and 🔥 together at most 5 shapes
+  const cost = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), keep = { ...state.pack };
+    const shapes = () => ((document.getElementById("figure") || {}).outerHTML || "").match(/<(path|circle|ellipse|rect|polygon|polyline|line|use|image|text)[\\s>\\/]/g) || [];
+    const n = {}; for (const f of ["front", "left", "right", "back"]) { state.body.facing = f;
+      state.pack = { ...keep, a: "", b: "" }; changed(); await w(40); const empty = shapes().length;
+      state.pack = { ...keep, a: "bubbles", b: "fire" }; changed(); await w(40); n[f] = shapes().length - empty; }
+    state.pack = keep; state.body.facing = "front"; changed(); return JSON.stringify(n); })()`));
+  ok("🫧 and 🔥 in the hands: at most 5 shapes more, in every facing", Object.values(cost).every(v => v <= 5), cost);
+  ok("the knight taken off: the sword and shield stay, in the 🎒 and in the hands", hands.off.pack.includes("sword") && hands.off.pack.includes("shield") && hands.off.slots[1] === "shield", hands);
   const pad = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); touchWant(true); await w(400);
     const b7 = document.querySelector('#touchpad [data-b="7"]'), label = b7 ? b7.textContent : "";
     touchSet(state.controls.useA, true); await w(300); const fire = firePad; touchSet(state.controls.useA, false); await w(200);

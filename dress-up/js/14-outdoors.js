@@ -2906,6 +2906,7 @@ function giftSvg(id, o = {}) {
     case "egg": return `<ellipse cx="0" cy="-28" rx="22" ry="29" fill="#7fbf7a" stroke="#2f6b2a" stroke-width="2.5"/>` +
       `<path d="M-14 -40 l6 4 l-6 4 M8 -46 l6 4 l-6 4 M-4 -20 l6 4 l-6 4 M10 -22 l5 4 l-5 4" stroke="#2f6b2a" stroke-width="2" fill="none"/>` +
       `<ellipse cx="-8" cy="-42" rx="5" ry="8" fill="#ffffff" opacity="0.4"/>`;
+    case "broom": case "staff": case "scepter": case "bow": case "lasso": return propGiftSvg(id);   // (ticket 687: a costume's own things, as in the hand)
     default: return caveMushroomSvg({ style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true }, 11, o);
   }
 }

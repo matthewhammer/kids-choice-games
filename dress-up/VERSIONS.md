@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.483 (2026-11-04)
+
+Everything in 0.0.482, plus:
+
+- **A costume's things go in your 🎒** (ticket 687). Put on a costume, and what it holds goes into your backpack and into your hands: the knight's 🗡️ sword and 🛡️ shield, the witch's 🧹 broom, the wizard's 🪄 staff, the queen's 👑 scepter, Robin's 🏹 bow, the cowgirl's ➿ lasso. The thing in the costume's left hand goes in 🔹, the one in its right hand in 🔸, so the friend looks as the costume does. Take the costume off, or put on another, and they stay: in the backpack, and in your hands until you choose something else in 🎒 your items, where they are listed once you have them. Turning a thing off in the costume's own box (the cowgirl's ➿ lasso) takes it out of the hand, but it stays in the backpack. A friend saved before this gets its costume's things once.
+- **Your items show in your hands**, over what a costume holds by itself: choose 🔥 for 🔹 as a knight, and the left hand holds the flame. A thing chosen for a hand in 🧍 Body's 🫴 holding still comes first.
+- **Fixed: the simmering 🫧 and 🔥 cost too much.** They moved by SMIL inside the friend, which is redrawn as they move; now by CSS, as a fairy's wings flap, with fewer shapes: two bubbles off the wand, and the flame without its ember. On a computer the game finds slow, they hold still with the scenery.
+
 ## 0.0.482 (2026-11-04)
 
 Everything in 0.0.481, plus:

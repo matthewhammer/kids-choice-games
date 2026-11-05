@@ -634,7 +634,7 @@ const DEFAULTS = {
   world: WORLD_DEFAULT,
   // (ticket 631, 632) what the friend carries: each { id, got, from }, what a chest gave first; and the pack itself: drawn on them, or not
   // (ticket 687) and 🎒 your items: the items in the slots 🔹 and 🔸 (either may be "": empty), and what covers the game behind them
-  backpack: [], pack: { drawn: false, tool: "", a: "bubbles", b: "fire", screen: "dim" },
+  backpack: [], pack: { drawn: false, tool: "", a: "bubbles", b: "fire", screen: "dim", dressed: "none||" },   // (dressed: itemsDressed's, the costume's things last given)
   // (ticket 406) the other worlds, by id (the one the friend is in is `world`), and the worlds kept as templates, by id
   worldsAway: {}, worldTemplates: {},
   // (ticket 639) the 🗝️ dungeon world, made once a game (dungeonWorldEnsure): made or not, in an object so a save keeps it
@@ -1550,7 +1550,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.482", released: "2026-11-04" };
+const VERSION = { number: "0.0.483", released: "2026-11-04" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

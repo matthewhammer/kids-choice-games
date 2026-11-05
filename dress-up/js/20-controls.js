@@ -1033,6 +1033,7 @@ function settle() {
   step();
 }
 function changed() {
+  if (typeof itemsDressed === "function") itemsDressed();   // (ticket 687: a costume put on gives its things to the 🎒 and the hands, before the drawing)
   worldKeep();   // (ticket 185, as in settle: before the drawing, which reads a crossing's live paths from it)
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
   flagCastles = null;   // (ticket 365: each round of syncs reads the castles afresh, once: flagCastle)
@@ -2408,7 +2409,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         pic.setAttribute("viewBox", "-60 -100 120 110"); pic.setAttribute("class", "pack-pic"); pic.setAttribute("aria-hidden", "true");
         try { pic.innerHTML = giftSvg(it.id, {}); } catch (e) { /* (a thing not drawn: its name alone) */ }
         const when = it.got ? new Date(it.got).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
-        return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || it.id),
+        return el("div", { class: "pack-card" }, [pic, el("div", { class: "pack-name" }, names[it.id] || (ITEM[it.id] ? ITEM[it.id].icon + " " + ITEM[it.id].name : it.id)),
           el("div", { class: "hint" }, [it.from === "chest" ? "from a 💰 chest" : "", when].filter(Boolean).join(", ")),   // (ticket 662: not ", Nov 2" when not from a chest)
           // (ticket 660, part 3) the can: how many pours of water are in it
           ...(it.id === "can" ? [el("div", { class: "pack-water" }, (n => n ? "💧".repeat(n) + "◌".repeat(CAN_HOLDS - n) + ` ${n} of ${CAN_HOLDS} pours` : "empty: fill it at water")(Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0)))))] : []),

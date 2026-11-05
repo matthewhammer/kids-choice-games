@@ -17,7 +17,11 @@
 // where 🫧 and 🔥 were), Z and X on the keyboard. A tool is used by a press (toolUse: swung, or the can tipped); an ability goes
 // on while its button is held. The screen covers the game dimmed, black or white (state.pack.screen).
 const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", "breathe fire", "ability"],
-               ["net", "🥅", "the bug net", "tool"], ["sword", "🗡️", "the sword", "tool"], ["can", "💧", "the watering can", "tool"]];
+               ["net", "🥅", "the bug net", "tool"], ["sword", "🗡️", "the sword", "tool"], ["can", "💧", "the watering can", "tool"],
+               // (Matthew: "costume props [to] appear in the backpack when we add the costume": itemsDressed) a costume's own things, held
+               // in the hand (drawn as HOLDABLES draws them), nothing done by their button: shown on the screen once had
+               ["broom", "🧹", "a broom", "prop"], ["staff", "🪄", "a staff", "prop"], ["scepter", "👑", "a scepter", "prop"],
+               ["shield", "🛡️", "a shield", "prop"], ["bow", "🏹", "a bow", "prop"], ["lasso", "➿", "a lasso", "prop"]];
 const ITEM = Object.fromEntries(ITEMS.map(([id, icon, name, kind]) => [id, { id, icon, name, kind }]));
 const ITEM_SCREENS = [["dim", "🌗 dimmed"], ["black", "⬛ black"], ["white", "⬜ white"]];
 // the slots: each its state.pack key, its controller action, its mark and its key on the keyboard
@@ -68,56 +72,79 @@ function toolHold(id) {
 }
 
 // ---- in the hands ----
-// (Matthew: "let's have the L and R hands depict the two selected items") what each own hand holds, drawn: the costume's or a
-// hold choice's thing (heldItems), else 🔹's item in the left hand and 🔸's in the right (a costume's own thing is never taken
-// from it; an item already in the other hand is not drawn twice). slotL, slotR: the hand's thing came of a slot. Not while the
-// people or the statue are drawn (personBusy): the slots are the friend's own.
-function heldWithItems(base) {
+// (Matthew: "let's have the L and R hands depict the two selected items"; asked whether a costume's own things or the items win
+// a hand: "Show my items") What each own hand holds, drawn: a choice made for that hand in 🧍 Body's 🫴 holding ("✋ nothing"
+// too) first; else 🔹's item in the left hand and 🔸's in the right; else the costume's own thing (heldItems). One thing is
+// not drawn in two hands: of two the same, the hand's own choice is kept, then the slot's, then the costume's. slotL, slotR:
+// the hand's thing came of its slot. Not while the people or the statue are drawn (personBusy): the slots are the friend's own.
+function heldWithItems(base, body = state.body) {
   if (typeof personBusy !== "undefined" && personBusy) return base;
-  const a = itemIn("a"), b = itemIn("b");
-  const L = base.L || (a && a !== base.R ? a : null), R = base.R || (b && b !== L ? b : null);
-  return { L, R, slotL: !base.L && !!L, slotR: !base.R && !!R };
+  const chose = h => (body["hold" + h] || "auto") !== "auto", a = itemIn("a"), b = itemIn("b");
+  const sL = !chose("L") && !!a, sR = !chose("R") && !!b;
+  let L = sL ? a : base.L || null, R = sR ? b : base.R || null;
+  if (L && L === R) { const rank = h => chose(h) ? 2 : (h === "L" ? sL : sR) ? 1 : 0; if (rank("L") >= rank("R")) R = null; else L = null; }
+  return { L, R, slotL: sL && L === a, slotR: sR && R === b };
+}
+// (Matthew, 2026-11-04: "costume props [should] appear in the backpack when we add the costume. Let's have an 'add but do not
+// remove' policy for adding a new costume so items from that costume appear in the backpack, and when we take off the costume
+// or switch to another, those items stay there") The costume's own things (heldAuto), each time they change (state.pack.dressed:
+// the costume and its own things, as last given): a thing it puts in a hand goes into the 🎒 (once) and into that hand's slot
+// (the left's 🔹, the right's 🔸), so the friend looks as the costume does. Taken off, or another put on, nothing is taken out
+// of the 🎒 or the hands. Only a thing turned off in the same costume's box (the cowgirl's ➿ lasso off) leaves its slot, if it
+// is still there; it stays in the 🎒. A friend saved before this gets its costume's things once. (changed() calls it, first.)
+function itemsDressed() {
+  const C = state.costume || {}, kind = C.kind || "none", auto = heldAuto(kind, C), P = state.pack || {};
+  const key = `${kind}|${auto.L || ""}|${auto.R || ""}`;
+  if (P.dressed === key) return;
+  const [was, wasL, wasR] = String(P.dressed || "none||").split("|"), next = { ...P, dressed: key }, add = [];
+  for (const [own, s, before] of [["L", "a", wasL], ["R", "b", wasR]]) {
+    const id = auto[own];
+    if (id && ITEM[id] && (was !== kind || id !== before)) { if (!packList().some(o => o.id === id) && !add.includes(id)) add.push(id); next[s] = id; }
+    else if (!id && before && was === kind && next[s] === before) next[s] = "";
+  }
+  if (add.length) state.backpack = [...packList(), ...add.map(id => ({ id, got: Date.now(), from: "costume" }))];
+  state.pack = next;
+}
+// a costume's thing in the 🎒 and on the floor (giftSvg): drawn as in the hand, the hand's point raised so it stands on the ground
+function propGiftSvg(id) {
+  const [, down] = HOLDABLES[id].ext;
+  return `<g transform="scale(0.6)">${heldSvg(id, [0, -Math.max(down, 10)], "front", { WC: state.costume || {}, kb: 1, own: "L", out: 1, dir: 1 })}</g>`;
 }
 // (Matthew: "if the selected items are bubbles or fire, can we render a cheap animation there on the hand for a 'simmering'
 // ability that's just waiting, and idling a bit (a few bubbles ... limited ..., or a small flame, similarly limited in
 // animation expense)") An item in the hand, at the hand (H, the friend's units), leaning the way the hand reaches (the way
-// they face in profile): the net and the can as they are swung and tipped; 🫧 a bubble wand, three bubbles at a time rising
-// off its ring; 🔥 a small flame on the open palm, flickering, an ember rising. Each moves by SMIL on the picture's own clock
-// (begun at 0, or before it, so a friend drawn again picks up where it was, the drawing the same each time; held still with
-// the picture): a fixed few shapes, nothing done a frame for them.
+// they face in profile): the net and the can as they are swung and tipped; 🫧 a bubble wand, two bubbles at a time rising
+// off its ring; 🔥 a small flame on the open palm, flickering. Each moves by a CSS animation (style.css:
+// simmer-…), begun by fairyPhase where the picture's clock is, as a fairy's wings flap, so a friend drawn again goes on where
+// it was: no SMIL in the friend (the speed run's checks count it costly), a fixed few shapes, nothing done a frame for them.
 function itemHeldSvg(id, H, view, o) {
   const [hx, hy] = H, s = view === "side" ? (o.dir || 1) : (o.out || 1);
   const at = (x, y, inner, rot = 0) => `<g transform="translate(${f1(x)} ${f1(y)})${rot ? ` rotate(${rot})` : ""}">${inner}</g>`;
-  const loop = (attr, values, dur, begin, extra = "") => `<animate${attr === "transform" ? "Transform" : ""} attributeName="${attr}" ${extra}values="${values}" dur="${dur}s" begin="${begin}s" repeatCount="indefinite"/>`;
+  const css = (name, dur, begin, more = "") => `style="${more}animation: ${name} ${dur}s linear ${fairyPhase(dur, begin)}s infinite"`;
   switch (id) {
     case "net": return at(hx, hy, `<g transform="scale(1.1)">${netSvg(1)}</g>`, s * 18);
     case "can": return at(hx, hy, `<g transform="scale(1.1)">${canSvg(s)}</g>`);
     case "bubbles": {
-      // the wand: a stick up and out of the fist, its ring a soap film; and off the ring, three bubbles a third of a cycle apart
+      // the wand, one path: a stick up and out of the fist and its ring, a soap film; and off the ring, two bubbles half a cycle
+      // apart (the held items' budget: at most 5 shapes for 🫧 and 🔥 together, ticket 687's check)
       const rx = s * 18, ry = -62;
-      let b = `<path d="M0 8 L${f1(rx * 0.85)} ${f1(ry + 13)}" stroke="#7c3aed" stroke-width="4.5" stroke-linecap="round"/>` +
-        `<circle cx="${f1(rx)}" cy="${ry}" r="13" fill="#dbeafe" fill-opacity="0.45" stroke="#7c3aed" stroke-width="3.5"/>` +
-        `<path d="M${f1(rx - 6)} ${ry - 5} Q${f1(rx - 2)} ${ry - 9} ${f1(rx + 3)} ${ry - 8}" stroke="#fff" stroke-width="2" fill="none" opacity="0.8"/>`;
-      for (let i = 0; i < 3; i++) {
-        const r = 4 + i * 1.5, dx = s * (6 + 7 * i), begin = (-0.8 * i).toFixed(1);
-        b += `<g opacity="0">${loop("opacity", "0;0.95;0.95;0", 2.4, begin, 'keyTimes="0;0.15;0.7;1" ')}` +
-          `<circle cx="${f1(rx)}" cy="${ry - 12}" r="${r}" fill="#e0f2fe" fill-opacity="0.35" stroke="#60a5fa" stroke-width="1.6">` +
-          `${loop("transform", `0 0;${f1(dx)} -50`, 2.4, begin, 'type="translate" ')}</circle></g>`;
-      }
+      let b = `<path d="M0 8 L${f1(rx * 0.85)} ${f1(ry + 13)} M${f1(rx - 13)} ${ry} a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0" fill="#dbeafe" fill-opacity="0.45" stroke="#7c3aed" stroke-width="3.5" stroke-linecap="round"/>`;
+      for (let i = 0; i < 2; i++)
+        b += `<g transform="translate(${f1(rx)} ${ry - 12})"><circle r="${4.5 + i * 1.5}" fill="#e0f2fe" fill-opacity="0.35" stroke="#60a5fa" stroke-width="1.6" opacity="0" ` +
+          `${css("simmer-rise", 2.4, 1.2 * i, `--dx: ${s * (7 + 8 * i)}px; `)}/></g>`;
       return at(hx, hy, b);
     }
     case "fire": {
-      // the flame on the palm, scaled about its foot: a flicker, never a frame's work; and one ember, up and out
-      const flame = `<g>${loop("transform", "1 1;0.9 1.14;1.08 0.93;0.95 1.07;1 1", 0.9, 0, 'type="scale" ')}` +
+      // the flame on the palm, its yellow heart in it, scaled about its foot: a flicker
+      const flame = `<g ${css("simmer-flicker", 0.9, 0, "transform-origin: 0 0; ")}>` +
         `<path d="M0 0 C-15 -3 -14 -24 -3 -44 C1 -31 11 -28 9 -15 C16 -20 15 -6 0 0 Z" fill="#f97316" stroke="#c2410c" stroke-width="1.5"/>` +
         `<path d="M0 -2 C-8 -4 -7 -15 -1 -27 C2 -18 7 -15 5 -9 C7 -10 7 -4 0 -2 Z" fill="#fde047"/></g>`;
-      const ember = `<g opacity="0">${loop("opacity", "0;1;0", 1.6, -0.5)}<circle cx="0" cy="-34" r="2.2" fill="#fdba74">` +
-        `${loop("transform", `0 0;${s * 7} -34`, 1.6, -0.5, 'type="translate" ')}</circle></g>`;
-      return at(hx, hy - 12, flame + ember);
+      return at(hx, hy - 12, flame);
     }
     default: return "";
   }
 }
+
 // Z and X held: each its slot's (blowTick and fireTick read itemKeyHolds, as they read B's and F's own flags)
 const itemKeys = { a: false, b: false };
 const itemKeyHolds = ability => SLOTS.some(([s]) => itemKeys[s] && itemIn(s) === ability);
@@ -135,6 +162,8 @@ function itemKey(s, down) {
 function itemLetGo() { itemKeys.a = itemKeys.b = false; blowPad = false; firePad = false; }
 
 // ---- the screen ----
+// (the items on the screen: every ability and tool, a costume's thing once had)
+const itemsShown = () => ITEMS.filter(([id, , , kind]) => kind !== "prop" || itemHas(id));
 let itemsOpen = false, itemsAt = 0, itemsStick = [0, 0], itemsPaused = false;   // (open; the item the arrows are on; the stick's last push; the picture held by us)
 const itemsBtn = document.getElementById("items-btn"), itemsEl = document.getElementById("items-screen");
 const ITEM_MOVES = new Set(["walk", "run", "crawl", "swim", "swimfast"]);
@@ -151,7 +180,7 @@ function itemsShow(on) {
     if (ITEM_MOVES.has(state.body.anim)) { state.body.anim = "none"; padWant = null; padVel = [0, 0]; changed(); }
     itemsPaused = !!(p && p.pauseAnimations && !p.animationsPaused() && stillAt == null);
     if (itemsPaused) p.pauseAnimations();
-    itemsAt = Math.max(0, ITEMS.findIndex(([id]) => id === itemIn("a")));
+    itemsAt = Math.max(0, itemsShown().findIndex(([id]) => id === itemIn("a")));
     itemsRender();
   } else {
     if (itemsPaused && p) p.unpauseAnimations();
@@ -172,16 +201,16 @@ function itemsRender() {
     return el("div", { class: "items-slot" + (it ? "" : " empty") }, [el("span", { class: "items-mark" }, mark),
       el("span", { class: "items-slot-icon", "aria-hidden": "true" }, it ? it.icon : "·"),
       el("span", { class: "items-slot-name" }, [it ? it.name : "empty", el("span", { class: "hint" }, itemsKeyName(a))])]); };
-  const tiles = ITEMS.map(([id, icon, name, kind], i) => {
+  const tiles = itemsShown().map(([id, icon, name, kind], i) => {
     const has = itemHas(id);
     return el("div", { class: "items-tile" + (has ? "" : " missing") + (i === itemsAt ? " at" : ""), "data-item": id }, [
       el("div", { class: "items-icon", "aria-hidden": "true" }, icon),
       el("div", { class: "items-name" }, name),
-      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : "hold to use"),
+      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "prop" ? "held in the hand" : "hold to use"),
       el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
         "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))))]);
   });
-  const names = Object.fromEntries(CHEST_GIFTS), rest = packList().filter(o => !ITEM[o.id]);
+  const names = Object.fromEntries(CHEST_GIFTS), rest = packList().filter(o => !ITEM[o.id]);   // (a costume's things are items: on the screen above)
   itemsEl.replaceChildren(
     el("div", { class: "items-top" }, [el("h2", {}, "🎒 Your items"),
       el("div", { class: "items-backs", role: "group", "aria-label": "behind your items" }, ITEM_SCREENS.map(([k, label]) =>
@@ -203,7 +232,7 @@ function itemsMove(dx, dy) {
   itemsRender();
 }
 // a slot given the item the arrows are on, if it is had (already there, it stays: only a tap on its pressed chip empties a slot)
-function itemsPick(s) { const [id] = ITEMS[itemsAt] || []; if (id && itemHas(id) && itemIn(s) !== id) itemSet(s, id); }
+function itemsPick(s) { const [id] = itemsShown()[itemsAt] || []; if (id && itemHas(id) && itemIn(s) !== id) itemSet(s, id); }
 // (padPoll, while the screen is open: the buttons pressed since the last frame, arrows too; the controller's own numbers)
 function itemsPad(fresh, g, btn) {
   const has = i => fresh.includes(i), push = v => (Math.abs(v ?? 0) > 0.5 ? Math.sign(v) : 0);

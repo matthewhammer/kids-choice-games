@@ -36,6 +36,8 @@ try {
         return [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => new DOMPoint(x, y).matrixTransform(m))
           .some(p => p.x < vb.x - 2 || p.x > vb.x + vb.width + 2 || p.y < vb.y - 2 || p.y > vb.y + vb.height + 2); }).map(e => e.getAttribute("data-moth")); };
     state.music.mute = true; state.world.at = null; Object.assign(state.background, { kind: "none", things: [], seat: null }); state.body.sit = false;
+    // (ticket 687: the costume's own look, as the 92 was set for: the slots empty, so no item of 🎒 your items is in a hand; the items' own budget is items687's)
+    state.pack = { ...state.pack, a: "", b: "" };
     set("body", "pose", "stand"); state.body.anim = "none"; set("body", "horse", "none"); set("costume", "kind", "moth"); changed(); await w(100);
     const D = DEFAULTS.costume, ids = Object.keys(MOTH_STYLES);
     out.chooser = TABS.find(t => t[1] === "costume")[2].find(c => c[1] === "kind")[3].some(([v, l]) => v === "moth" && l === "🦋 moth");
