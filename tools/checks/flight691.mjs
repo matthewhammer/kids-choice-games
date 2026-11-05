@@ -49,6 +49,8 @@ try {
     const split = t => { const d = document.createElementNS("http://www.w3.org/2000/svg", "g"); d.innerHTML = t; const near = [...d.querySelectorAll(".fly-near")].reduce((a, x) => a + count(x.innerHTML), 0); return [count(t) - near, near]; };
     out.looks = {}; const big = { ...state.background, castle: "D", houses: 6, bridges: 6, ladders: 6, ducks: 12, cattails: 30, toys: 16, mushrooms: 30, vines: 16, parrots: 4, gardenBeds: 6, hutRooms: 6, hutCenter: true, tents: 3, pastureHorses: 3, pastureFlowers: 24 };
     for (const [k] of PLACES) if (k !== "none") for (const o of [state.background, big]) { const [base, near] = split(flyLookOf(k, "1,1", o) + flyPathsSvg(k, Object.keys(WORLD_DIRS))); if (base > 56 || near > 60) out.looks[k] = [base, near]; }
+    // (every kind of thing to place drawn as itself from above: none a plain dot, but the game's own two, item and lifted)
+    out.dots = Object.keys(THING_KINDS).filter(k => !["item", "lifted"].includes(k) && /^<circle[^>]*stroke="#00000055" stroke-width="3"\/>$/.test(flyThingSvg({ kind: k, x: 0, z: 330 })));
     // (the keys: → flies east, Page Up climbs, F does nothing up here)
     const x0 = flight.x, h0 = flight.h; key("ArrowRight"); run(40); key("ArrowRight", "keyup"); key("PageUp"); run(20); key("PageUp", "keyup");
     key("f"); out.keys = { east: flight.x - x0, climbed: flight.h - h0, fire: !!fireSim.raf || fireKey }; key("f", "keyup");
@@ -74,6 +76,7 @@ try {
   ok("taken off: the world from above, every square a tile, the scene gone, the friend riding, the flight's buttons and the place's name", r.up.flying && r.up.shut && r.up.quilt && r.up.tiles && !r.up.scene && r.up.rider && r.up.hud && r.up.where.length > 3, r.up);
   ok("low, about one square across; high, the whole world, its things left out; no SMIL", r.low.span < 1.2 && r.high.span >= r.high.rows && r.high.high && r.high.hidden && !r.high.smil, [r.low, r.high]);
   ok("each place from above, with all eight paths: at most 56 shapes, and at most 60 finer ones seen only low down", !Object.keys(r.looks).length, r.looks);
+  ok("every kind of thing drawn as itself from above, none a plain dot", !r.dots.length, r.dots);
   ok("→ flies east, Page Up climbs, F breathes no fire up there", r.keys.east > 0.2 && r.keys.climbed > 0.05 && !r.keys.fire, r.keys);
   ok("a tap to the west flies that way", r.tap < -0.1, r.tap);
   ok("over an empty square: still up, told there is nowhere to land", !r.empty || (r.empty.flying && /Nowhere/.test(r.empty.said)), r.empty);

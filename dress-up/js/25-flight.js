@@ -392,6 +392,32 @@ function flyThingSvg(t) {
     case "barn": { const w = 160 * k, h = 110 * k; return flyRoof(x - w / 2, y - h / 2, w, h, "#b03a2e"); }
     case "puddle": case "cascade": { const r = 34 * k; return flyE(x, y, 1.4 * r, 0.8 * r, "#5fa3e0"); }
     case "passage": case "trapdoor": { const r = 26 * k; return t.kind === "trapdoor" ? flyRect(x - r, y - r, 2 * r, 2 * r, "#6e4a26", ` stroke="#3e2a16" stroke-width="4"`) : flyE(x, y, 1.3 * r, r, "#1f1d22"); }
+    // (ticket 691: the things that were a plain dot from above, each its own now, a few shapes each)
+    case "chocolate": { const w = 30 * k, h = 18 * k; return flyRect(x - w / 2 + 3, y - h / 2 + 3, w, h, FLY_SHADE) + flyRect(x - w / 2, y - h / 2, w, h, "#5a3a22", ` rx="2"`) + flyRect(x, y - h / 2, w / 2, h, "#c0392b", ` rx="2"`) +
+      `<path d="M${f1(x - w / 4)} ${f1(y - h / 2)} V${f1(y + h / 2)} M${f1(x - w / 2)} ${f1(y)} H${f1(x)}" stroke="#3e2716" stroke-width="2"/>`; }
+    case "bottle": { const r = 13 * k; return flyE(x + 3, y + 4, 2 * r, r, FLY_SHADE) + flyE(x - 0.4 * r, y, 1.5 * r, r, "#9fd8b0", ` fill-opacity="0.75" stroke="#4f8a5a" stroke-width="2"`) + flyRect(x + r, y - 0.35 * r, 1.1 * r, 0.7 * r, "#9fd8b0", ` stroke="#4f8a5a" stroke-width="2"`) + flyC(x + 2.2 * r, y, 0.35 * r, "#8a5a2b"); }
+    case "net": { const r = 18 * k; return `<path d="M${f1(x + 0.7 * r)} ${f1(y + 0.7 * r)} L${f1(x + 2 * r)} ${f1(y + 2 * r)}" stroke="#8a5a2b" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` + flyC(x, y, r, "url(#fly-hatch)", ` stroke="#5a5a5a" stroke-width="3"`); }
+    case "bee": { const r = 7 * k; return flyE(x - 0.5 * r, y - 1.1 * r, r, 0.6 * r, "#ffffffcc") + flyE(x + 0.5 * r, y - 1.1 * r, r, 0.6 * r, "#ffffffcc") + flyE(x, y, 1.5 * r, r, "#f2c12e") +
+      `<path d="M${f1(x - 0.4 * r)} ${f1(y - r)} V${f1(y + r)} M${f1(x + 0.4 * r)} ${f1(y - r)} V${f1(y + r)}" stroke="#1f1f22" stroke-width="${f1(0.5 * r)}"/>`; }
+    case "plate": { const w = 46 * k; return flyRect(x - w / 2, y - w / 2, w, w, "#9a968c", ` rx="6" stroke="#6f6a60" stroke-width="3"`) + flyC(x, y, w / 4, t.switch === "hold" ? "#c69a3c" : "#5a6f9a"); }
+    case "potion": { const r = 13 * k; return flyC(x + 3, y + 4, r, FLY_SHADE) + flyC(x, y, r, col || "#7c3aed", ` stroke="#ffffffaa" stroke-width="2"`) + flyC(x - 0.3 * r, y - 0.3 * r, 0.3 * r, "#ffffff99") + flyC(x, y, 0.35 * r, "#8a5a2b"); }
+    case "skeleton": { const r = 10 * k; return flyC(x - 2.6 * r, y, r, "#f4efe0", ` stroke="#b8b2a0" stroke-width="2"`) +
+      `<path d="M${f1(x - 1.6 * r)} ${f1(y)} H${f1(x + 2.4 * r)} M${f1(x - 0.8 * r)} ${f1(y - r)} V${f1(y + r)} M${f1(x)} ${f1(y - r)} V${f1(y + r)} M${f1(x + 0.8 * r)} ${f1(y - r)} V${f1(y + r)} M${f1(x + 2.4 * r)} ${f1(y)} l${f1(r)} ${f1(-r)} M${f1(x + 2.4 * r)} ${f1(y)} l${f1(r)} ${f1(r)}" stroke="#f4efe0" stroke-width="${f1(0.45 * r)}" stroke-linecap="round"/>`; }
+    case "skullstake": { const r = 11 * k; return flyC(x + 3, y + 4, r, FLY_SHADE) + flyC(x, y, r, "#f4efe0", ` stroke="#b8b2a0" stroke-width="2"`) + flyC(x - 0.35 * r, y + 0.15 * r, 0.22 * r, "#1f1f22") + flyC(x + 0.35 * r, y + 0.15 * r, 0.22 * r, "#1f1f22"); }
+    case "coral": case "seafan": { const r = 16 * k, c = col || "#f97373";
+      return t.kind === "coral" ? flyC(x - 0.6 * r, y, 0.7 * r, c) + flyC(x + 0.5 * r, y - 0.4 * r, 0.6 * r, c) + flyC(x + 0.3 * r, y + 0.6 * r, 0.55 * r, lighter(c))
+        : flyPath(`M${f1(x - 1.4 * r)} ${f1(y + 0.4 * r)} A${f1(1.4 * r)} ${f1(1.1 * r)} 0 0 1 ${f1(x + 1.4 * r)} ${f1(y + 0.4 * r)} Z`, c, ` stroke="${darker(c)}" stroke-width="2"`) +
+          `<path d="M${f1(x)} ${f1(y + 0.4 * r)} V${f1(y - 0.7 * r)} M${f1(x)} ${f1(y + 0.4 * r)} L${f1(x - 0.9 * r)} ${f1(y - 0.4 * r)} M${f1(x)} ${f1(y + 0.4 * r)} L${f1(x + 0.9 * r)} ${f1(y - 0.4 * r)}" stroke="${darker(c)}" stroke-width="2"/>`; }
+    case "shell": { const r = 11 * k, c = col || "#f8e1c7";
+      return t.shape === "conch" ? flyE(x, y, 1.4 * r, 0.8 * r, c, ` stroke="${darker(c)}" stroke-width="2"`) + `<path d="M${f1(x - 0.6 * r)} ${f1(y)} q${f1(0.6 * r)} ${f1(-0.6 * r)} ${f1(1.2 * r)} 0" fill="none" stroke="${darker(c)}" stroke-width="2"/>`
+        : flyPath(`M${f1(x - r)} ${f1(y + 0.5 * r)} A${f1(r)} ${f1(r)} 0 0 1 ${f1(x + r)} ${f1(y + 0.5 * r)} Z`, c, ` stroke="${darker(c)}" stroke-width="2"`) +
+          `<path d="M${f1(x)} ${f1(y + 0.5 * r)} V${f1(y - 0.5 * r)} M${f1(x)} ${f1(y + 0.5 * r)} L${f1(x - 0.7 * r)} ${f1(y - 0.2 * r)} M${f1(x)} ${f1(y + 0.5 * r)} L${f1(x + 0.7 * r)} ${f1(y - 0.2 * r)}" stroke="${darker(c)}" stroke-width="1.5"/>`; }
+    case "starfish": { const r = 16 * k, c = col || "#fb923c", P = [...Array(10)].map((_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? 0.42 * r : r; return [x + q * Math.cos(a), y + q * Math.sin(a)]; });
+      return flyPath(flyPoly(P), c, ` stroke="${darker(c)}" stroke-width="2"`); }
+    case "seafish": { const r = 13 * k, c = col || "#ff9f1c"; return flyE(x, y, 1.4 * r, 0.7 * r, c) + flyPath(flyPoly([[x - 1.2 * r, y], [x - 2.1 * r, y - 0.7 * r], [x - 2.1 * r, y + 0.7 * r]]), c) + flyC(x + 0.8 * r, y - 0.15 * r, 0.16 * r, "#1f1f22"); }
+    case "anchor": { const r = 18 * k; return `<path d="M${f1(x)} ${f1(y - r)} V${f1(y + 0.8 * r)} M${f1(x - 0.8 * r)} ${f1(y + 0.2 * r)} Q${f1(x)} ${f1(y + 1.3 * r)} ${f1(x + 0.8 * r)} ${f1(y + 0.2 * r)} M${f1(x - 0.5 * r)} ${f1(y - 0.5 * r)} H${f1(x + 0.5 * r)}" fill="none" stroke="#3a3f4a" stroke-width="${f1(0.22 * r)}" stroke-linecap="round"/>` + flyC(x, y - 1.15 * r, 0.25 * r, "none", ` stroke="#3a3f4a" stroke-width="${f1(0.15 * r)}"`); }
+    case "gem": { const r = 12 * k, c = col || "#38bdf8"; return flyPath(flyPoly([[x, y - r], [x + 0.85 * r, y - 0.2 * r], [x, y + r], [x - 0.85 * r, y - 0.2 * r]]), c, ` stroke="${darker(c)}" stroke-width="2"`) + flyPath(flyPoly([[x, y - r], [x + 0.4 * r, y - 0.2 * r], [x, y + 0.1 * r], [x - 0.4 * r, y - 0.2 * r]]), lighter(c)); }
+    case "helmet": { const r = 15 * k; return flyC(x + 3, y + 4, r, FLY_SHADE) + flyC(x, y, r, "#a9adb5", ` stroke="#6f737a" stroke-width="2"`) + flyRect(x - 0.6 * r, y + 0.2 * r, 1.2 * r, 0.22 * r, "#1f1f22") + flyE(x, y - 0.45 * r, 0.25 * r, 0.8 * r, t.plume || "#c0392b"); }
     default: { const r = 14 * k; return flyC(x, y, r, col || "#d8c8a0", ` stroke="#00000055" stroke-width="3"`); }
   }
 }
@@ -450,7 +476,7 @@ function flightDraw() {
     // (the friend's own patterns, the defs drawNow left, kept for the rider; the rest of the picture taken away while flying)
     for (const c of [...pic.childNodes]) if (c.nodeName !== "defs") c.remove();
     const clouds = [0, 1, 2, 3, 4, 5].map(i => `<g data-cloud="${i}">${flyE(0, 0, 150, 60, "#ffffff")}${flyE(-80, 18, 90, 44, "#ffffff")}${flyE(90, 14, 100, 46, "#ffffff")}</g>`).join("");
-    pic.insertAdjacentHTML("beforeend", `<g id="fly"><g id="fly-ground">${flyQuiltSvg(W)}<ellipse id="fly-shadow" rx="80" ry="56" fill="#00000040"/></g>` +
+    pic.insertAdjacentHTML("beforeend", `<g id="fly"><defs><pattern id="fly-hatch" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0 L6 6 M6 0 L0 6" stroke="#5a5a5a" stroke-width="1"/></pattern></defs><g id="fly-ground">${flyQuiltSvg(W)}<ellipse id="fly-shadow" rx="80" ry="56" fill="#00000040"/></g>` +
       `<g id="fly-clouds" opacity="0">${clouds}</g><g id="fly-craft"></g></g>`);
     root = pic.querySelector(":scope > #fly");
     flyBuilt = { key, tiles: [...root.querySelectorAll("[data-tile]")], shown: null };

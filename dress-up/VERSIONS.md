@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.491 (2026-11-05)
+
+Everything in 0.0.490, plus:
+
+- **Every thing you place is drawn as itself from above, flying** (ticket 691). Sixteen kinds were still a plain dot: now the chocolate bar, the glass bottle, the bug net, the bee, the floor switch, the potion, the skeleton, the skull on a stake, coral, the shell (a scallop's fan or a conch), the starfish, the fish, the anchor, the sea fan, the gem and the helmet each have their own look from the top, in their own colours.
+
 ## 0.0.490 (2026-11-05)
 
 Everything in 0.0.489, plus:
