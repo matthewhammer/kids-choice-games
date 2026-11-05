@@ -806,11 +806,11 @@
   "rows": 7,
   "squares": 31,
   "shapes": 1831,
-  "buildMs": 12.4,
+  "buildMs": 12.2,
   "start": "3,3"
  },
  "fps": {
-  "low": 60,
+  "low": 59,
   "high": 60
  },
  "version": "0.0.489"
