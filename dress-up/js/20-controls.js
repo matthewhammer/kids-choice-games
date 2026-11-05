@@ -2416,7 +2416,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           el("div", { class: "row pack-uses" }, [
             // (ticket 639) take it out: on the floor in front of the friend; a tool: held in the hand, or put away; a bee: let go
             el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down"),
-            ...(TOOLS[it.id] ? SLOTS.map(([sl, , mark]) => el("button", { "aria-pressed": String(itemIn(sl) === it.id), title: `${mark}: in your ${mark} item, in that hand`, onclick: () => itemSet(sl, it.id) }, slotMark(mark))) : []),   // (ticket 687: in 🔹 or 🔸, which is in the hand, where ✋ hold it was)
+            ...SLOTS.map(([sl, , mark]) => el("button", { "aria-pressed": String(itemIn(sl) === it.id), title: `${mark}: in your ${mark} item, in that hand`, onclick: () => itemSet(sl, it.id) }, slotMark(mark))),   // (ticket 687: any thing, in 🔹 or 🔸, which is in the hand; a tool's where ✋ hold it was)
             ...(it.id === "bottlebee" ? [el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => beeFree(i) }, "🐝 let it go")] : [])])]);
       }));
     };

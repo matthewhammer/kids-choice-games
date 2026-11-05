@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.484 (2026-11-04)
+
+Everything in 0.0.483, plus:
+
+- **Everything in your 🎒 is an item** (ticket 687). Gold coins, the chocolate bar, a potion, a shell, the dragon egg and the rest can each go in 🔹 or 🔸, like the tools and the abilities: in 🎒 your items (every one of them is listed there now), or with the 🔹 and 🔸 chips on its card in the 🎒 Backpack tab. The friend holds it in that hand, on the open palm. Their buttons do nothing yet. In the hand they hold still: a glowing gem or mushroom without its glow, and the little statue as a plain one.
+
 ## 0.0.483 (2026-11-04)
 
 Everything in 0.0.482, plus:

@@ -485,6 +485,10 @@ const HOLDABLES = {
   bubbles: { name: "🫧 bubbles", ext: [120, 0, 44], fist: true, slot: true },
   fire:    { name: "🔥 fire", ext: [90, 0, 24], fist: false, slot: true },
 };
+// (ticket 687) any other thing a slot puts in a hand (a 🎒 thing: gold coins, the chocolate bar...): held on the open palm, as
+// itemHeldSvg draws it
+const HELD_THING = { name: "a thing", ext: [70, 0, 40], fist: false, slot: true, thing: true };
+const holdableOf = id => HOLDABLES[id] || HELD_THING;
 const HOLD_CHOICES = [["auto", "🎭 the costume's own"], ["none", "✋ nothing"], ...Object.entries(HOLDABLES).filter(([, h]) => !h.slot).map(([id, h]) => [id, h.name])];
 // What a costume puts in each own hand by itself ("auto"): the broom, staff, scepter, sword and lasso in the left (side +1
 // facing us), the bow and the shield in the right, each while its own costume setting has it on
@@ -1550,7 +1554,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.483", released: "2026-11-04" };
+const VERSION = { number: "0.0.484", released: "2026-11-04" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

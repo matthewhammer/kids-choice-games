@@ -281,7 +281,7 @@ function drawNow() {
   const armOf = own => arms.find(x => x.side === (away ? -1 : 1) * (own === "L" ? 1 : -1)) || null;
   // (ticket 687) and 🔹's item in the left hand, 🔸's in the right, where nothing else is (heldWithItems; slotL, slotR)
   const heldNow = heldWithItems(heldItems(B, kind, WC));
-  const held = Object.keys(HOLDABLES).flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own), slot: !!heldNow["slot" + own] })))
+  const held = [...Object.keys(HOLDABLES), ...new Set(["L", "R"].map(o => heldNow[o]).filter(id => id && !HOLDABLES[id]))].flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own), slot: !!heldNow["slot" + own] })))   // (ticket 687: and any 🎒 thing in a slot, after them)
     .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"))
     .filter(h => !(swinging && h.item === swinging))   // (ticket 656: the sword in the hand is the one swinging, drawn by toolUse; ticket 687: any tool)
     .filter(h => !(h.slot && carry));   // (ticket 687: a pot over the head takes both hands, as ticket 639's tool was put away for it)
@@ -295,7 +295,7 @@ function drawNow() {
   const kb = (state.costume.broomSize ?? 100) / 100, catK = witch && WC.witchCat ? (WC.catSize ?? 100) / 100 : 0;
   // (each held thing's reach from its hand, HOLDABLES' ext: a broom's times its size, a twirling lasso's up and out)
   const heldExt = h => { if (crawlTo) return [16, 24, h.item === "broom" ? 130 * kb : 130];
-    const [u, d, o] = HOLDABLES[h.item].ext, k = h.item === "broom" ? kb : 1, spin = h.item === "lasso" && lassoSpin != null;
+    const [u, d, o] = holdableOf(h.item).ext, k = h.item === "broom" ? kb : 1, spin = h.item === "lasso" && lassoSpin != null;
     return [spin ? 70 : u * k, d * k, spin ? 110 : o * k]; };
   const heldUp = held.map(h => heldExt(h)[0] ? h.arm.H[1] - heldExt(h)[0] : 0), heldDown = held.map(h => heldExt(h)[1] ? h.arm.H[1] + heldExt(h)[1] : 0);
   const heldOut = held.map(h => heldExt(h)[2] ? -(Math.abs(h.arm.H[0]) + heldExt(h)[2]) : 0);
@@ -909,7 +909,7 @@ function drawNow() {
   const heldFar = (dir || q) && !winged && !squash ? held.filter(h => farArms.includes(h.arm)) : [], heldView = crawlTo ? "floor" : dir ? "side" : away ? "back" : "front";
   const heldDraw = h => { const s = heldSvg(h.item, h.arm.H, heldView, { WC: wanderer ? { ...WC, ...wandererArms(WC) } : WC, kb, monk, dryad: WC.monkWho === "dryad", knight: knight || wanderer, own: h.own, out: h.arm.side, dir, spin: lassoSpin });
     // (ticket 687: an item of 🎒 your items, marked as a tool or an ability)
-    return h.slot && s ? `<g data-${ITEM[h.item].kind}="${h.item}">${s}</g>` : s; };
+    return h.slot && s ? `<g data-${itemOf(h.item).kind}="${h.item}">${s}</g>` : s; };
   const farAt = svg.length;
   if (!winged && !squash) for (const arm of farArms) svg += limbThrough(armJoints(arm), armW, limb, limbLine);
   // (a sleeve: the shirt's share of the arm, round the elbow)
@@ -920,7 +920,7 @@ function drawNow() {
   // it, a round fist)
   const handOf = ({ side, out, H, angle }) => { const hands = suit ? suitHands(C, kind) : robot ? robotHands(R, state.hands) : state.hands, own = !suit && !robot && ownOf(side) === "R" ? rightHandOf(hands) : hands;   // (ticket 515: a robot's hands; ticket 528: by own hand, armOf's)
     const gl = ninja ? { ...own, color: NINJA.glove } : own;   // (ticket 557: black gloves, in the friend's own hand style)
-    return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && HOLDABLES[h.item].fist) ? { ...gl, style: "round" } : gl, skin); };
+    return handSvg(H[0], H[1], angle, out, held.some(h => h.arm.side === side && holdableOf(h.item).fist) ? { ...gl, style: "round" } : gl, skin); };
   // (ticket 286: crawling toward us or away, each arm drawn whole, straight down to its hand flat on the floor, seen short)
   const crawlArm = arm => limbThrough(armJoints(arm), armW, limb, limbLine) +
     (sleeve > 0 ? limbThrough(sleeveOf(arm), armW + 14, ss) + limbThrough(sleeveOf(arm), armW + 9, sf, false) : "") +

@@ -1328,7 +1328,7 @@ function padPoll(t) {
   const coasting = !moving && ramp > 0 && Math.hypot(padVel[0], padVel[1]) > 2 && BG.kind !== "none" && !entering && !drag && !onLadder;
   if (!moving && !coasting) padVel = [0, 0];
   const wet = BG.kind !== "none" && !SHALLOW_WATER[BG.kind] && inWater(BG, BG.figX ?? 0, SCENE.ground + (BG.figY ?? 0));
-  const slotA = itemIn("a"), slotB = itemIn("b"), toolOn = b => [["useA", slotA], ["useB", slotB]].some(([a, id]) => id && ITEM[id].kind === "tool" && btn(a) === b);
+  const slotA = itemIn("a"), slotB = itemIn("b"), toolOn = b => [["useA", slotA], ["useB", slotB]].some(([a, id]) => id && itemOf(id).kind === "tool" && btn(a) === b);
   const run = held("run"), low = (held("crouch") && !toolOn(btn("crouch"))) || padCrawl;   // (ticket 639: a tool takes Y from crouching; ticket 687: a tool in 🔹 or 🔸 on its button)
   const want = moving ? (low ? (wet ? "swim" : "crawl") : wet ? (run ? "swimfast" : "swim") : run ? "run" : "walk") : coasting && padWant ? padWant : low && !wet ? "crouch" : "none";
   if (isJump(B.anim)) jumpPrev = want;   // (landing into what they are told now)
@@ -1348,7 +1348,7 @@ function padPoll(t) {
   const acted = hit("act") && actionPress();   // (ticket 639: a chest, a thing to carry or a pot in reach, before the passage)
   if (hit("enter") && !acted) enterPicture();   // (ticket 145)
   // (ticket 687) 🔹 and 🔸: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
-  for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && ITEM[id].kind === "tool" && hit(a)) itemToolUse(id);
+  for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && itemOf(id).kind === "tool" && hit(a)) itemToolUse(id);
   blowPad = (slotA === "bubbles" && held("useA")) || (slotB === "bubbles" && held("useB"));
   if (blowPad) blowGo();
   firePad = (slotA === "fire" && held("useA")) || (slotB === "fire" && held("useB"));
@@ -2295,7 +2295,7 @@ function touchLabels() {
   for (const x of touchPad.el.querySelectorAll("button[data-b]")) {
     const a = PAD_ACTIONS.find(([k]) => C[k] === +x.dataset.b);
     // (ticket 687) 🔹's and 🔸's buttons show the item in the slot, or the slot's mark when it is empty
-    const slot = a && SLOTS.find(([, k]) => k === a[0]), it = slot && ITEM[itemIn(slot[0])];
+    const slot = a && SLOTS.find(([, k]) => k === a[0]), it = slot && itemOf(itemIn(slot[0]));
     x.lastChild.textContent = a ? (slot ? (it ? it.icon : slot[2]) : a[1].split(" ")[0]) : "";
     x.title = `${x.firstChild.textContent}: ${a ? (slot ? `${slot[2]} ${it ? it.icon + " " + it.name : "nothing in it: choose one in 🎒 your items"}` : a[1]) : "nothing yet (set one in the 🎮 Controls tab)"}`;
     x.classList.toggle("idle", !a);

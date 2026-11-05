@@ -2880,7 +2880,7 @@ function giftSvg(id, o = {}) {
     case "sword": return swordSvg(0, 0, 0, -76, 1.1);
     case "potion": return potionSvg("flask", 0, 0, 2.6, POTION_COLORS[5]);
     case "helmet": return helmetSvg(0, 0, 1.2, { plume: "#c0392b", side: 0, back: false });
-    case "gem": return gemThingSvg({ style: "cut", color: GEM_COLORS[0], glow: true }, 7, o);
+    case "gem": return gemThingSvg({ style: "cut", color: GEM_COLORS[0], glow: !o.held }, 7, o);   // (ticket 687: o.held, in a hand: no glow, whose gradient the friend must not carry)
     case "shell": return `<g transform="scale(1.4)">${seaShellSvg("scallop", SHELL_COLORS[1])}</g>`;
     case "starfish": return `<g transform="scale(1.3)">${starfishSvg(STAR_COLORS[0], 3)}</g>`;
     case "toadstool": return toadstool(0, 0, 1.5, "#d62828");
@@ -2898,7 +2898,7 @@ function giftSvg(id, o = {}) {
       `<circle cx="-17" cy="-14" r="2" fill="#3f464c"/><circle cx="17" cy="-14" r="2" fill="#3f464c"/><circle cx="-14" cy="-34" r="2" fill="#3f464c"/><circle cx="14" cy="-34" r="2" fill="#3f464c"/>`;
     case "rock": return rockSvg(0, -2, 26, 5, ROCK_TONES[0]);
     case "can": return `<g transform="translate(-10 -50)">${canSvg(1)}</g>`;   // (ticket 660, part 3: standing on its foot)
-    case "statue": { const fig = typeof statueFigure === "function" ? statueFigure(0.28) : "";
+    case "statue": { const fig = !o.held && typeof statueFigure === "function" ? statueFigure(0.28) : "";   // (ticket 687: in a hand, the plain one: a copy of the friend in the friend's hand is the friend twice)
       const base = `<ellipse cx="0" cy="0" rx="22" ry="6" fill="#6f6c66"/><rect x="-18" y="-10" width="36" height="10" rx="2" fill="#9a968e" stroke="#55524c" stroke-width="2"/>`;
       if (fig) return base + `<g transform="translate(0 -10)">${fig}</g>`;
       return base + `<path d="M-11 -10 L-9 -46 Q0 -54 9 -46 L11 -10 Z" fill="#a9a59c" stroke="#55524c" stroke-width="2"/><circle cx="0" cy="-58" r="10" fill="#a9a59c" stroke="#55524c" stroke-width="2"/>` +
@@ -2907,7 +2907,7 @@ function giftSvg(id, o = {}) {
       `<path d="M-14 -40 l6 4 l-6 4 M8 -46 l6 4 l-6 4 M-4 -20 l6 4 l-6 4 M10 -22 l5 4 l-5 4" stroke="#2f6b2a" stroke-width="2" fill="none"/>` +
       `<ellipse cx="-8" cy="-42" rx="5" ry="8" fill="#ffffff" opacity="0.4"/>`;
     case "broom": case "staff": case "scepter": case "bow": case "lasso": return propGiftSvg(id);   // (ticket 687: a costume's own things, as in the hand)
-    default: return caveMushroomSvg({ style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: true }, 11, o);
+    default: return caveMushroomSvg({ style: "glowcap", color: CAVE_MUSHROOM_COLORS[0], glow: !o.held }, 11, o);
   }
 }
 // (ticket 471) what a treasure chest holds, open (seaChestSvg)

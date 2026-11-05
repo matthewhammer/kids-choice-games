@@ -74,6 +74,22 @@ try {
       state.pack = { ...keep, a: "bubbles", b: "fire" }; changed(); await w(40); n[f] = shapes().length - empty; }
     state.pack = keep; state.body.facing = "front"; changed(); return JSON.stringify(n); })()`));
   ok("🫧 and 🔥 in the hands: at most 5 shapes more, in every facing", Object.values(cost).every(v => v <= 5), cost);
+  // every 🎒 thing an item too: gold coins in 🔹, the chocolate bar in 🔸, held in those hands; each thing held still (no SMIL), at most 22 shapes
+  const things = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), keep = { ...state.pack }, keepB = state.backpack;
+    const fig = () => (document.getElementById("figure") || {}).outerHTML || "", far = () => (document.getElementById("figure-far") || {}).outerHTML || "";
+    const count = t => (t.match(/<(path|circle|ellipse|rect|polygon|polyline|line|use|image|text)[\\s>\\/]/g) || []).length;
+    const ids = [...new Set([...CHEST_GIFTS.map(([k]) => k), ...CARRY_KINDS])].filter(k => k !== "item");
+    state.backpack = [...keepB, ...ids.map(id => ({ id, got: Date.now(), from: "chest" }))]; state.body.facing = "front";
+    state.pack = { ...keep, a: "gold", b: "chocolate" }; changed(); await w(150);
+    const shown = [...document.querySelectorAll(".items-tile")].length, gold = !!document.querySelector('#figure [data-thing="gold"], #figure-far [data-thing="gold"]'), choc = !!document.querySelector('#figure [data-thing="chocolate"], #figure-far [data-thing="chocolate"]');
+    itemsShow(true); const tiles = [...document.querySelectorAll(".items-tile")].map(t => t.dataset.item); itemsShow(false);
+    state.pack = { ...keep, a: "", b: "" }; changed(); await w(40); const empty = count(fig() + far());
+    const over = {}; for (const id of ids) { state.pack = { ...keep, a: id, b: "" }; changed(); await w(25); const t = fig() + far(), n = count(t) - empty;
+      if (n > 22 || /<animate|<set\\b|<filter|feGaussianBlur|Gradient/.test(t)) over[id] = n; }
+    state.pack = keep; state.backpack = keepB; changed();
+    return JSON.stringify({ gold, choc, tiles: tiles.length, every: ids.every(id => tiles.includes(id)), over }); })()`));
+  ok("every 🎒 thing an item: gold coins in 🔹 and the chocolate bar in 🔸, held in those hands, and each on the screen", things.gold && things.choc && things.every, things);
+  ok("each 🎒 thing held: still (no SMIL), no filter or gradient, at most 22 shapes", !Object.keys(things.over).length, things.over);
   ok("the knight taken off: the sword and shield stay, in the 🎒 and in the hands", hands.off.pack.includes("sword") && hands.off.pack.includes("shield") && hands.off.slots[1] === "shield", hands);
   const pad = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); touchWant(true); await w(400);
     const b7 = document.querySelector('#touchpad [data-b="7"]'), label = b7 ? b7.textContent : "";

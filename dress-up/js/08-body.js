@@ -1707,7 +1707,7 @@ function heldSvg(id, H, view, o) {
     case "lasso": return `<g data-western="lasso">${lassoSvg(H, view, side ? dir : o.out, o.spin)}</g>`;
     // (ticket 687: the items of 🎒 your items, js/25-inventory.js; on the floor, crawling toward us, put away: the default above)
     case "net": case "can": case "bubbles": case "fire": return itemHeldSvg(id, H, view, o);
-    default: return "";
+    default: return HOLDABLES[id] ? "" : itemHeldSvg(id, H, view, o);   // (ticket 687: any other 🎒 thing, in a slot)
   }
 }
 

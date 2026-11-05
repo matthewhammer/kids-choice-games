@@ -23,6 +23,16 @@ const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", 
                ["broom", "🧹", "a broom", "prop"], ["staff", "🪄", "a staff", "prop"], ["scepter", "👑", "a scepter", "prop"],
                ["shield", "🛡️", "a shield", "prop"], ["bow", "🏹", "a bow", "prop"], ["lasso", "➿", "a lasso", "prop"]];
 const ITEM = Object.fromEntries(ITEMS.map(([id, icon, name, kind]) => [id, { id, icon, name, kind }]));
+// (Matthew: "some items are not treated like 'holdable' items: gold coins, chocolate bar. every item should have equal status as
+// 'holdable' (assignable to the two active slots, for controller) and shown in our hands, when selected that way") Every
+// thing the 🎒 can hold is an item too, of kind "thing": in a slot it is held in that hand (itemHeldSvg: its 🎒 picture, held
+// still), and its button does nothing yet. itemOf: an item by id, ITEMS's or a thing's (named as the 🎒 names it, giftName)
+function itemOf(id) {
+  if (!id) return null;
+  if (ITEM[id]) return ITEM[id];
+  const full = String(giftName(id) || id), m = full.match(/^(\S+)\s+(.+)$/);
+  return { id, icon: m ? m[1] : "🎁", name: m ? m[2] : full, kind: "thing" };
+}
 const ITEM_SCREENS = [["dim", "🌗 dimmed"], ["black", "⬛ black"], ["white", "⬜ white"]];
 // the slots: each its state.pack key, its controller action, its mark and its key on the keyboard
 const SLOTS = [["a", "useA", "🔹", "Z"], ["b", "useB", "🔸", "X"]];
@@ -31,7 +41,7 @@ const slotMark = m => el("span", { class: "slot-mark", "aria-hidden": "true" }, 
 
 // the friend has it: an ability always; a tool in the backpack, or (the sword) in their own hand
 function itemHas(id) {
-  const it = ITEM[id];
+  const it = itemOf(id);
   if (!it) return false;
   if (it.kind === "ability") return true;
   if (packList().some(o => o.id === id)) return true;
@@ -60,7 +70,7 @@ function itemToolUse(id) {
 // an ability (🔸's first: its hand, the right, is a tool's; an ability is always had, so nothing is lost), never of a tool
 function itemFound(id) {
   if (!TOOLS[id] || itemIn("a") === id || itemIn("b") === id) return;
-  const s = !itemIn("b") ? "b" : !itemIn("a") ? "a" : ITEM[itemIn("b")].kind === "ability" ? "b" : ITEM[itemIn("a")].kind === "ability" ? "a" : "";
+  const s = !itemIn("b") ? "b" : !itemIn("a") ? "a" : itemOf(itemIn("b")).kind === "ability" ? "b" : itemOf(itemIn("a")).kind === "ability" ? "a" : "";
   if (s) state.pack = { ...(state.pack || {}), [s]: id };
 }
 // (the 🎒 tab's 🔹 and 🔸, and older code's toolHold: in a slot as a found tool goes, or out of its slot again)
@@ -141,7 +151,10 @@ function itemHeldSvg(id, H, view, o) {
         `<path d="M0 -2 C-8 -4 -7 -15 -1 -27 C2 -18 7 -15 5 -9 C7 -10 7 -4 0 -2 Z" fill="#fde047"/></g>`;
       return at(hx, hy - 12, flame);
     }
-    default: return "";
+    // (any other 🎒 thing: its 🎒 picture, on the open palm, standing on it; held still: its SMIL taken out (ANIMS_RE), as the
+    // scenery's is on a slow computer, for no SMIL is drawn in the friend; giftSvg's held version: no glow's gradient, the
+    // statue plain; at most 22 shapes, the helmet's 21: items687)
+    default: return at(hx, hy - 6, `<g transform="scale(0.75)">${giftSvg(id, { held: true }).replace(ANIMS_RE, "")}</g>`);
   }
 }
 
@@ -154,7 +167,7 @@ function itemKey(s, down) {
   if (!down) return;
   const id = itemIn(s);
   if (!id) return;
-  if (ITEM[id].kind === "tool") itemToolUse(id);
+  if (itemOf(id).kind === "tool") itemToolUse(id);
   else if (id === "bubbles") blowGo();
   else if (id === "fire") fireGo();
 }
@@ -163,7 +176,8 @@ function itemLetGo() { itemKeys.a = itemKeys.b = false; blowPad = false; firePad
 
 // ---- the screen ----
 // (the items on the screen: every ability and tool, a costume's thing once had)
-const itemsShown = () => ITEMS.filter(([id, , , kind]) => kind !== "prop" || itemHas(id));
+const itemsShown = () => [...ITEMS.filter(([id, , , kind]) => kind !== "prop" || itemHas(id)),
+  ...[...new Set(packList().map(o => o.id))].filter(id => !ITEM[id]).map(id => { const it = itemOf(id); return [id, it.icon, it.name, it.kind]; })];   // (and every other thing in the 🎒, once each)
 let itemsOpen = false, itemsAt = 0, itemsStick = [0, 0], itemsPaused = false;   // (open; the item the arrows are on; the stick's last push; the picture held by us)
 const itemsBtn = document.getElementById("items-btn"), itemsEl = document.getElementById("items-screen");
 const ITEM_MOVES = new Set(["walk", "run", "crawl", "swim", "swimfast"]);
@@ -197,7 +211,7 @@ function itemsRender() {
   if (!itemsOpen) return;
   const P = state.pack || {}, screen = ITEM_SCREENS.some(([k]) => k === P.screen) ? P.screen : "dim";
   itemsEl.className = "items-screen " + screen;
-  const slot = ([s, a, mark]) => { const it = ITEM[itemIn(s)];
+  const slot = ([s, a, mark]) => { const it = itemOf(itemIn(s));
     return el("div", { class: "items-slot" + (it ? "" : " empty") }, [el("span", { class: "items-mark" }, mark),
       el("span", { class: "items-slot-icon", "aria-hidden": "true" }, it ? it.icon : "·"),
       el("span", { class: "items-slot-name" }, [it ? it.name : "empty", el("span", { class: "hint" }, itemsKeyName(a))])]); };
@@ -206,11 +220,10 @@ function itemsRender() {
     return el("div", { class: "items-tile" + (has ? "" : " missing") + (i === itemsAt ? " at" : ""), "data-item": id }, [
       el("div", { class: "items-icon", "aria-hidden": "true" }, icon),
       el("div", { class: "items-name" }, name),
-      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "prop" ? "held in the hand" : "hold to use"),
+      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
       el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
         "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))))]);
   });
-  const names = Object.fromEntries(CHEST_GIFTS), rest = packList().filter(o => !ITEM[o.id]);   // (a costume's things are items: on the screen above)
   itemsEl.replaceChildren(
     el("div", { class: "items-top" }, [el("h2", {}, "🎒 Your items"),
       el("div", { class: "items-backs", role: "group", "aria-label": "behind your items" }, ITEM_SCREENS.map(([k, label]) =>
@@ -219,9 +232,7 @@ function itemsRender() {
     el("div", { class: "items-slots" }, SLOTS.map(slot)),
     el("p", { class: "hint" }, ["Choose what ", slotMark("🔹"), " and ", slotMark("🔸"), " do: tap ", slotMark("🔹"), " or ", slotMark("🔸"),
       " under an item. With a controller, the arrows choose an item, and the button you want it on puts it there; start shuts this."]),
-    el("div", { class: "items-grid" }, tiles),
-    ...(rest.length ? [el("div", { class: "items-rest" }, [el("span", { class: "hint" }, "🎒 also in your backpack:"),
-      ...rest.map(o => el("span", { class: "items-thing" }, names[o.id] || o.id))])] : []));
+    el("div", { class: "items-grid" }, tiles));
 }
 // the arrows (a controller's or the keyboard's) move along the items, a row at a time up and down
 function itemsMove(dx, dy) {
