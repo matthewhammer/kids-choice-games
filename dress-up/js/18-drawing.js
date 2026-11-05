@@ -284,7 +284,7 @@ function drawNow() {
   const held = [...Object.keys(HOLDABLES), ...new Set(["L", "R"].map(o => heldNow[o]).filter(id => id && !HOLDABLES[id]))].flatMap(id => ["L", "R"].filter(own => heldNow[own] === id).map(own => ({ own, item: id, arm: armOf(own), slot: !!heldNow["slot" + own] })))   // (ticket 687: and any 🎒 thing in a slot, after them)
     .filter(h => h.arm && !(h.item === "lasso" && handsBusy) && !(move && move.swim && h.item !== "rein"))
     .filter(h => !(swinging && h.item === swinging))   // (ticket 656: the sword in the hand is the one swinging, drawn by toolUse; ticket 687: any tool)
-    .filter(h => !(h.slot && carry));   // (ticket 687: a pot over the head takes both hands, as ticket 639's tool was put away for it)
+    .filter(h => !(h.slot && (carry || ride)));   // (ticket 687: a pot over the head takes both hands, as ticket 639's tool was put away for it; ticket 690: so do the reins, riding)
   // (ticket 529: swimming, everything held is put away, as the lasso is: both arms windmill over the head and under the
   // body each stroke, so a thing in the hand would sweep through the friend; crawling toward us, each lies flat on the
   // floor under its hand, heldSvg's "floor" drawings, reaching out to the side, not up)

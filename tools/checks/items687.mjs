@@ -90,6 +90,13 @@ try {
     return JSON.stringify({ gold, choc, tiles: tiles.length, every: ids.every(id => tiles.includes(id)), over }); })()`));
   ok("every 🎒 thing an item: gold coins in 🔹 and the chocolate bar in 🔸, held in those hands, and each on the screen", things.gold && things.choc && things.every, things);
   ok("each 🎒 thing held: still (no SMIL), no filter or gradient, at most 22 shapes", !Object.keys(things.over).length, things.over);
+  // (ticket 690) riding, the reins win over 🔹 and 🔸, as a carried pot does: two reins facing us, no item in either hand
+  const rode = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), keep = { ...state.pack }, q = sel => document.querySelectorAll("#figure " + sel + ", #figure-far " + sel).length;
+    state.pack = { ...keep, a: "bubbles", b: "fire" }; state.body.facing = "front"; set("body", "horse", "ride"); changed(); await w(150);
+    const out = { reins: q(".rein"), items: q("[data-ability]") + q("[data-tool]") + q("[data-thing]") };
+    set("body", "horse", "none"); changed(); await w(60); out.after = q("[data-ability]"); state.pack = keep; changed();
+    return JSON.stringify(out); })()`));
+  ok("riding: two reins facing us, 🫧 and 🔥 put away; off the horse, back in the hands", rode.reins === 2 && rode.items === 0 && rode.after === 2, rode);
   ok("the knight taken off: the sword and shield stay, in the 🎒 and in the hands", hands.off.pack.includes("sword") && hands.off.pack.includes("shield") && hands.off.slots[1] === "shield", hands);
   const pad = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); touchWant(true); await w(400);
     const b7 = document.querySelector('#touchpad [data-b="7"]'), label = b7 ? b7.textContent : "";

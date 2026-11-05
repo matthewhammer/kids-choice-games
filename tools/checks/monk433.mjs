@@ -20,6 +20,8 @@ try {
   await send("Page.navigate", { url }); await sleep(4000);
   const r = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)), out = { v: {}, poses: {} };
     state.music.mute = true; state.world.at = null; Object.assign(state.background, { kind: "emptyroom", things: [], seat: null }); state.body.sit = false;
+    // (ticket 690: the costume's own look, the slots empty: a 🔥 held is orange as the space bot's flames, and 🫧 and 🔥 simmer by the picture's clock, so no two drawings of the friend would match)
+    state.pack = { ...state.pack, a: "", b: "" };
     set("hair", "beard", "none"); set("hair", "color", "#e8c35a"); set("costume", "kind", "monk");
     const fig = () => document.getElementById("figure").innerHTML;
     // (the hair shows when its style changes the drawing: hidden under the hood, shown with it down)

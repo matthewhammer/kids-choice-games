@@ -34,6 +34,8 @@ try {
     const friendEyes = t => [...t.matchAll(/<g[^>]*data-part="eyes"[^>]*>/g)].filter(m => !t.slice(m.index, m.index + 400).includes('data-robot="eyes"')).length;
     const shapes = t => (t.match(/<(path|circle|ellipse|rect|polygon|polyline|line|use|image|text)[\\s>\\/]/g) || []).length;
     state.music.mute = true; state.world.at = null; Object.assign(state.background, { kind: "none", things: [], seat: null }); state.body.sit = false;
+    // (ticket 690: the costume's own look, the slots empty: a 🔥 held is orange as the space bot's flames, and 🫧 and 🔥 simmer by the picture's clock, so no two drawings of the friend would match)
+    state.pack = { ...state.pack, a: "", b: "" };
     set("body", "pose", "stand"); state.body.anim = "none"; set("costume", "kind", "robot"); changed(); await w(100);
     const C = state.costume, D = DEFAULTS.costume, ids = Object.keys(ROBOT_STYLES);
     out.chooser = TABS.find(t => t[1] === "costume")[2].find(c => c[1] === "kind")[3].some(([v, l]) => v === "robot" && l === "🤖 robot");

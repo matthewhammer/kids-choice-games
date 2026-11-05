@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.485 (2026-11-04)
+
+Everything in 0.0.484, plus:
+
+- **Riding the horse, the friend holds the reins again** (ticket 690). Since 0.0.483 the 🫧 and 🔥 in their hands made them let go of both reins. Now, on the horse, the reins win: the items in 🔹 and 🔸 are put away while they ride, as they are while a pot is carried, and they come back to the hands on getting off.
+
 ## 0.0.484 (2026-11-04)
 
 Everything in 0.0.483, plus:
