@@ -1293,11 +1293,12 @@ html.lineart .script-log .log-field { background: none; border-color: currentCol
 .pack-uses { font-style: italic; }
 /* (ticket 687) 🎒 your items: the button by the 🎮 one, and the screen over the game: dimmed, black or white behind the items.
    The button stays over the screen, to shut it again; both over the ways' arrows (35), under the on-screen controller (40). */
-.items-btn { position: absolute; bottom: 8px; right: 66px; z-index: 38; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
+/* (ticket 688: at the top right, beside ⤢, which nothing else shares outside full screen: at the bottom right, by 🎮, it lay over
+   the place's things in that corner, which then could not be pointed at or tapped) */
+.items-btn { position: absolute; top: 8px; right: 66px; z-index: 38; padding: 0 9px; font-size: 1.3em; line-height: 1.45;
              background: var(--panel); opacity: 0.9; }
 .items-btn[aria-pressed="true"] { opacity: 1; outline: 3px solid var(--accent); }
-.pad-btn[hidden] ~ .items-btn { right: 8px; }
-body.big .items-btn { bottom: auto; top: 8px; right: 182px; }
+body.big .items-btn { top: 8px; right: 182px; }
 body.big .pad-btn[hidden] ~ .items-btn { right: 124px; }
 body.pic-in-world .items-btn { display: none; }
 .items-screen { position: absolute; inset: 0; z-index: 37; overflow: auto; line-height: 1.35; padding: 12px 14px 16px;
@@ -1306,7 +1307,7 @@ body.pic-in-world .items-btn { display: none; }
    units keeps the size above) */
 .items-screen > * { font-size: clamp(11px, 1.9cqw, 20px); }
 /* (open, the button moves to the top right, over the corner the screen covers, so nothing of the screen is under it) */
-body.items-open .items-btn { top: 8px; right: 8px; bottom: auto; }
+body.items-open .items-btn { top: 8px; right: 8px; }
 .items-screen[hidden] { display: none; }
 .items-screen.dim { background: rgba(8, 6, 16, 0.86); color: #f4f1ff; }
 .items-screen.black { background: #000; color: #f4f1ff; }

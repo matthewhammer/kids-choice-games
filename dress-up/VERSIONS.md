@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.482 (2026-11-04)
+
+Everything in 0.0.481, plus:
+
+- **Fixed: the 🎒 button covered a corner of the place** (ticket 688). At the picture's bottom right, beside 🎮, it lay over whatever stood in that corner, so a thing there could not be pointed at or tapped. It is at the top right now, beside ⤢ (in full screen, in the row of buttons along the top, as before).
+
 ## 0.0.481 (2026-11-04)
 
 Everything in 0.0.480, plus:
