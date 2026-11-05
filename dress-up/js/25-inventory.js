@@ -7,8 +7,8 @@
 // what's on screen to mostly, but not entirely, hide it)"; "items for: creating bubbles, creating fire, other things we have
 // special buttons for"; "so that these special buttons become something that can be changed from within the game, like selecting
 // an item that gives that ability"; "going forward, we'll have use item A, use item B, and those can be tools, or abilities")
-// 🎒 Your items: a screen over the game (the 🎒 button at the picture's corner, I on the keyboard, or the controller's button for
-// it if one is set in 🎮 Controls), the game's picture held still under it. On it, every item: the abilities, which anyone has
+// 🎒 Your items: a screen over the game (the 🎒 button at the picture's corner, I on the keyboard, or start on the controller:
+// Matthew's pick, 2026-11-04, 🚪 the nearest passage taken off it), the game's picture held still under it. On it, every item: the abilities, which anyone has
 // (🫧 blowing bubbles, 🔥 breathing fire), and the tools, once found (in the 🎒 backpack; the sword also in the friend's own
 // hand), the ones not found yet shown dim. Two of them are the active items, in the slots 🅰️ and 🅱️ (state.pack.a and .b;
 // either may be empty, and no item is assumed): the controller's "use item A" and "use item B" (the left and right triggers,
@@ -121,7 +121,7 @@ function itemsRender() {
         el("button", { type: "button", "aria-pressed": String(screen === k), onclick: () => { state.pack = { ...(state.pack || {}), screen: k }; changed(); itemsRender(); } }, label))),
       el("button", { type: "button", class: "items-close", onclick: () => itemsShow(false) }, "✖ back to the game")]),
     el("div", { class: "items-slots" }, SLOTS.map(slot)),
-    el("p", { class: "hint" }, "Choose what 🅰️ and 🅱️ do: tap 🅰️ or 🅱️ under an item. With a controller, the arrows choose an item, and the button you want it on puts it there."),
+    el("p", { class: "hint" }, "Choose what 🅰️ and 🅱️ do: tap 🅰️ or 🅱️ under an item. With a controller, the arrows choose an item, and the button you want it on puts it there; start shuts this."),
     el("div", { class: "items-grid" }, tiles),
     ...(rest.length ? [el("div", { class: "items-rest" }, [el("span", { class: "hint" }, "🎒 also in your backpack:"),
       ...rest.map(o => el("span", { class: "items-thing" }, names[o.id] || o.id))])] : []));

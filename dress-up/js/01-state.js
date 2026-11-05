@@ -811,18 +811,22 @@ const clone = o => JSON.parse(JSON.stringify(o));
 // (ticket 637: spread as an object, the backpack came back {} from 📂 Load and from every reload's autosave)
 const savedOver = (k, v) => Array.isArray(DEFAULTS[k]) ? clone(Array.isArray(v) ? v : DEFAULTS[k]) : { ...DEFAULTS[k], ...(v || {}) };
 // (ticket 687) buttons from before 🅰️ and 🅱️: theirs are 🫧's and 🔥's (in them to start), and the three actions they replace go
+// (Matthew, 2026-11-04: start opens 🎒 your items) and in a layout from before, 🎒, with no button of its own, takes 🚪 the
+// nearest passage's (start, in the usual layouts and a taught pad's), and 🚪 has none
 function itemButtons(C) {
   if (!C || typeof C !== "object") return C;
   if (!("useA" in C) && Number.isInteger(C.bubbles)) C.useA = C.bubbles;
   if (!("useB" in C) && Number.isInteger(C.fire)) C.useB = C.fire;
+  if (!(Number.isInteger(C.items) && C.items >= 0) && Number.isInteger(C.door) && C.door >= 0) { C.items = C.door; C.door = -1; }
   delete C.bubbles; delete C.fire; delete C.tool;
   return C;
 }
+// (the saved layout, made over as above, before the defaults fill what it lacks)
 function upgradeItems(next, saved) {
   const S = saved && saved.controls, C = next.controls;
-  if (S && typeof S === "object" && !("useA" in S)) {
-    if (Number.isInteger(S.bubbles)) C.useA = S.bubbles;
-    if (Number.isInteger(S.fire)) C.useB = S.fire;
+  if (S && typeof S === "object") {
+    const was = itemButtons({ ...S });
+    for (const k of ["useA", "useB", "items", "door"]) if (k in was) C[k] = was[k];
   }
   itemButtons(C);
 }
@@ -1013,7 +1017,7 @@ DEFAULTS.visible = { all: 100, head: 100, eyes: 100, hair: 100, shirt: 100, pant
 // (ticket 146) R (5, the right shoulder) turns crawling on or off. A pad
 // taught its buttons (🎓 in the Controls tab) keeps its own layout, by its
 // name, in localStorage["dress-up-pads"], put back whenever it connects.
-DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: 9, enter: 4, useA: 6, useB: 7, items: -1, throw: 1, act: 4 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start; ticket 687: 🅰️ and 🅱️ there now, 🫧 and 🔥 in them to start)
+DEFAULTS.controls = { jumpShort: 1, jumpHigh: 0, run: 3, crouch: 2, crawlToggle: 5, back: 8, door: -1, enter: 4, useA: 6, useB: 7, items: 9, throw: 1, act: 4 };   // (ticket 629: 🏺 throw on A with the short jump, which it takes while a pot is held)   // (ticket 221: 🫧 on the left trigger, and beside select on the screen; ticket 499: 🔥 on the right trigger, and beside start; ticket 687: 🅰️ and 🅱️ there now, 🫧 and 🔥 in them to start; 🎒 your items on start, Matthew's pick, 🚪 the nearest passage off it)
 DEFAULTS.music = { track: "scene", volume: 60, mute: false, tempo: 100, transpose: 0, interval: 12, mix: {} };
 // (ticket 217, Matthew) ♿ Accessibility: every nav arrow shown, how bright the
 // far ones are and their colour (not the near ones' warm white), the arrows'
@@ -1539,7 +1543,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.479", released: "2026-11-04" };
+const VERSION = { number: "0.0.480", released: "2026-11-04" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

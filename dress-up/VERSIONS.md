@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.480 (2026-11-04)
+
+Everything in 0.0.479, plus:
+
+- **🎒 Your items on start** (ticket 687). On a controller, and on the on-screen one, start opens 🎒 your items, and start again shuts it, as in classic adventure games. 🚪 through the nearest passage leaves start and has no button now (✨ X still goes through the passage that glows); give it one in 🎮 Controls if you like. A layout from before gets the same change: 🎒 takes 🚪's button.
+
 ## 0.0.479 (2026-11-04)
 
 Everything in 0.0.478, plus:

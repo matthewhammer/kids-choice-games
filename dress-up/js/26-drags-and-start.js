@@ -1212,7 +1212,8 @@ const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
-// start the nearest doorway; run stays on the button it had (Matthew:
+// start 🎒 your items (ticket 687, Matthew 2026-11-04: start, and 🚪 the
+// nearest doorway off it, unset); run stays on the button it had (Matthew:
 // "perfect"), taking it from any other that also wanted it.
 const PAD_TEACH = [["B", "B, the bottom button"], ["A", "A, the right one"], ["X", "X, the top one"], ["Y", "Y, the left one"],
                    ["L", "L, the left shoulder"], ["R", "R, the right shoulder"], ["select", "select"], ["start", "start"]];
@@ -1224,7 +1225,7 @@ function padKeep() {
 }
 function padTaught() {
   const G = padTeach.got, C = state.controls, run = C.run, at = k => (Number.isInteger(G[k]) ? G[k] : -1);
-  Object.assign(C, { jumpShort: at("A"), jumpHigh: at("B"), enter: at("X"), crouch: at("Y"), crawlToggle: at("R"), back: at("select"), door: at("start") });
+  Object.assign(C, { jumpShort: at("A"), jumpHigh: at("B"), enter: at("X"), crouch: at("Y"), crawlToggle: at("R"), back: at("select"), items: at("start"), door: -1 });
   for (const [a] of PAD_ACTIONS) if (a !== "run" && C[a] === run && run >= 0) C[a] = -1;
   padTeach = { done: true, got: G, line: `${padId || padName} (${padMapping === "standard" ? "standard numbers" : "its own numbers"}): ` +
     PAD_TEACH.map(([k]) => `${k}=${at(k)}`).join(", ") + `, run=${run}` };
@@ -2206,7 +2207,7 @@ function padUse(id) {
 // and is set in the same 🎮 Controls tab. Its own layout is kept by its id
 // (TOUCH_ID), as a real pad's is, and starts as TOUCH_CONTROLS: Matthew's
 // taught one (A the short jump, B the high one, X into the picture that glows, Y crouch, select
-// back, start the nearest doorway), with run on R and crawling on or off on
+// back, start the nearest doorway; since ticket 687, start 🎒 your items), with run on R and crawling on or off on
 // L, so the right thumb holds run while the left one steers. Offered (🎮, at
 // the picture's bottom right) while no game controller is connected, and
 // hidden while one is. Whether it is shown is this browser's own
@@ -2214,7 +2215,7 @@ function padUse(id) {
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
 // (ticket 687: 🅰️ and 🅱️ where 🫧 and 🔥 were)
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: 9, enter: 3, useA: 6, useB: 7, items: -1, throw: 1, act: 3 };
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: -1, enter: 3, useA: 6, useB: 7, items: 9, throw: 1, act: 3 };   // (ticket 687: 🎒 on start, 🚪 off it)
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };

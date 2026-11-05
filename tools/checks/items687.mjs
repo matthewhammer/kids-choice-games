@@ -2,8 +2,8 @@
 // on it the abilities (🫧, 🔥) and the tools found (a 🥅 net in the backpack), the ones not found dim; 🅰️ and 🅱️ under an
 // item put it in that slot (taken from the other, the two swap); the backdrop is dimmed, black or white; Escape shuts it,
 // the picture moving again. In the game, Z held breathes the fire in 🅰️, X swings the net in 🅱️, the on-screen
-// controller's 🅱️ shows 🥅, and the controller's 🅰️ held breathes fire. An old save's 🫧 and 🔥 buttons become 🅰️'s and
-// 🅱️'s. Exits 1 on a failure.
+// controller's 🅱️ shows 🥅, and the controller's 🅰️ held breathes fire; start opens and shuts the screen. An old save's 🫧
+// and 🔥 buttons become 🅰️'s and 🅱️'s, and its 🚪 start 🎒's. Exits 1 on a failure.
 //   node items687.mjs <devtools port> <url>
 const [dport, url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -51,12 +51,17 @@ try {
   ok("X: the net in 🅱️, held and swung", x.swinging === "net" && x.tool === "net", x);
   const pad = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); touchWant(true); await w(400);
     const b7 = document.querySelector('#touchpad [data-b="7"]'), label = b7 ? b7.textContent : "";
-    touchSet(state.controls.useA, true); await w(300); const fire = firePad; touchSet(state.controls.useA, false); await w(200); touchWant(false); await w(200);
-    return JSON.stringify({ label, fire }); })()`));
+    touchSet(state.controls.useA, true); await w(300); const fire = firePad; touchSet(state.controls.useA, false); await w(200);
+    const b9 = document.querySelector('#touchpad [data-b="9"]'), start = b9 ? b9.textContent : "";
+    touchSet(state.controls.items, true); await w(250); const opened = itemsOpen; touchSet(state.controls.items, false); await w(150);
+    touchSet(state.controls.items, true); await w(250); const shut = !itemsOpen; touchSet(state.controls.items, false); await w(150);
+    touchWant(false); await w(200);
+    return JSON.stringify({ label, fire, start, opened, shut, items: DEFAULTS.controls.items, door: DEFAULTS.controls.door }); })()`));
   ok("the on-screen 🅱️ shows the net, and the controller's 🅰️ held breathes the fire in it", /🥅/.test(pad.label) && pad.fire, pad);
-  const old = JSON.parse(await ev(`(async () => { loadSaved({ state: { controls: { bubbles: 3, fire: 5, tool: 2 } } }); await new Promise(r => setTimeout(r, 200));
-    const C = state.controls; return JSON.stringify({ useA: C.useA, useB: C.useB, gone: !("bubbles" in C) && !("fire" in C) && !("tool" in C), slots: [state.pack.a, state.pack.b] }); })()`));
-  ok("an old save: its 🫧 and 🔥 buttons are 🅰️'s and 🅱️'s, 🫧 and 🔥 in them", old.useA === 3 && old.useB === 5 && old.gone && old.slots[0] === "bubbles" && old.slots[1] === "fire", old);
+  ok("start is 🎒 (🚪 off it, Matthew's pick): it opens the screen, and shuts it", pad.items === 9 && pad.door === -1 && /🎒/.test(pad.start) && pad.opened && pad.shut, pad);
+  const old = JSON.parse(await ev(`(async () => { loadSaved({ state: { controls: { bubbles: 3, fire: 5, tool: 2, door: 9 } } }); await new Promise(r => setTimeout(r, 200));
+    const C = state.controls; return JSON.stringify({ useA: C.useA, useB: C.useB, items: C.items, door: C.door, gone: !("bubbles" in C) && !("fire" in C) && !("tool" in C), slots: [state.pack.a, state.pack.b] }); })()`));
+  ok("an old save: its 🫧 and 🔥 buttons are 🅰️'s and 🅱️'s, 🫧 and 🔥 in them, and its 🚪 start 🎒's", old.useA === 3 && old.useB === 5 && old.items === 9 && old.door === -1 && old.gone && old.slots[0] === "bubbles" && old.slots[1] === "fire", old);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
