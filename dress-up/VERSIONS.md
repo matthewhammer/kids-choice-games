@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.487 (2026-11-04)
+
+Everything in 0.0.486, plus:
+
+- **More of each place seen from above, flying** (ticket 691). Low down, a square shows its finer things too (left out high up, where they would be too small to see). The castle has its moat round the walls, as wide as its moat setting, with lily pads, the drawbridge down across it to the gate, a tower at each corner (bigger with more levels) and the keep, all with cone roofs in the castle's roof colour and flags in its two colours, the battlements along the walls, the fence outside the moat, its trees round it (as many as its trees setting), the road out with a pennant either side, the hay cart, the well, bushes and flowers. The tree house has its great tree's crown with the round room at the top, each of its houses on its platform where it sits on the tree, roofed in its animal's colour with the animal's ears (the fox's, the owl's tufts, the bunny's long ones), the rope bridges and the ladders (as many as its settings say), and the stream winding past.
+
 ## 0.0.486 (2026-11-04)
 
 Everything in 0.0.485, plus:

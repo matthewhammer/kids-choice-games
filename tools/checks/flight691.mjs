@@ -3,7 +3,8 @@
 // a time") Flying: 🎈 the hot-air balloon and 🫧 a big bubble are items, on 🎒 your items each with 🛫 fly. Taken off from a
 // square of the world, the picture is the world from above, each square a tile of the quilt, the scene and the standing friend
 // gone, the friend riding, seen from above (topDownSvg), the flight's buttons and the place's name shown; low, about one square
-// across, high, the whole world, the things left out; no SMIL; each place's look with all eight paths at most 48 shapes. The
+// across, high, the whole world, the things left out; no SMIL; each place's look with all eight paths at most 56 shapes, its
+// finer things (seen only low down) at most 60 more: the castle's moat and towers, the tree house's houses. The
 // arrow keys fly them, a tap flies toward the spot, Page Up climbs; F breathes no fire up there. Landing over a place enters it,
 // the scene back; over an empty square they stay up, told why; inside, off the grid, they cannot take off. Exits 1 on a failure.
 //   node flight691.mjs <devtools port> <url>
@@ -44,7 +45,10 @@ try {
     out.high = { span: flySpan(1), rows: W.rows, cols: W.cols, high: pic().querySelector("#fly").classList.contains("fly-high"), hidden: !things || getComputedStyle(things).display === "none", smil: /<animate|<set\\b/.test(pic().innerHTML) };
     flight.h = 0.3; flyPlace();
     // (each place's look, with all eight paths)
-    out.looks = {}; for (const [k] of PLACES) if (k !== "none") { const c = count(flyLookOf(k, "1,1") + flyPathsSvg(k, Object.keys(WORLD_DIRS))); if (c > 48) out.looks[k] = c; }
+    // (its finer things, .fly-near, apart: seen only low down; the castle and the tree at their biggest settings too)
+    const split = t => { const d = document.createElementNS("http://www.w3.org/2000/svg", "g"); d.innerHTML = t; const near = [...d.querySelectorAll(".fly-near")].reduce((a, x) => a + count(x.innerHTML), 0); return [count(t) - near, near]; };
+    out.looks = {}; const big = { ...state.background, castle: "D", houses: 6, bridges: 6, ladders: 6 };
+    for (const [k] of PLACES) if (k !== "none") for (const o of [state.background, big]) { const [base, near] = split(flyLookOf(k, "1,1", o) + flyPathsSvg(k, Object.keys(WORLD_DIRS))); if (base > 56 || near > 60) out.looks[k] = [base, near]; }
     // (the keys: → flies east, Page Up climbs, F does nothing up here)
     const x0 = flight.x, h0 = flight.h; key("ArrowRight"); run(40); key("ArrowRight", "keyup"); key("PageUp"); run(20); key("PageUp", "keyup");
     key("f"); out.keys = { east: flight.x - x0, climbed: flight.h - h0, fire: !!fireSim.raf || fireKey }; key("f", "keyup");
@@ -69,7 +73,7 @@ try {
   ok("🎒 your items: 🎈 the hot-air balloon and 🫧 a big bubble, each with 🛫 fly", r.screen.every(Boolean), r.screen);
   ok("taken off: the world from above, every square a tile, the scene gone, the friend riding, the flight's buttons and the place's name", r.up.flying && r.up.shut && r.up.quilt && r.up.tiles && !r.up.scene && r.up.rider && r.up.hud && r.up.where.length > 3, r.up);
   ok("low, about one square across; high, the whole world, its things left out; no SMIL", r.low.span < 1.2 && r.high.span >= r.high.rows && r.high.high && r.high.hidden && !r.high.smil, [r.low, r.high]);
-  ok("each place from above, with all eight paths: at most 48 shapes", !Object.keys(r.looks).length, r.looks);
+  ok("each place from above, with all eight paths: at most 56 shapes, and at most 60 finer ones seen only low down", !Object.keys(r.looks).length, r.looks);
   ok("→ flies east, Page Up climbs, F breathes no fire up there", r.keys.east > 0.2 && r.keys.climbed > 0.05 && !r.keys.fire, r.keys);
   ok("a tap to the west flies that way", r.tap < -0.1, r.tap);
   ok("over an empty square: still up, told there is nowhere to land", !r.empty || (r.empty.flying && /Nowhere/.test(r.empty.said)), r.empty);

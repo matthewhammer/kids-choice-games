@@ -1364,7 +1364,7 @@ body.items-open .items-btn { top: 8px; right: 8px; }
 .fly-hud.fly-saying .fly-side { display: none; }   /* (a word while on the ground, "take off from outside": only the words) */
 body.flying .ways-layer, body.flying #back { display: none !important; }
 .items-fly { margin-left: 4px; }
-#fly.fly-high .fly-things { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
+#fly.fly-high .fly-things, #fly.fly-high .fly-near { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
 /* (the craft bobbing as it floats: a CSS animation of its own group, nothing done a frame for it) */
 .fly-bob { animation: fly-bob 3.2s ease-in-out infinite; }
 @keyframes fly-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
