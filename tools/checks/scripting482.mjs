@@ -99,7 +99,9 @@ try {
     await new Promise(r => setTimeout(r, 300)); const b = f.getBoundingClientRect(); return b.top >= 0 && b.top < innerHeight; })()`);
   const inView0 = await toView();
   let look = null;
-  for (let i = 0; i < 80 && !(look && look.tokens > 0); i++) { look = await frameLook(); if (!(look && look.tokens > 0)) await sleep(250); }
+  // (ticket 693: scrolled into view again while waiting: the six module boxes above it grow for seconds after, each as its tiles come,
+  // and pushed it back below the fold, where it got no animation frame to take its program on: no tiles, 0.0.486 to 0.0.490)
+  for (let i = 0; i < 80 && !(look && look.tokens > 0); i++) { if (i % 4 === 3) await toView(); look = await frameLook(); if (!(look && look.tokens > 0)) await sleep(250); }
   const st0 = JSON.parse(await ev(`JSON.stringify((scriptFrame && scriptFrame.status) || null)`));
   ok("the frame scrolled into view (out of it, Chrome gives it no animation frames)", inView0 === true, inView0);
   // (ticket 578: the tiles that take edits are embed-editable's build, f849f43; the library stays js-library-embed's)
