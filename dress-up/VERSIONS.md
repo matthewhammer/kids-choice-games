@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.489 (2026-11-04)
+
+Everything in 0.0.488, plus:
+
+- **The balloon's and the bubble's buttons in 🎒 your items are the size of every other tile's** (ticket 691, Matthew: "notice how extra large certain buttons appear"). 🛫 fly had wrapped onto two lines beside 🔹 and 🔸, so the whole row grew twice as tall and wider than its tile; it is now on a line of its own under them. In a small picture, 🔹 and 🔸 also narrow to fit their tile.
+
 ## 0.0.488 (2026-11-04)
 
 Everything in 0.0.487, plus:

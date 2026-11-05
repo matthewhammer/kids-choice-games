@@ -229,10 +229,10 @@ function itemsRender() {
       el("div", { class: "items-icon", "aria-hidden": "true" }, icon),
       el("div", { class: "items-name" }, name),
       el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "craft" ? "press to fly, again to land" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
-      el("div", { class: "items-pick" }, [...SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
-        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark))),
-        // (ticket 691: a craft flown at once, from here)
-        ...(kind === "craft" ? [el("button", { type: "button", class: "items-fly", title: `fly ${name}`, onclick: () => flightStart(id) }, "🛫 fly")] : [])])]);
+      el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
+        "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark)))),
+      // (ticket 691: a craft flown at once, from here: on a line of its own under 🔹 and 🔸, which stay as every tile's are)
+      ...(kind === "craft" ? [el("button", { type: "button", class: "items-fly", title: `fly ${name}`, onclick: () => flightStart(id) }, "🛫 fly")] : [])]);
   });
   itemsEl.replaceChildren(
     el("div", { class: "items-top" }, [el("h2", {}, "🎒 Your items"),

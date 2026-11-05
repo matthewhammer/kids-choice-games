@@ -1336,8 +1336,9 @@ body.items-open .items-btn { top: 8px; right: 8px; }
 .items-tile.missing { opacity: 0.45; }
 .items-icon { font-size: 2.6em; line-height: 1.1; }
 .items-name { font-weight: 600; }
-.items-pick { display: flex; gap: 6px; margin-top: 4px; }
-.items-pick button { font-size: 1.15em; padding: 2px 10px; }
+.items-pick { display: flex; gap: 6px; margin-top: 4px; align-items: center; max-width: 100%; }
+/* (in a small picture, the pair narrower, to fit its tile: no wider than half of it each) */
+.items-pick button { font-size: 1.15em; padding: 2px 10px; min-width: 0; flex: 0 1 auto; }
 .items-rest { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .items-thing { border: 1px solid rgba(127, 127, 127, 0.55); border-radius: 999px; padding: 2px 10px; font-size: 0.9em; }
 
@@ -1363,7 +1364,7 @@ body.items-open .items-btn { top: 8px; right: 8px; }
 .fly-level { position: absolute; left: 0; right: 0; bottom: 0; background: #7cc4ff; }
 .fly-hud.fly-saying .fly-side { display: none; }   /* (a word while on the ground, "take off from outside": only the words) */
 body.flying .ways-layer, body.flying #back { display: none !important; }
-.items-fly { margin-left: 4px; }
+.items-fly { margin-top: 4px; font-size: 1em; padding: 1px 12px; white-space: nowrap; }
 #fly.fly-high .fly-things, #fly.fly-high .fly-near { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
 /* (the craft bobbing as it floats: a CSS animation of its own group, nothing done a frame for it) */
 .fly-bob { animation: fly-bob 3.2s ease-in-out infinite; }
