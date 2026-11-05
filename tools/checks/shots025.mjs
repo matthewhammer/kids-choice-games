@@ -35,7 +35,9 @@ const W = `const w = ms => new Promise(r => setTimeout(r, ms));`;
 // (flying: the craft over a spot, at a height, held there: its own climb to its first height and any move stopped; clean, the craft,
 // its shadow, the clouds and the flight's buttons hidden)
 const FLYTO = (x, y, h, clean) => `flight.want = null; flight.goal = null; flight.landing = false; cancelAnimationFrame(flyLoop); flyLoop = 0;
-  flight.x = ${x}; flight.y = ${y}; flight.h = ${h}; document.body.classList.toggle("shot-clean", ${!!clean}); flyPlace();`;
+  flight.h = ${h}; flight.x = ${x}; flight.y = ${y}; document.body.classList.toggle("shot-clean", ${!!clean}); flyPlace();`;
+// (a square's middle at the picture's middle: the craft, and the ground under it, are drawn 62% of the way down, flyPlace's)
+const MID = r => `(${r} + 0.5 + 0.12 * flySpan(flight.h) * document.getElementById("pic").viewBox.baseVal.height / document.getElementById("pic").viewBox.baseVal.width)`;
 // (the height at which a whole square fits the picture, up and down, with a little of its neighbours round it)
 const FIT = `(() => { const vb = document.getElementById("pic").viewBox.baseVal, want = 1.12 * vb.width / vb.height; let lo = 0, hi = 1;
   for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (flySpan(m) < want) lo = m; else hi = m; } return lo; })()`;
@@ -51,7 +53,7 @@ const EVERY = `state = clone(DEFAULTS); state.music.mute = true; state.access = 
   ${JSON.stringify(KINDS)}.forEach((k, i) => worldPut((i % ${COLS}) + "," + Math.floor(i / ${COLS}), k)); worldJoinAll(state.world); worldEnter("0,0", null, false);
   state.body.facing = "front"; state.body.anim = "none"; changed(); draw();`;
 async function scenes() {
-  await ev(`(() => { const s = document.createElement("style"); s.textContent = ".pic-box > button, .ways-layer, .touchpad, #access-layer, .bar { visibility: hidden !important; }" +
+  await ev(`(() => { const s = document.createElement("style"); s.textContent = ".pic-box > button, .ways-layer, .touchpad, #access-layer, .bar, #cnav-show { visibility: hidden !important; }" +
     " body.shot-clean #fly-craft, body.shot-clean #fly-shadow, body.shot-clean #fly-clouds, body.shot-clean #fly-hud { visibility: hidden !important; }"; document.head.append(s);
     if (!document.body.classList.contains("big")) document.getElementById("max").click(); return 1; })()`);
   await sleep(800);
@@ -81,7 +83,7 @@ async function scenes() {
     texts.squares[key] = await ev(`(async () => { ${W} state = clone(DEFAULTS); state.music.mute = true; const cell = state.world.cells["${key}"]; worldEnter("${key}", null, false);
       state.body.facing = "front"; changed(); draw(); await w(1500); return { kind: cell.kind, name: placeName(cell.kind), things: (cell.things || []).map(t => t.kind) }; })()`);
     await shot(`1${i}-square-${key.replace(",", "-")}-side`);
-    await ev(`(async () => { ${W} const [c, r] = "${key}".split(",").map(Number); flightStart("balloon"); await w(200); ${FLYTO("c + 0.5", "r + 0.5", FIT, true)} await w(500); return 1; })()`);
+    await ev(`(async () => { ${W} const [c, r] = "${key}".split(",").map(Number); flightStart("balloon"); await w(200); ${FLYTO("c + 0.5", MID("r"), FIT, true)} await w(500); return 1; })()`);
     await shot(`1${i}-square-${key.replace(",", "-")}-above`);
     await ev(`(async () => { ${LAND} return 1; })()`);
   });
@@ -92,7 +94,7 @@ async function scenes() {
     texts.places[k] = await ev(`(async () => { ${W} ${count} worldEnter("${key}", null, false); state.body.facing = "front"; state.body.anim = "none"; changed(); draw(); await w(1400);
       return { name: placeName("${k}"), key: "${key}", look: split(flyLookOf("${k}", "${key}", state.background, state.world.cells["${key}"]) + flyPathsSvg("${k}", worldLiveWays(state.world, "${key}"))), ways: worldLiveWays(state.world, "${key}") }; })()`);
     await shot(`${nn}-${k}-side`);
-    await ev(`(async () => { ${W} const [c, r] = "${key}".split(",").map(Number); flightStart("balloon"); await w(200); ${FLYTO("c + 0.5", "r + 0.5", FIT, true)} await w(500); return 1; })()`);
+    await ev(`(async () => { ${W} const [c, r] = "${key}".split(",").map(Number); flightStart("balloon"); await w(200); ${FLYTO("c + 0.5", MID("r"), FIT, true)} await w(500); return 1; })()`);
     await shot(`${nn}-${k}-above`);
     await ev(`(async () => { ${LAND} return 1; })()`);
   });
@@ -108,7 +110,7 @@ async function scenes() {
       const dot = k => /^<circle[^>]*stroke="#00000055" stroke-width="3"\\/>$/.test(flyThingSvg({ kind: k, x: 0, z: 330 }));
       return { group: "${name}", kinds: ${JSON.stringify(ks)}, labels: ${JSON.stringify(ks)}.map(k => (THING_KINDS[k] || {}).label || k), dots: ${JSON.stringify(ks)}.filter(dot) }; })()`);
     await shot(`${tag}-side`);
-    await ev(`(async () => { ${W} flightStart("balloon"); await w(200); ${FLYTO(4.5, 0.5, FIT, true)} await w(500); return 1; })()`);
+    await ev(`(async () => { ${W} flightStart("balloon"); await w(200); ${FLYTO(4.5, MID(0), FIT, true)} await w(500); return 1; })()`);
     await shot(`${tag}-above`);
     await ev(`(async () => { ${LAND} return 1; })()`);
   });
