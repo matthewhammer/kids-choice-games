@@ -37,15 +37,6 @@
           <button class="items-btn" id="items-btn" title="Your items: choose what 🔹 and 🔸 do (I on the keyboard, start on a controller)" aria-label="Your items" aria-pressed="false">🎒</button>
           <div class="ways-layer" id="ways"></div><div class="ways-layer" id="access-layer"></div>
           <div class="items-screen" id="items-screen" role="dialog" aria-label="Your items" hidden></div>
-          <div class="fly-hud" id="fly-hud" hidden>
-            <div class="fly-where" aria-live="polite"></div>
-            <div class="fly-side">
-              <button type="button" id="fly-up" title="Climb (Page Up or + on the keyboard, a jump button on a controller)" aria-label="Climb" aria-pressed="false">⬆️</button>
-              <div class="fly-meter" aria-hidden="true"><div class="fly-level"></div></div>
-              <button type="button" id="fly-down" title="Sink (Page Down or - on the keyboard, crouch on a controller); down at the ground, land" aria-label="Sink" aria-pressed="false">⬇️</button>
-              <button type="button" id="fly-land" title="Land here" aria-label="Land here">🛬</button>
-            </div>
-          </div>
         </div>
         <div class="bar">
           <div class="caption" id="mood" title="Drag the mouth or the eyebrows on the face, too!"></div>
@@ -121,7 +112,7 @@
 <script src="js/25-friends.js?v=0.0.486"></script>
 <script src="js/25-recordings.js?v=0.0.486"></script>
 <script src="js/25-inventory.js?v=0.0.486"></script>
-<script src="js/25-flight.js?v=0.0.486"></script>
+<script>var flight = null;</script>
 <script src="js/26-drags-and-start.js?v=0.0.486"></script>
 </body>
 </html>
