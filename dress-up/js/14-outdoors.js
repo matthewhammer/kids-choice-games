@@ -104,7 +104,7 @@ function desertScene(c) {
   let s = SEP + part("desert-sky", c.F, () => { const sx = x1 - W * 0.17, sy = y0 + H * 0.14;
     return `<defs>${grad("bg-desert-sky", "#3d86d1", "#f4e3c3", y0, hz)}<radialGradient id="bg-desert-sun"><stop offset="0" stop-color="#fff6cf" stop-opacity="0.9"/>` +
       `<stop offset="1" stop-color="#fff6cf" stop-opacity="0"/></radialGradient>${cloudDef("bg-cloud", 0.8)}</defs>` + all("url(#bg-desert-sky)") +
-      `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(95 * k)}" fill="url(#bg-desert-sun)"/>` + sunSvg(sx, sy, 28 * k); });
+      (CLOCK_SKY.on ? "" : `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(95 * k)}" fill="url(#bg-desert-sun)"/>`) + sunSvg(sx, sy, 28 * k); });   // (the glow too, under the clock's sky)
   // two small clouds, drifting (the slow LFO)
   s += SEP + part("desert-clouds", [c.F, sceneLfoKey(o, "slow")], () => [0, 1].map(i =>
     driftingCloud(x0 + W * (0.12 + 0.42 * i), y0 + H * (0.08 + 0.07 * i), k * (0.42 + 0.12 * i), i + 3, o)).join(""));
@@ -1222,7 +1222,7 @@ function farmyardScene(c) {
   // the sky and a soft sun; the clouds drifting (the slow LFO)
   let s = SEP + part("farm-sky", c.F, () => `<defs>${grad("bg-farm-sky", "#74bdea", "#e6f4fb", y0, horizon)}` +
     `<radialGradient id="bg-farm-sun"><stop offset="0.3" stop-color="#fff3b0"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></radialGradient></defs>` + all("url(#bg-farm-sky)") +
-    `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(64 * k)}" fill="url(#bg-farm-sun)"/><circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(22 * k)}" fill="#fff6c9"/>`);
+    (CLOCK_SKY.on ? "" : `<circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(64 * k)}" fill="url(#bg-farm-sun)"/><circle cx="${f1(x1 - W * 0.15)}" cy="${f1(y0 + H * 0.13)}" r="${f1(22 * k)}" fill="#fff6c9"/>`));   // (under the clock's sky, its sun instead)
   s += SEP + cloudsSvg(c, 3, 0.55, 502);
   // far off: rolling hills and a line of round trees, on the horizon (farLayers: wall objects of their own)
   s += SEP + part("farm-far", c.F, () => farLayers(c, horizon, { mountains: "hills", forest: "broadleaf", size: 70 }));

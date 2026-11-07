@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.492 (2026-11-07)
+
+Everything in 0.0.491, plus:
+
+- **Night falls everywhere outdoors** (ticket 711, Matthew and M: the camp had a real night, "but the others do not ... they merely dim the daytime"). With 🌗 night and day on, every outdoor place now takes its sky from the clock, as the camp does: its own sky by day, sunset colours at dusk and dawn, and at night a dark sky full of stars, with the moon in its phase. The sun and the moon are where the clock says, and a place's own painted sun is gone while the clock runs. The beach, the sea, the lake, the house, the tree house, the clearing, the castle, the mountains, the desert, the farm, the woodland path, the pasture, the garden, the spring, the crossing, the hut and the forest all have it. The darkness over the land is lighter over the sky, so the stars and the moon stay bright.
+- **A whole day can take as little as 10 seconds** (ticket 712, "for further testing"). The ⏱️ slider in ⚙️ Advanced now goes from 10 seconds to an hour, its steps close together where a day is short: 10, 15, 20, 30 and 45 seconds, 1, 1½, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50 and 60 minutes.
+- **The sun and the moon glide across the sky** (ticket 713). The clock now runs every frame, by the time that passed, instead of a step each second, and the sun and the moon are moved every frame instead of jumping a quarter hour at a time. The picture is drawn again only when the time of day changes, or on a new quarter hour at most once a second, so even a 10-second day stays smooth.
+
 ## 0.0.491 (2026-11-05)
 
 Everything in 0.0.490, plus:

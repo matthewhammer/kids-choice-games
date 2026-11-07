@@ -75,14 +75,41 @@ function stakeSkullSvg(tipX, tipY, u, eye, glow) {
     `<path d="M${L(-1.5, 3 + drop)} L${L(0, drop)} L${L(1.5, 3 + drop)} Z" fill="#1a1426"/>` +
     [-3, 0, 3].map(t => `<line x1="${Lx(t * jw)}" y1="${Ly(6 + drop)}" x2="${Lx(t * jw)}" y2="${Ly(10 + drop)}" stroke="#6b6355" stroke-width="${f1(1 * u)}"/>`).join("");
 }
-function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
+// (Matthew, 2026-11-07: "the camping background does day/night correctly, but the others do not. they seem to lack the actual
+// nighttime phase (stars, moon, etc.) and merely dim the daytime to some low level, without ever switching") With 🌗 night and
+// day on, the place shown (main), if it is outdoors and has no time of day of its own (TIME_PLACES draw theirs), takes its sky
+// from the clock as the camp does: the sky's own colours by day, the camp's at sunset (and dawn) and at night; the stars at
+// night (the camp's ⭐ settings); and the sun and the moon where the clock says (skyBodiesSvg: they glide, moved each frame).
+// Its own sun is not drawn meanwhile (CLOCK_SKY.on). Every sky is a gradient named bg-...sky, filled over the whole picture
+// (all), so the clock's sky goes in there, behind everything the place has; its parts are kept apart by the time of day (F).
+const CLOCK_SKY_COLORS = { sunrise: ["#3a2a6a", "#f2a65a"], sunset: ["#3a2a6a", "#f2a65a"], night: ["#0b1030", "#24305a"] };
+const isSkyId = id => /^bg-[a-z-]*sky$/.test(id);
+function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}, main = false) {
+  // (read through opts: the place shown is kept by what it read, and 🌗 turned on or off must draw it again)
+  const clock = main && opts["days:on"] && kind !== "none" && !TIME_PLACES.has(kind) && !ELSEWHERE.includes(kind) && !INSIDE_KINDS.has(kind)
+    ? { time: skyTimeOf(opts, false), h: null } : null;
+  const was = CLOCK_SKY.on;
+  CLOCK_SKY.on = clock;
+  try { return backgroundSvgOf(kind, x0, y0, x1, y1, g, opts, clock); } finally { CLOCK_SKY.on = was; }
+}
+function backgroundSvgOf(kind, x0, y0, x1, y1, g, opts, clock) {
   const W = x1 - x0, H = y1 - y0, k = H / 700, pad = Math.max(W, H);
   // the same "random" every time, for a scene that holds still
   const R = (i, j = 0) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
   const P = (x, y) => `${f1(x)} ${f1(y)}`;
-  const grad = (id, a, b, ya, yb) => `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(ya)}" x2="0" y2="${f1(yb)}">` +
-    `<stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
-  const all = fill => `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="${fill}"/>`;
+  const grad = (id, a, b, ya, yb) => {
+    if (clock && isSkyId(id)) { clock.h = yb; CLOCK_SKY.horizon[kind] = yb; if (CLOCK_SKY_COLORS[clock.time]) [a, b] = CLOCK_SKY_COLORS[clock.time]; }
+    return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${f1(ya)}" x2="0" y2="${f1(yb)}">` +
+      `<stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+  };
+  // (the clock's sky over a sky filled in: the stars at night, then the sun and the moon)
+  const clockSky = () => {
+    const h = clock.h ?? g - 150 * k, dark = (CLOCK_SKY_COLORS[clock.time] || ["#5aa9e6"])[0];
+    return (clock.time === "night" ? starsSvg(opts, 70, x0, x1, y0, h - 40 * k, k, R, 1700) : "") + skyBodiesSvg({ x0, W, k }, opts, h, y0 + 12 * k, dark);
+  };
+  const all = fill => `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(H + 2 * pad)}" fill="${fill}"/>` +
+    (clock && /^url\(#bg-[a-z-]*sky\)$/.test(fill) ? clockSky() : "");
+  const clockKey = clock ? [clock.time] : [];
   // ground from y = at (a gentle wave) down past the frame
   // (landY finds its edge's height at any x, for WATER: keep the two alike)
   const land = (at, amp, fill, phase = 0) => {
@@ -724,7 +751,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     const hz = seaHorizon({ g, k });
     s += `<defs>${grad("bg-sea-sky", "#5fbdf2", "#d6f0ff", y0, hz)}${grad("bg-sea", "#2a9fd6", "#0f5e8e", hz, y1)}</defs>` + all("url(#bg-sea-sky)");
     const sx = x1 - W * 0.2, sy = y0 + H * 0.15;
-    s += [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
+    if (!clock) s += [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;   // (with the clock's sky, its sun instead)
       return `<line x1="${f1(sx + 58 * k * Math.cos(a))}" y1="${f1(sy + 58 * k * Math.sin(a))}" x2="${f1(sx + 82 * k * Math.cos(a))}" y2="${f1(sy + 82 * k * Math.sin(a))}" ` +
              `stroke="#ffd23f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`; }).join("") +
          `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
@@ -749,7 +776,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
     s += `<defs>${grad("bg-sky", "#5fbdf2", "#d6f0ff", y0, sea)}${grad("bg-ocean", "#1f86c4", "#4cc0e6", sea, shore)}</defs>` + all("url(#bg-sky)");
     // the sun, high on the right
     const sx = x1 - W * 0.16, sy = y0 + H * 0.14;
-    s += [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
+    if (!clock) s += [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;   // (with the clock's sky, its sun instead)
       return `<line x1="${f1(sx + 58 * k * Math.cos(a))}" y1="${f1(sy + 58 * k * Math.sin(a))}" x2="${f1(sx + 82 * k * Math.cos(a))}" y2="${f1(sy + 82 * k * Math.sin(a))}" ` +
              `stroke="#ffd23f" stroke-width="${f1(6 * k)}" stroke-linecap="round"/>`; }).join("") +
          `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(46 * k)}" fill="#ffd23f"/>`;
@@ -822,7 +849,7 @@ function backgroundSvg(kind, x0, y0, x1, y1, g, opts = {}) {
            `<polygon points="0,0 ${f1(sd * 22 * k)},${f1(7 * k)} 0,${f1(14 * k)}" fill="#e53935"/></g></g>`);
     }
   } else if (SCENES[kind])
-    s += SCENES[kind]({ x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, side, o: opts, F: [x0, y0, x1, y1, g] });
+    s += SCENES[kind]({ x0, y0, x1, y1, g, W, H, k, pad, R, P, grad, all, land, side, o: opts, F: [x0, y0, x1, y1, g, ...clockKey] });
   return s;
 }
 

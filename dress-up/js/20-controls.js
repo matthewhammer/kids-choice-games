@@ -2473,12 +2473,20 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                (() => { const D = () => state.days || (state.days = clone(DEFAULTS.days));
                         const b = el("button", { class: "day-night-toggle", "aria-pressed": String(!!D().on), onclick: () => { D().on = !D().on; b.setAttribute("aria-pressed", String(D().on)); changed(); } },
                                     "🌗 night and day: night falls, and you sleep in a bed till morning");
-                        const len = el("input", { type: "range", min: "4", max: "60", step: "1", value: String(D().dayMinutes ?? 12), "aria-label": "minutes a whole day takes",
-                                                  oninput: e => { D().dayMinutes = Number(e.target.value); changed(); } });
+                        // (Matthew, 2026-11-07: "for further testing, we want the min for the slider that controls one day cycle to go
+                        // to 10 sec, not 4 min") a whole day from 10 seconds to an hour, the slider's steps close together where a
+                        // day is short (DAY_LENGTHS, in seconds; dayMinutes is still minutes, a sixth of one at the least)
+                        const DAY_LENGTHS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 300, 360, 480, 600, 720, 900, 1200, 1500, 1800, 2400, 3000, 3600];
+                        const stepOf = m => { const sec = 60 * (m ?? 12); let best = 0;
+                          DAY_LENGTHS.forEach((v, i) => { if (Math.abs(v - sec) < Math.abs(DAY_LENGTHS[best] - sec)) best = i; }); return best; };
+                        const dayWords = m => { const sec = Math.round(60 * (m ?? 12));
+                          return sec < 60 ? `${sec} seconds` : sec % 60 ? `${Math.floor(sec / 60)} minute${sec < 120 ? "" : "s"} ${sec % 60} seconds` : `${sec / 60} minute${sec === 60 ? "" : "s"}`; };
+                        const len = el("input", { type: "range", min: "0", max: String(DAY_LENGTHS.length - 1), step: "1", value: String(stepOf(D().dayMinutes)), "aria-label": "how long a whole day takes",
+                                                  oninput: e => { D().dayMinutes = DAY_LENGTHS[Number(e.target.value)] / 60; changed(); } });
                         const lenText = el("span", { class: "hint" }), count = el("span", { class: "hint" });
                         const more = el("div", { class: "row day-night-more" }, [el("span", { class: "hint" }, "⏱️ a whole day takes"), len, lenText, count]);
-                        syncs.push(() => { setPressed(b, !!D().on); setHidden(more, !D().on); const m = D().dayMinutes ?? 12;
-                          if (len.value !== String(m)) len.value = String(m); setText(lenText, `${m} minutes`); setText(count, ` · 🛌 nights slept: ${D().nights || 0}`); });
+                        syncs.push(() => { setPressed(b, !!D().on); setHidden(more, !D().on); const m = D().dayMinutes ?? 12, i = String(stepOf(m));
+                          if (len.value !== i) len.value = i; setText(lenText, dayWords(m)); setText(count, ` · 🛌 nights slept: ${D().nights || 0}`); });
                         return el("div", {}, [el("div", { class: "row" }, [b]), more]); })(),
                // (ticket 659, M: the plants the sword cuts grow back) 🌱 cut plants grow back, saved with the friend (state.regrow), on
                // to start: after regrow.minutes; with 🌗 night and day on, by the next morning (regrowHere)

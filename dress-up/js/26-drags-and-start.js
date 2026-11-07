@@ -1697,7 +1697,7 @@ function leafPuffs(at, word = "chop!") {
 // drawing, and saved), the darkness every second.
 const WAKE_HOUR = 7, DAY_TINT = "#0b1236";
 let dayClock = null, dayWritten = null, nightSaid = false, sleeping = false;
-const sunAlt = h => skyNow({ ...state.background, skyHour: h }).sun.alt * 180 / Math.PI;
+const sunAlt = h => skyNow(skyAtHour(state.background, h)).sun.alt * 180 / Math.PI;
 // the darkness over a place at hour h: none while the sun is 6° up, all of it when the sun is 12° down
 function dayTint(h) {
   const kind = state.background.kind;
@@ -1718,34 +1718,57 @@ function nightShow(h = dayClock) {
   const O = makerOver(), [x, y, w, ht] = (O.getAttribute("viewBox") || "0 0 800 600").split(/[\s,]+/).map(Number);
   if (!g) {
     g = document.createElementNS("http://www.w3.org/2000/svg", "g"); g.id = "day-night";
-    g.innerHTML = `<rect class="tint" fill="${DAY_TINT}" opacity="0"/><g class="clock"><rect rx="10" fill="#0b1236" opacity="0.55"/><text fill="#ffffff" font-family="sans-serif" font-weight="700" text-anchor="middle"/></g>`;
+    // (2026-11-07) over a place whose sky is the clock's (CLOCK_SKY.horizon), the darkness is lighter over the sky than over
+    // the land, fading in down to its horizon: the sky is dark of itself, and its stars and moon stay bright
+    g.innerHTML = `<defs><linearGradient id="day-night-fade" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${DAY_TINT}" stop-opacity="0.35"/>` +
+      `<stop offset="1" stop-color="${DAY_TINT}"/></linearGradient></defs><rect class="tint" fill="${DAY_TINT}" opacity="0"/>` +
+      `<g class="clock"><rect rx="10" fill="#0b1236" opacity="0.55"/><text fill="#ffffff" font-family="sans-serif" font-weight="700" text-anchor="middle"/></g>`;
     O.prepend(g);
   }
   const at = (n, k, v) => { v = String(v); if (n.getAttribute(k) !== v) n.setAttribute(k, v); };
   const tint = g.querySelector(".tint"), box = g.querySelector(".clock rect"), text = g.querySelector(".clock text"), fs = ht * 0.04;
   at(tint, "x", x); at(tint, "y", y); at(tint, "width", w); at(tint, "height", ht);
+  const hz = CLOCK_SKY.horizon[state.background.kind], fade = g.querySelector("#day-night-fade");
+  if (hz != null && fade) { at(fade, "y1", f1(y)); at(fade, "y2", f1(hz)); at(tint, "fill", "url(#day-night-fade)"); } else at(tint, "fill", DAY_TINT);
   if (!sleeping) at(tint, "opacity", dayTint(h).toFixed(3));
   const words = `${sunAlt(h) > 0 ? "☀️" : "🌙"} ${clockText(h)} · 🛌 ${state.days.nights || 0}`;
   if (text.textContent !== words) text.textContent = words;
   at(text, "x", f1(x + w / 2)); at(text, "y", f1(y + fs * 1.6)); at(text, "font-size", f1(fs));
   at(box, "x", f1(x + w / 2 - fs * 4.6)); at(box, "y", f1(y + fs * 0.45)); at(box, "width", f1(fs * 9.2)); at(box, "height", f1(fs * 1.55));
 }
-// the clock, each second: on a quarter hour, the hour written (a drawing); as the sun sets, a word about sleeping
-setInterval(() => {
+// the clock (Matthew, 2026-11-07, with M: a whole day as short as 10 seconds, "for further testing"; and "let's find a way to
+// smooth out the animation of the sun and moon as they cross the sky"): run every frame by the time that passed, not a step
+// each second, so a short day does not jump hours at a time. Each frame, the darkness (nightShow) and the sun and the moon
+// (skyBodiesLive) follow it. The hour is written (a drawing, and saved) when the sky's time of day changes (day, dusk or
+// dawn, night) or the date does, and otherwise on a new quarter hour, at most once a second. As the sun sets, a word about
+// sleeping. A page out of sight runs no frames: the clock stops, as it did.
+let dayFrameAt = null, dayWrittenAt = 0, daySkyTime = null;
+const DAY_SECONDS_MIN = 10;
+function dayFrame(now) {
+  requestAnimationFrame(dayFrame);
   const B = state.background;
-  if (!daysOn() || B.kind === "none") { dayClock = dayWritten = null; nightShow(); return; }
-  if (document.hidden || sleeping) return;
+  if (!daysOn() || B.kind === "none") { if (dayClock !== null || document.getElementById("day-night")) { dayClock = dayWritten = null; nightShow(); } dayFrameAt = null; return; }
+  if (document.hidden || sleeping) { dayFrameAt = null; return; }
   // (the hour set by hand, in 🌍 where and when, or by a friend loaded: the clock goes on from there)
-  if (dayClock === null || B.skyHour !== dayWritten) dayClock = dayWritten = Number(B.skyHour ?? 12);
-  dayClock += 24 / (60 * Math.max(1, state.days.dayMinutes || 12));
-  if (dayClock >= 24) { dayClock -= 24; nextDay(B); }
+  if (dayClock === null || B.skyHour !== dayWritten) { dayClock = dayWritten = Number(B.skyHour ?? 12); daySkyTime = null; }
+  const dt = dayFrameAt === null ? 0 : Math.min(250, now - dayFrameAt);   // (after a pause, no leap)
+  dayFrameAt = now;
+  dayClock += dt / 1000 * 24 / Math.max(DAY_SECONDS_MIN, 60 * (state.days.dayMinutes || 12));
+  let newDay = false;
+  if (dayClock >= 24) { dayClock -= 24; nextDay(B); newDay = true; }
   const a = sunAlt(dayClock);
   if (a < -6 && !nightSaid) { nightSaid = true; scriptSay("Night is falling. Find somewhere to sleep: a bed, a bunk, a sleeping bag or a blanket.", "🌙"); }
   if (a > 0) nightSaid = false;
-  const q = Math.floor(dayClock * 4) / 4;   // (the quarter hour begun)
-  if (q !== dayWritten) { B.skyHour = dayWritten = q; changed(); }
+  const sky = a > 6 ? "day" : a < -6 ? "night" : "dusk", quarter = h => Math.floor(h * 4);
+  if (newDay || sky !== daySkyTime || (quarter(dayClock) !== quarter(dayWritten) && now - dayWrittenAt >= 1000)) {
+    daySkyTime = sky; dayWrittenAt = now;
+    B.skyHour = dayWritten = Math.round(dayClock * 1000) / 1000;
+    changed();
+  }
   nightShow(dayClock);
-}, 1000);
+  skyBodiesLive(dayClock);
+}
+requestAnimationFrame(dayFrame);
 // (from lieOn) lying down: after sunset, to sleep; by day, a word
 function sleepIfNight() {
   if (!daysOn() || sleeping) return;

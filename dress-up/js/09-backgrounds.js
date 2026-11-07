@@ -206,7 +206,12 @@ const use = (id, x, y, s = 1, sy = s, more = "") => `<use href="#${id}" ${tf(x, 
 // (turning: its rays go slowly round, one ray's spacing a loop, and breathe)
 // (o, the scene's options: its rays then pulse with the scene's quick LFO,
 // each ray a twelfth of the way round after the last: sceneLfo)
-const sunSvg = (x, y, r, turning = false, o = null) => (turning ? `<g><animateTransform attributeName="transform" type="rotate" from="0 ${f1(x)} ${f1(y)}" to="30 ${f1(x)} ${f1(y)}" dur="8s" repeatCount="indefinite"/>` : "") +
+// (Matthew, 2026-11-07: with 🌗 night and day on, every place with a sky takes it from the clock) while a place's sky is
+// the clock's (CLOCK_SKY.on, set by backgroundSvg for the place shown), its own sun is not drawn: the clock's is
+// (skyBodiesSvg, with sunSvgDrawn). CLOCK_SKY.horizon: each such place's horizon, for the night's tint (nightShow).
+const CLOCK_SKY = { on: null, horizon: {} };
+const sunSvg = (x, y, r, turning = false, o = null) => CLOCK_SKY.on ? "" : sunSvgDrawn(x, y, r, turning, o);
+const sunSvgDrawn = (x, y, r, turning = false, o = null) => (turning ? `<g><animateTransform attributeName="transform" type="rotate" from="0 ${f1(x)} ${f1(y)}" to="30 ${f1(x)} ${f1(y)}" dur="8s" repeatCount="indefinite"/>` : "") +
   [...Array(12)].map((_, i) => { const a = i * Math.PI / 6;
   const own = `<animate attributeName="stroke-width" values="${f1(r * 0.13)};${f1(r * 0.2)};${f1(r * 0.13)}" dur="${(2.4 + 0.3 * (i % 3)).toFixed(1)}s" repeatCount="indefinite"/>`;
   return `<line x1="${f1(x + r * 1.26 * Math.cos(a))}" y1="${f1(y + r * 1.26 * Math.sin(a))}" x2="${f1(x + r * 1.78 * Math.cos(a))}" y2="${f1(y + r * 1.78 * Math.sin(a))}" ` +
@@ -231,6 +236,9 @@ const SKY_PLACES = [["denver", "🏔️ Denver", 39.74, -104.99], ["newyork", "�
 const skyPlaceOf = o => { const p = SKY_PLACES.find(q => q[0] === o.skyWhere && q[0] !== "custom");
   return p ? { lat: p[2], lon: p[3] } : { lat: Math.max(-89.9, Math.min(89.9, Number(o.skyLat ?? 39.74))), lon: Math.max(-180, Math.min(180, Number(o.skyLon ?? -104.99))) }; };
 const skyKey = o => [o.skyWhere, o.skyLat, o.skyLon, o.skyYear, o.skyMonth, o.skyDay, o.skyHour].join("|");
+// (2026-11-07) the sky's settings of o at the hour h, and nothing else: the place's settings are some 2,000, and copying them
+// all (as { ...o, skyHour: h }) cost 0.3 ms, every frame now that the clock runs every frame
+const skyAtHour = (o, h) => ({ skyWhere: o.skyWhere, skyLat: o.skyLat, skyLon: o.skyLon, skyYear: o.skyYear, skyMonth: o.skyMonth, skyDay: o.skyDay, skyHour: h });
 let skyMemo = { key: null, now: null };
 function skyNow(o) {
   const key = skyKey(o);
@@ -300,11 +308,53 @@ const moonOfDateKey = o => { const m = moonOfDate(o); return m.phase + (m.south 
 const moonOfDateSvg = (o, cx, cy, r, dark) => { const m = moonOfDate(o); return moonPhaseSvg(cx, cy, r, m.phase, dark, m.south); };
 // the sun and the moon by the clock, in a scene's sky (its horizon h, its top): the sun (low and orange near the horizon),
 // the moon in its phase (faint by day); none where open says the sky is hidden there (a cliff, drawn under the night's tint)
+// (Matthew, 2026-11-07, with M: "let's find a way to smooth out the animation of the sun and moon as they cross the sky") Each
+// is drawn where the hour written says (background.skyHour: a drawing each time it is written), in a group of its own, and
+// then moved every frame from the running clock (skyBodiesLive, from the clock in 26-drags-and-start.js), so it glides
+// across the sky and the scene is not drawn again for it. SKY_LIVE keeps each sky's measures by the id its group carries.
+const SKY_LIVE = new Map();
+const skyLiveId = s => { let v = 7; for (let i = 0; i < s.length; i++) v = (v * 31 + s.charCodeAt(i)) | 0; return "s" + (v >>> 0).toString(36); };
+function skyBodiesAt(L, n) {
+  const vis = p => p && (!L.open || L.open(p)) ? p : null, sa = n.sun.alt * 180 / Math.PI;
+  const sun = vis(skyXY(L, n.sun, L.h, L.top)), moon = vis(skyXY(L, n.moon, L.h, L.top));
+  const phase = Math.round(n.moon.phase * 100) / 100, south = skyFacesNorth(n);
+  return { sun, moon, high: sa > 8, lowFill: sa > 2 ? "#ffd27a" : "#ff8c42", moonOp: sa > 6 ? "0.55" : "1", phase, south, phaseKey: phase + (south ? "s" : "n") };
+}
+const skyAt = p => `translate(${f1(p[0])} ${f1(p[1])})`;
 function skyBodiesSvg(c, o, h, top, darkSky, open = null) {
-  const n = skyNow(o), k = c.k, out = [], vis = p => p && (!open || open(p)) ? p : null, sp = vis(skyXY(c, n.sun, h, top)), mp = vis(skyXY(c, n.moon, h, top)), sa = n.sun.alt * 180 / Math.PI;
-  if (mp) out.push(`<g opacity="${sa > 6 ? 0.55 : 1}">` + moonPhaseSvg(mp[0], mp[1], 22 * k, n.moon.phase, darkSky, skyFacesNorth(n)) + `</g>`);
-  if (sp) out.push(sa > 8 ? sunSvg(sp[0], sp[1], 30 * k, true, o) : `<circle cx="${f1(sp[0])}" cy="${f1(sp[1])}" r="${f1(44 * k)}" fill="${sa > 2 ? "#ffd27a" : "#ff8c42"}" opacity="0.95"/>`);
-  return out.join("");
+  const L = { x0: c.x0, W: c.W, k: c.k, h, top, dark: darkSky, open };
+  const id = skyLiveId([c.x0, c.W, c.k, h, top, darkSky, open ? String(open) : ""].join("|"));
+  SKY_LIVE.set(id, L);
+  const k = c.k, m = skyBodiesAt(L, skyNow(o));
+  return `<g class="sky-bodies" data-sky="${id}">` +
+    `<g class="sky-moon" data-phase="${m.phaseKey}"${m.moon ? ` transform="${skyAt(m.moon)}"` : ` display="none"`} opacity="${m.moonOp}">${moonPhaseSvg(0, 0, 22 * k, m.phase, darkSky, m.south)}</g>` +
+    `<g class="sky-sun"${m.sun ? ` transform="${skyAt(m.sun)}"` : ` display="none"`}><g class="sun-high"${m.high ? "" : ` display="none"`}>${sunSvgDrawn(0, 0, 30 * k, true, o)}</g>` +
+    `<circle class="sun-low" r="${f1(44 * k)}" fill="${m.lowFill}" opacity="0.95"${m.high ? ` display="none"` : ""}/></g></g>`;
+}
+// the sun and the moon of the place shown, moved to where they are at the hour h (the running clock's, between the hours
+// written); only what changed is set
+function skyBodiesLive(h) {
+  const groups = document.querySelectorAll("#bg .sky-bodies");
+  if (!groups.length) return;
+  const n = skyNow(skyAtHour(state.background, h));
+  const at = (el, key, v) => { if (el.getAttribute(key) !== v) el.setAttribute(key, v); };
+  const shown = (el, on) => { if (!on) at(el, "display", "none"); else if (el.hasAttribute("display")) el.removeAttribute("display"); };
+  for (const G of groups) {
+    if (G.closest(".portal")) continue;   // (a picture of a place keeps its own hour)
+    const L = SKY_LIVE.get(G.getAttribute("data-sky"));
+    if (!L) continue;
+    const m = skyBodiesAt(L, n), moon = G.querySelector(":scope > .sky-moon"), sun = G.querySelector(":scope > .sky-sun");
+    if (moon) {
+      shown(moon, !!m.moon); if (m.moon) at(moon, "transform", skyAt(m.moon)); at(moon, "opacity", m.moonOp);
+      if (moon.getAttribute("data-phase") !== m.phaseKey) { moon.setAttribute("data-phase", m.phaseKey); moon.innerHTML = moonPhaseSvg(0, 0, 22 * L.k, m.phase, L.dark, m.south); }
+    }
+    if (sun) {
+      shown(sun, !!m.sun); if (m.sun) at(sun, "transform", skyAt(m.sun));
+      const hi = sun.querySelector(":scope > .sun-high"), lo = sun.querySelector(":scope > .sun-low");
+      if (hi) shown(hi, m.high);
+      if (lo) { shown(lo, !m.high); at(lo, "fill", m.lowFill); }
+    }
+  }
 }
 // a puffy cloud, its size the drawing's own
 const cloudDef = (id, puff) => `<g id="${id}"><g transform="scale(${+puff.toFixed(3)})">` +
