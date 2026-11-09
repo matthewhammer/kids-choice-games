@@ -2488,6 +2488,15 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                         syncs.push(() => { setPressed(b, !!D().on); setHidden(more, !D().on); const m = D().dayMinutes ?? 12, i = String(stepOf(m));
                           if (len.value !== i) len.value = i; setText(lenText, dayWords(m)); setText(count, ` · 🛌 nights slept: ${D().nights || 0}`); });
                         return el("div", {}, [el("div", { class: "row" }, [b]), more]); })(),
+               // (ticket 723, M: "weather, as in other games like Harvest Moon") 🌦️ weather, saved with the friend (state.weather), off to
+               // start: each day's own weather outside, and tomorrow's in 🎒's 📻 weather report; today's can be chosen by hand, for today
+               (() => { const b = el("button", { class: "weather-toggle", "aria-pressed": String(weatherOn()), onclick: () => { weatherSet().on = !weatherSet().on; b.setAttribute("aria-pressed", String(weatherSet().on)); changed(); } },
+                                    "🌦️ weather: sun, clouds, rain, snow, wind or fog outside, a new one each day (tomorrow's in 🎒)");
+                        const chips = ["auto", ...WEATHER_ORDER].map(k => el("button", { type: "button", "data-wx": k, onclick: () => weatherPick(k) },
+                                                                                  k === "auto" ? "🎲 the day's own" : `${WEATHERS[k].icon} ${WEATHERS[k].name}`));
+                        const more = el("div", { class: "row weather-more" }, [el("span", { class: "hint" }, "🌦️ today:"), ...chips]);
+                        syncs.push(() => { setPressed(b, weatherOn()); setHidden(more, !weatherOn()); const k = weatherPicked(); for (const c of chips) setPressed(c, c.dataset.wx === k); });
+                        return el("div", {}, [el("div", { class: "row" }, [b]), more]); })(),
                // (ticket 659, M: the plants the sword cuts grow back) 🌱 cut plants grow back, saved with the friend (state.regrow), on
                // to start: after regrow.minutes; with 🌗 night and day on, by the next morning (regrowHere)
                (() => { const R = () => state.regrow || (state.regrow = clone(DEFAULTS.regrow));

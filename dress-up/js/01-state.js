@@ -652,6 +652,9 @@ const DEFAULTS = {
   // (ticket 659) 🌱 the plants a 🗡️ sword cuts grow back (⚙️ Advanced): on or off, and after how many minutes (with 🌗 night and
   // day on, by the next morning instead)
   regrow: { on: true, minutes: 2 },
+  // (ticket 723) 🌦️ weather (⚙️ Advanced): on or off, the seed that chooses each day's weather, and today's chosen by hand
+  // ("auto": the day's own; pickDay, the day it was chosen for: js/25-weather.js)
+  weather: { on: false, seed: 723, pick: "auto", pickDay: "" },
   face:  { color: "#cfa000", size: 46, smile: 85, brow: 30, sick: 0, burst: 0, candy: 0,
            stars: false, hearts: false, xeyes: false, closed: false, unibrow: false, eyes: 50, sides: 0,
            rays: 0, teeth: 5, open: 0, teethStyle: "normal",
@@ -1554,7 +1557,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.492", released: "2026-11-07" };
+const VERSION = { number: "0.0.493", released: "2026-11-09" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

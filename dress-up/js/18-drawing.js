@@ -7,6 +7,7 @@ function draw() {
   const t = performance.now(), text = bgShown.text;
   drawNow();
   if (typeof gardenMeters === "function") gardenMeters();   // (ticket 660, part 3: the plants' meters, while the 💧 can is held)
+  if (typeof weatherShow === "function") weatherShow();   // (ticket 723: 🌦️ the weather over the picture, outside)
   if (tripTimer) tripWork("drawing", t);   // (⏱️ a trip being timed)
   if (bgShown.text !== text) return;
   const ms = performance.now() - t;

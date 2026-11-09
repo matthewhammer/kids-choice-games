@@ -240,6 +240,7 @@ function itemsRender() {
         el("button", { type: "button", "aria-pressed": String(screen === k), onclick: () => { state.pack = { ...(state.pack || {}), screen: k }; changed(); itemsRender(); } }, label))),
       el("button", { type: "button", class: "items-close", onclick: () => itemsShow(false) }, "✖ back to the game")]),
     el("div", { class: "items-slots" }, SLOTS.map(slot)),
+    ...(typeof weatherReportBox === "function" ? [weatherReportBox()] : []),   // (ticket 723: 📻 tomorrow's weather, as Harvest Moon's TV says it)
     el("p", { class: "hint" }, ["Choose what ", slotMark("🔹"), " and ", slotMark("🔸"), " do: tap ", slotMark("🔹"), " or ", slotMark("🔸"),
       " under an item. With a controller, the arrows choose an item, and the button you want it on puts it there; start shuts this."]),
     el("div", { class: "items-grid" }, tiles));

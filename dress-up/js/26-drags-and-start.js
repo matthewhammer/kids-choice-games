@@ -1723,7 +1723,8 @@ function nightShow(h = dayClock) {
     g.innerHTML = `<defs><linearGradient id="day-night-fade" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${DAY_TINT}" stop-opacity="0.35"/>` +
       `<stop offset="1" stop-color="${DAY_TINT}"/></linearGradient></defs><rect class="tint" fill="${DAY_TINT}" opacity="0"/>` +
       `<g class="clock"><rect rx="10" fill="#0b1236" opacity="0.55"/><text fill="#ffffff" font-family="sans-serif" font-weight="700" text-anchor="middle"/></g>`;
-    O.prepend(g);
+    const wx = document.getElementById("weather");   // (ticket 723: over the 🌦️ weather, which is darkened with the land)
+    if (wx && wx.parentNode === O) wx.after(g); else O.prepend(g);
   }
   const at = (n, k, v) => { v = String(v); if (n.getAttribute(k) !== v) n.setAttribute(k, v); };
   const tint = g.querySelector(".tint"), box = g.querySelector(".clock rect"), text = g.querySelector(".clock text"), fs = ht * 0.04;
@@ -1790,7 +1791,8 @@ function sleepTillMorning(h) {
     B.skyHour = dayClock = dayWritten = WAKE_HOUR; nightSaid = false;
     state.days = { ...state.days, nights: (state.days.nights || 0) + 1 };
     changed();
-    setTimeout(() => fade(0.95, dayTint(WAKE_HOUR), 1400, () => { sleeping = false; nightShow(); scriptSay(`Good morning! Nights slept: ${state.days.nights}.`, "🌅"); }), 400);
+    setTimeout(() => fade(0.95, dayTint(WAKE_HOUR), 1400, () => { sleeping = false; nightShow(); scriptSay(`Good morning! Nights slept: ${state.days.nights}.` +
+      (typeof weatherOn === "function" && weatherOn() ? ` Today: ${WEATHERS[weatherToday()].icon} ${WEATHERS[weatherToday()].name}.` : ""), "🌅"); }), 400);   // (ticket 723)
   });
 }
 // (ticket 659, M: a way for the plants that are cut to regrow; Matthew: "build it. good plan.") With 🌱 cut plants grow back on

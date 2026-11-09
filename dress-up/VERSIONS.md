@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.493 (2026-11-09)
+
+Everything in 0.0.492, plus:
+
+- **Weather, as in Harvest Moon** (ticket 723, for M). Turn on **🌦️ weather** in ⚙️ Advanced, and every day has a weather of its own: ☀️ sunny, ⛅ cloudy, 🌧️ rain, ❄️ snow, 💨 windy or 🌫️ fog, the same all over the world. Outside you see it: clouds drifting across the sky, rain or snow falling, the wind blowing streaks and leaves past, fog thick over the ground. Inside, under the sea, in a cave or a dungeon, there is none. The weather goes with the season: snow only in winter, mostly sunshine in summer. At night it is darkened with everything else.
+- **📻 The weather report, in 🎒 Your items**: tomorrow's weather, with the date, and today's. A day always has the same weather, so the report is right. With 🌗 night and day on, waking up in bed says today's weather too.
+- In ⚙️ Advanced, under 🌦️ weather, **🌦️ today:** chooses today's weather by hand (🎲 the day's own, or any of the six), for today only.
+
 ## 0.0.492 (2026-11-07)
 
 Everything in 0.0.491, plus:
