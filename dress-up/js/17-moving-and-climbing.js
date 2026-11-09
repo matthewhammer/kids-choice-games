@@ -634,6 +634,8 @@ function enterPicture() {
     return;
   }
   const p = enterAt;
+  // (ticket 724: no way or door near, in open water or the deep ocean: X dives, or swims up)
+  if (!p && !entering && typeof diveDir === "function" && diveDir()) { diveGo(diveDir()); return; }
   if (!p || !p.el.isConnected || entering) return;
   if (p.ladder && climb && !climb.none) return;   // (on a ladder already: climbing it)
   if (climb && !climb.none) climb.through = true;   // (off the ladder, arriving: see draw)

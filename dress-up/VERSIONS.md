@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.494 (2026-11-09)
+
+Everything in 0.0.493, plus:
+
+- **The deep ocean, a world of its own under the open water** (ticket 724, for N). The 🪸 deep sea squares down the west side of the start world are now 🌊 open water, where you swim at the surface, and under every open-water square there is a 🪸 deep-ocean square: a world called **deep ocean**, the start world's floor below. The shells, coral, kelp and treasure chests that were in the deep sea squares are down there now, in the squares under where they were, and the squares under the rest of the open water have sea things of their own: fish, starfish, kelp, coral, sea fans, shells. In the deep ocean, swim from square to square as at the surface.
+- **Dive anywhere in open water.** Swimming at the surface, a **⬇️ dive** arrow follows you, just under you, wherever you are: tap it (or press X on the controller, 🚪, or Enter, when no other way is near) and you tip head first and sink out of sight, then sink in from above into the deep ocean square below, the right way up. In the deep ocean a **⬆️ swim up** arrow over your head takes you back up to the surface square above, rising out of the top of the picture and bobbing up into the open water.
+- A game saved while swimming in the deep sea opens in the deep ocean, at the same square.
+
 ## 0.0.493 (2026-11-09)
 
 Everything in 0.0.492, plus:

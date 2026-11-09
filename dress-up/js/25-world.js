@@ -388,7 +388,10 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
   // (ticket 524) an inside in a square of its own keeps its way toward us (insideWays: the living room's door out, a
   // tree room's, a castle room's), where the square has no way that side: still a way back to its outside
   if (INSIDE_KINDS.has(B.kind)) for (const w of insideWays(B)) if (!ways.includes(w.d)) compass.push([w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]);
-  worldWaysAt = [...compass, ...doorWays(B, k)];   // (ticket 525: and the cave doors' arrows, after the compass's; their doorways are the passages' own)
+  // (ticket 724) from open water, ⬇️ a dive to the deep ocean below; in it, ⬆️ up to the surface: an arrow at the swimmer, placed
+  // where they are at every drawing (worldWaysHud), always shown; no doorway in the picture (diveGo takes it)
+  const dv = diveBelow(W, W.at) ? "down" : surfaceAbove(W, W.at) ? "up" : null;
+  worldWaysAt = [...compass, ...doorWays(B, k), ...(dv ? [[dv, 0, 0, dv === "down" ? 90 : -90, { kind: dv === "down" ? "deepsea" : "sea" }, DIVE_WAYS[dv].to, "", DIVE_WAYS[dv]]] : [])];   // (ticket 525: and the cave doors' arrows, after the compass's; their doorways are the passages' own)
   worldWaysHud();
   if (!compass.length) return "";
   const sig = compass.map(([d, , , , to, nm, attrs]) => d + (to ? to.kind + ":" + nm : "-") + (attrs || "")).join();
@@ -397,6 +400,10 @@ function worldWaysSvg(B, x0, y0, x1, y1, g) {
     return obj(`way ${d}`, Infinity, to ? `<g class="portal way-out" data-door="1" data-way="${d}"${attrs ? " " + attrs : ""} pointer-events="none">${tri}</g>` : `<g class="way-out nowhere" pointer-events="none">${tri}</g>`);
   }).join(""));
 }
+// (ticket 724) the dive's and the rise's arrows: their glyph and words, and where they lead
+const DIVE_WAYS = { down: { name: "deep water below", glyph: "⬇️ dive", side: "right", to: "🪸 the deep ocean" },
+                    up: { name: "water above", glyph: "⬆️ swim up", side: "right", to: "🌊 the surface" } };
+const isDiveWay = d => d === "down" || d === "up";
 // The arrows over the picture: made again when the ways change, placed and
 // shown or hidden on every drawing (cheap: a few at most)
 let waysShown = null;
@@ -416,7 +423,8 @@ function worldWaysHud() {
       const words = document.createElement("span"); words.className = "way-words";
       words.append(door ? door.glyph : to ? WORLD_ARROWS[d] : "🚧 " + WORLD_ARROWS[d], document.createElement("br"), to ? nm : "nowhere yet");
       b.append(tri, words);
-      b.addEventListener("click", () => { const p = to && bgShown.node && bgShown.node.querySelector(`.portal[data-way="${d}"]`); if (p && !entering) enterScene(p); });
+      b.addEventListener("click", () => { if (isDiveWay(d)) { if (!entering) diveGo(d); return; }   // (ticket 724)
+        const p = to && bgShown.node && bgShown.node.querySelector(`.portal[data-way="${d}"]`); if (p && !entering) enterScene(p); });
       return b;
     }));
   }
@@ -429,10 +437,13 @@ function worldWaysHud() {
                 ["--label-stay", Math.max(100, A.labelStay ?? 500) + "ms"]];   // (ticket 404)
   for (const [k, v] of vars) if (layer.style.getPropertyValue(k) !== v) layer.style.setProperty(k, v);
   const at = [];
+  // (ticket 724: the dive's arrow under the swimmer, the rise's over their head, by the friend as drawn now)
+  const figBox = worldWaysAt.some(e => isDiveWay(e[0])) ? (document.getElementById("figure") || { getBoundingClientRect: () => null }).getBoundingClientRect() : null;
   worldWaysAt.forEach(([d, x, y, a, , , , door], i) => {
     const el = layer.children[i];
     if (!el) return;
-    const p = new DOMPoint(x, y).matrixTransform(M), near = wayNearness(d) < 1;
+    const dive = isDiveWay(d) && figBox && figBox.width;
+    const p = dive ? { x: figBox.left + figBox.width / 2, y: d === "down" ? figBox.bottom + 30 * sc : figBox.top - 30 * sc } : new DOMPoint(x, y).matrixTransform(M), near = dive || wayNearness(d) < 1;
     // (kept inside the picture, by its size)
     const left = Math.max(edge, Math.min(box.width - edge, p.x - box.left)), top = Math.max(edge, Math.min(box.height - edge, p.y - box.top));
     // (its words toward the middle: left of an arrow on the right, below one at the top...)
@@ -1061,6 +1072,7 @@ function worldsInit(S = state) {
   if (!S.worldsAway || typeof S.worldsAway !== "object" || Array.isArray(S.worldsAway)) S.worldsAway = {};
   if (!S.worldTemplates || typeof S.worldTemplates !== "object" || Array.isArray(S.worldTemplates)) S.worldTemplates = {};
   if (S === state && !(S.dungeon && S.dungeon.made) && S.background && typeof dungeonMazeWorld === "function") dungeonWorldEnsure(S);   // (ticket 639: once per game)
+  if (S === state && !(S.deepOcean && S.deepOcean.made) && S.background && typeof deepOceanEnsure === "function") deepOceanEnsure(S);   // (ticket 724: once per game)
 }
 const worldNum = W => +String(W.id || "").replace(/\D/g, "") || 1;
 const worldTitle = W => String(W.name || "").trim() || "world " + worldNum(W);
@@ -1209,6 +1221,131 @@ function dungeonDedupe(S = state) {
   for (const T of lists) for (let i = T.length - 1; i >= 0; i--) if (made(T[i]) && gone.has(T[i].dest.world)) T.splice(i, 1);
   for (const id of gone) delete S.worldsAway[id];
   return true;
+}
+// (ticket 724, N, via Matthew: "another world (deep ocean) that is accessible from the surface-style ocean squares, where we swim on
+// the surface. I recommend separating the few deep ocean squares we have onto another world (called deep ocean) --- let's replace
+// the deep ocean with more surface ocean and separate into another world, somehow --- with a vertical way of connecting worlds
+// together between surface ocean and deep ocean, something similar to the 'hole' in the cemetery, except not localized to one
+// spot, and not rendered as an object. Not sure where to place the 'nav' arrow, but it would be nice to actually center it below
+// the person as they swim, to indicate that every spot offers a chance to dive"; "diving animation, maybe just a variation of
+// swimming?") 🪸 The deep ocean: a world of its own (ocean: true, named "deep ocean"), the start world's floor below (W.below, as
+// a dungeon floor's, tickets 622 and 625), square for square: under every 🌊 open-water square, a 🪸 deep-sea square. Once in
+// every game (state.deepOcean.made, as the dungeon's), the start world's deep-sea squares become open water, their things
+// moved down to the deep ocean's square under them (the shells, the coral, the chests); a deep square under open water that had
+// none gets a few sea things of its own. From any open-water square a ⬇️ dive arrow under the swimmer (worldWaysSvg's "down",
+// following them as they swim) dives to the square below; in the deep ocean, a ⬆️ arrow over their head swims up to the square
+// above. X does it too when no other way is near. Diving: the swim tipped head first, sinking out of sight, and then sinking in
+// from above the deep ocean's picture, righting; coming up, the reverse (diveGo). A deep square missing under open water (made
+// later in 🗺️ World design) is made when someone dives there, so every spot offers a dive.
+const DEEP_THINGS = [
+  { kind: "kelp", color: "#2f8f4e" }, { kind: "kelp", color: "#3f9f5e" }, { kind: "coral", color: "#fde047" }, { kind: "coral", color: "#f472b6" },
+  { kind: "seafan", color: "#c084fc" }, { kind: "seagrass", color: "#4caf50" }, { kind: "sealettuce", color: "#8bc34a" },
+  { kind: "shell", shape: "scallop", color: "#f8e1c7" }, { kind: "shell", shape: "conch", color: "#fdba74" }, { kind: "shell", shape: "clam", color: "#ffffff" },
+  { kind: "starfish", color: "#fb923c" }, { kind: "seafish", color: "#ff9f1c", bubbles: true }];
+// (a new deep square's things: four or five, by its key, the same every time)
+function deepThings(key) {
+  const [c, r] = key.split(",").map(Number), R = seeded(7240 + c * 31 + r * 97), n = 4 + Math.floor(R(0) * 2), G = SCENE.ground;
+  return [...Array(n)].map((_, i) => ({ size: 100, mirror: R(i * 5 + 1) < 0.5, seed: 1000 + Math.floor(R(i * 5 + 2) * 9000),
+    x: Math.round(-330 + 660 * (i + 0.2 + 0.6 * R(i * 5 + 3)) / n), z: Math.round(G + 5 + 80 * R(i * 5 + 4)),
+    ...DEEP_THINGS[Math.floor(R(i * 5 + 5) * DEEP_THINGS.length)] }));
+}
+// (a deep square's ways: to every deep square beside it)
+function deepJoin(D, key) {
+  const c = D.cells[key];
+  if (!c) return;
+  c.ways = Object.keys(WORLD_DIRS).filter(d => { const nb = worldNeighbour(D, key, d); return !nb.off && D.cells[nb.key]; });
+}
+function deepCell(D, key, things = deepThings(key)) {
+  const [c, r] = key.split(",").map(Number);
+  D.cols = Math.max(D.cols || 0, c + 1); D.rows = Math.max(D.rows || 0, r + 1);
+  D.cells[key] = { kind: "deepsea", ways: [], things };
+  deepJoin(D, key);
+  for (const d of Object.keys(WORLD_DIRS)) { const nb = worldNeighbour(D, key, d); if (!nb.off && D.cells[nb.key]) deepJoin(D, nb.key); }
+  return D.cells[key];
+}
+function deepOceanEnsure(S = state) {
+  if (!S || !S.world || (S.deepOcean && S.deepOcean.made)) return;
+  (S.deepOcean || (S.deepOcean = {})).made = true;   // (first: worldsInit calls this)
+  worldsInit(S);
+  const all = [S.world, ...Object.values(S.worldsAway)], W1 = all.find(w => w.id === WORLD_FIRST);
+  if (!W1 || (W1.below && W1.below !== W1.id && all.some(w => w.id === W1.below))) return;   // (a floor below chosen already: left as it is)
+  const n = 1 + Math.max(0, ...all.map(worldNum)), D = { id: "w" + n, name: "deep ocean", ocean: true, cols: W1.cols, rows: W1.rows, cells: {} };
+  // (the square shown, the friend's: its things are the place's, state.background's)
+  const shown = k => S.world === W1 && W1.at === k && S.background && S.background.kind === W1.cells[k].kind;
+  const moved = {};
+  for (const k of Object.keys(W1.cells)) {
+    const c = W1.cells[k];
+    if (c.kind !== "deepsea") continue;
+    const T = shown(k) ? (S.background.things || []) : (c.things || []);
+    moved[k] = T.filter(t => t.kind !== "passage");   // (a cave door stays where it was linked)
+    c.kind = "sea"; c.things = T.filter(t => t.kind === "passage");
+    if (shown(k)) { S.background.kind = "sea"; S.background.things = c.things; }
+  }
+  const seaKeys = Object.keys(W1.cells).filter(k => W1.cells[k].kind === "sea");
+  if (!seaKeys.length) return;
+  for (const k of seaKeys) D.cells[k] = { kind: "deepsea", ways: [], things: moved[k] && moved[k].length ? moved[k] : deepThings(k) };
+  for (const k of seaKeys) deepJoin(D, k);
+  D.start = D.at = Object.keys(moved).find(k => D.cells[k]) || seaKeys[0];
+  S.worldsAway[D.id] = D;
+  W1.below = D.id;
+  // (the friend was in the deep sea: there still, in the deep ocean, at that square)
+  if (S === state && S.world === W1 && moved[W1.at] && D.cells[W1.at]) worldSwitch(D.id, W1.at, null, false);
+}
+// where a dive from this square goes: the square under it, in the floor below, when this is open water; in the deep ocean, a
+// square to be made (make: made now) when there is none yet
+function diveBelow(W, key, make = false) {
+  const c = W && W.cells[key], T = c && c.kind === "sea" && W.below && W.below !== W.id ? worldById(W.below) : null;
+  if (!T) return null;
+  if (!T.cells[key] && T.ocean && make) deepCell(T, key);
+  return T.cells[key] ? { W: T, key, cell: T.cells[key] } : T.ocean ? { W: T, key, cell: { kind: "deepsea" }, made: false } : null;
+}
+// where swimming up from this deep-sea square goes: the square over it, in the world whose floor below this is, if it is water
+function surfaceAbove(W, key) {
+  const c = W && W.cells[key];
+  if (!c || c.kind !== "deepsea") return null;
+  const t = stairsAbove(W, key);
+  return t && DEEP_WATER.has(t.cell.kind) ? t : null;
+}
+const diveHere = () => { const W = state.world; return W && W.at && state.background.kind === (W.cells[W.at] || {}).kind ? diveBelow(W, W.at) || surfaceAbove(W, W.at) : null; };
+// (which: "down" from open water, "up" in the deep ocean, or null)
+const diveDir = () => !diveHere() ? null : diveBelow(state.world, state.world.at) ? "down" : "up";
+const DIVE_MS = 700;
+// (a dive's or a rise's motion: the friend's drawing in a wrapper, moved and turned by the Web Animations API, as a fall is)
+function diveMotion(frames, ms, easing, then) {
+  const fig = document.getElementById("figure");
+  if (!fig || !fig.animate) { then(); return; }
+  const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g");
+  fig.replaceWith(w); w.append(fig);
+  w.style.transformBox = "fill-box"; w.style.transformOrigin = "50% 50%";
+  const a = w.animate(frames, { duration: ms, easing, fill: "forwards" });
+  // (done: the motion taken off and the wrapper with it, before the next drawing, so a friend drawn again is never left in its
+  // last frame, gone; and done anyway a little after it should be, where the page runs no animations: out of sight)
+  let over = false;
+  const done = () => { if (over) return; over = true; a.cancel(); const f = w.firstChild; if (w.isConnected && f) w.replaceWith(f); then(); };
+  a.onfinish = done; setTimeout(done, ms + 400);
+}
+function diveGo(dir) {
+  const W = state.world, B = state.background, down = dir === "down";
+  const t = down ? diveBelow(W, W.at, true) : surfaceAbove(W, W.at);
+  if (!t || entering) return;
+  const fig = document.getElementById("figure"), h = (fig && fig.getBBox().height) || 300;
+  const from = { kind: B.kind, figX: B.figX ?? 0, figY: B.figY ?? 0, to: t.cell.kind, worldAt: W.at, worldId: W.id };
+  entering = true; padWant = "none"; state.body.anim = "none";
+  // (going: tipped head first and sinking out of sight, or rising up out of the top of the picture)
+  const out = down ? [{ transform: "translate(0px, 0px) rotate(0deg)", opacity: 1 }, { transform: `translate(0px, ${f1(0.5 * h)}px) rotate(170deg)`, opacity: 0 }]
+                   : [{ transform: "translate(0px, 0px)", opacity: 1 }, { transform: `translate(0px, ${f1(-1.5 * h)}px)`, opacity: 0.2 }];
+  diveMotion(out, DIVE_MS, "ease-in", () => {
+    trips.push(from);
+    worldSwitch(t.W.id, t.key, null, false);
+    const B2 = state.background, F = sceneFrame;
+    B2.figX = Math.round(clamp(from.figX, F.left + 40, F.right - 40));
+    changed();
+    // (arriving: sinking in from above the picture, righting as they come; or bobbing up from below to the surface)
+    const fig2 = document.getElementById("figure"), h2 = (fig2 && fig2.getBBox().height) || h;
+    const inn = down ? [{ transform: `translate(0px, ${f1(-1.6 * h2)}px) rotate(170deg)` }, { transform: "translate(0px, 0px) rotate(0deg)" }]
+                     : [{ transform: `translate(0px, ${f1(0.6 * h2)}px)`, opacity: 0.3 }, { transform: "translate(0px, 0px)", opacity: 1 }];
+    diveMotion(inn, DIVE_MS + 200, "ease-out", () => { entering = false; padWant = null; changed(); });
+  });
 }
 function worldTemplatesAll() {
   worldsInit();

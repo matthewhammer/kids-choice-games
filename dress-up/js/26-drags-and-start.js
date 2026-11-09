@@ -916,6 +916,7 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Enter" || e.repeat || (e.target.closest && e.target.closest("input, textarea, select, button, [contenteditable]"))) return;
   if (actionPress()) { e.preventDefault(); return; }
   if (enterAt) { e.preventDefault(); enterPicture(); }
+  else if (!entering && diveDir()) { e.preventDefault(); diveGo(diveDir()); }   // (ticket 724: nothing glowing, in open water or the deep ocean: dive, or swim up)
 });
 // (ticket 639) U: use the tool held (the 🥅 bug net: a swing; ticket 656: or a 🗡️ sword, which cuts plants)
 document.addEventListener("keydown", e => {
@@ -2199,6 +2200,7 @@ function potThrow() {
 function padDoor() {
   if (entering || state.background.kind === "none") return;
   if (actionPress()) return;   // (ticket 629: a pot in reach first)
+  if (!passesNear().length && diveDir()) { diveGo(diveDir()); return; }   // (ticket 724: no way near, in the water: dive, or swim up)
   const all = passesNear(Infinity);
   if (all.length) { enterAt = all[0].p; enterPicture(); }
 }

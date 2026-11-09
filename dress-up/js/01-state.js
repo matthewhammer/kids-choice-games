@@ -643,6 +643,8 @@ const DEFAULTS = {
   worldsAway: {}, worldTemplates: {},
   // (ticket 639) the 🗝️ dungeon world, made once a game (dungeonWorldEnsure): made or not, in an object so a save keeps it
   dungeon: { made: false },
+  // (ticket 724) 🪸 the deep ocean world, made once in every game: the start world's floor below, under its open water
+  deepOcean: { made: false },
   // (ticket 439) the person being dressed (their look is the parts below), and the other people, by id
   person: { id: "p1", name: "", template: false, from: null }, peopleAway: {},
   // (ticket 482) 📜 Scripting: the rules on or off, and each module's text (null: the shipped one, scriptsState)
@@ -1557,7 +1559,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.493", released: "2026-11-09" };
+const VERSION = { number: "0.0.494", released: "2026-11-09" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
