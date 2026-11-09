@@ -38,8 +38,11 @@ try {
     const fairy = { moon: !!bgShown.node.querySelector('path[fill="#f4eebc"]') };
     // the waterfall by the clock at 21:00 tonight: the moon behind its cliff, hidden; seen from the cave, through its mouth
     Object.assign(B, { kind: "waterfall", fallTime: "clock", skyMonth: 10, skyDay: 20, skyHour: 21 }); changed(); await w(400);
-    const wfMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length; B.kind = "cave"; changed(); await w(400);
-    const caveMoon = bgShown.node.querySelectorAll('path[fill="#f4eebc"]').length;
+    // (ticket 725: since 0.0.492 a sky by the clock always holds its moon, moved and shown or hidden as the clock runs
+    // (skyBodiesSvg, skyBodiesLive): behind the cliff it is there with display="none"; so the moons shown are counted)
+    const shownMoons = () => [...bgShown.node.querySelectorAll('path[fill="#f4eebc"]')].filter(p => !p.closest('[display="none"]')).length;
+    const wfMoon = shownMoons(); B.kind = "cave"; changed(); await w(400);
+    const caveMoon = shownMoons();
     // (the review after 0.0.385) Quito at noon today: the sun drawn (the picture faces the noon sun); no day "X h 60 min" all year;
     // the tent's windows follow the clock; the stars' settings show at night by the clock
     const sunAt = (o) => { const n = skyNow({ skyYear: 2026, skyHour: 12, ...o }); return !!skyXY(stageC(), n.sun, SCENE.ground - 100, SCENE.top + 10); };
