@@ -32,7 +32,8 @@ try {
       sameBox: !!row && boxOf(row) === boxOf(code) && boxOf(row) === boxOf(ver), afterCode: before(code, row), beforeVersion: before(row, ver) }); })()`));
   console.log(`  ${JSON.stringify(r)}`);
   ok("⚙️ Advanced has a See also row", r.row && /See also/.test(r.text), r);
-  ok("near the top: in 🏠 this game, the second box", /this game/.test(r.box || "") && r.boxes.indexOf(r.box) === 1, r);
+  // (ticket 727: 🌦️ days and weather went first in 0.0.496, ticket 726, Matthew: "Yes, move it up"; near the top is one of the first three)
+  ok("near the top: in 🏠 this game, among the first three boxes", /this game/.test(r.box || "") && r.boxes.indexOf(r.box) >= 0 && r.boxes.indexOf(r.box) <= 2, r);
   ok("after the links to the game's page and code, before the version", r.sameBox && r.afterCode && r.beforeVersion, r);
   ok("the paper's title and year, linked to arXiv", r.links.length >= 1 && /Languages of Play: Towards Semantic Foundations For Game Interfaces \(2017\)/.test(r.links[0][0]) && r.links[0][1] === "https://arxiv.org/abs/1703.05410", r.links);
   ok("its authors", /Chris Martens and Matthew A\. Hammer/.test(r.text), r.text);

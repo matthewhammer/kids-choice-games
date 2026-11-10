@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.497 (2026-11-10)
+
+Everything in 0.0.496, plus:
+
+- **🔬 the scripts' cost table in ⚙️ Advanced scrolls inside its own box**, in 🧪 tests and timing, instead of running past the edge of the panel (ticket 727). Its seven columns are wider than a box when the panel shows two columns of boxes; 0.0.496's new first box moved it into the right-hand column, where the after-release checks caught it.
+
 ## 0.0.496 (2026-11-10)
 
 Everything in 0.0.495, plus:
