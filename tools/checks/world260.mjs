@@ -32,11 +32,18 @@ try {
   const ab = JSON.parse(await ev(`JSON.stringify({ a: worldLiveWays(DEFAULTS.world, "0,3"), b: worldLiveWays(DEFAULTS.world, "1,4") })`));
   ok("A4 and B5 not joined (A4 no way SE, B5 no way NW)", !ab.a.includes("SE") && !ab.b.includes("NW"), ab);
   ok("a save whose world was changed: kept as it was", r.mineKept, r);
-  // a fresh friend walks his world: the clearing, and a square of deep sea drawn
-  const walk = JSON.parse(await ev(`(async () => { state = clone(DEFAULTS); state.music.mute = true; changed(); await new Promise(r => setTimeout(r, 500));
-    worldEnter(state.world.start); await new Promise(r => setTimeout(r, 500)); const a = state.background.kind;
-    worldEnter("0,0"); await new Promise(r => setTimeout(r, 600)); return JSON.stringify({ a, b: state.background.kind, things: (state.background.things || []).length }); })()`));
-  ok("a fresh friend starts in his clearing, and his deep sea (0,0) is drawn with what he put there", walk.a === "clearing" && walk.b === "deepsea" && walk.things > 0, walk);
+  // a fresh friend walks his world: the clearing, and a square of deep sea drawn (since 0.0.494, ticket 724: his deep sea
+  // is the deep ocean, a world below the open water, so his (0,0) is open water, and diving there finds what he put)
+  const walk = JSON.parse(await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms));
+    state = clone(DEFAULTS); state.music.mute = true; changed(); await w(500);
+    worldEnter(state.world.start); await w(500); const a = state.background.kind;
+    worldEnter("0,0"); await w(600); const b = state.background.kind, below = state.world.below && worldById(state.world.below);
+    diveGo("down"); await w(1500);
+    return JSON.stringify({ a, b, below: below && below.name, world: state.world.name, at: state.world.at, c: state.background.kind,
+      things: (state.background.things || []).length }); })()`));
+  ok("a fresh friend starts in his clearing, his (0,0) open water, and diving there his deep sea is drawn with what he put there",
+     walk.a === "clearing" && walk.b === "sea" && walk.below === "deep ocean" && walk.world === "deep ocean" && walk.at === "0,0"
+     && walk.c === "deepsea" && walk.things > 0, walk);
   ok("no page errors", !errs.length, errs);
 } catch (e) { console.log("stopped:", String(e).slice(0, 300)); bad++; }
 finally { await fetch(`http://127.0.0.1:${dport}/json/close/${page.id}`); }
