@@ -1312,16 +1312,14 @@ const diveDir = () => !diveHere() ? null : diveBelow(state.world, state.world.at
 const DIVE_MS = 700;
 // (a dive's or a rise's motion: the friend's drawing in a wrapper, moved and turned by the Web Animations API, as a fall is)
 function diveMotion(frames, ms, easing, then) {
-  const fig = document.getElementById("figure");
-  if (!fig || !fig.animate) { then(); return; }
-  const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g");
-  fig.replaceWith(w); w.append(fig);
+  const w = figureWrap();
+  if (!w || !w.animate) { then(); return; }
   w.style.transformBox = "fill-box"; w.style.transformOrigin = "50% 50%";
   const a = w.animate(frames, { duration: ms, easing, fill: "forwards" });
   // (done: the motion taken off and the wrapper with it, before the next drawing, so a friend drawn again is never left in its
   // last frame, gone; and done anyway a little after it should be, where the page runs no animations: out of sight)
   let over = false;
-  const done = () => { if (over) return; over = true; a.cancel(); const f = w.firstChild; if (w.isConnected && f) w.replaceWith(f); then(); };
+  const done = () => { if (over) return; over = true; a.cancel(); if (w.isConnected) w.replaceWith(...w.childNodes); then(); };
   a.onfinish = done; setTimeout(done, ms + 400);
 }
 function diveGo(dir) {

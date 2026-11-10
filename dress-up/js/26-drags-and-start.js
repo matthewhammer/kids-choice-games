@@ -2510,14 +2510,24 @@ function pitAt(x, z) {
   solidHit = { name: q.name, n: solidHit.n + 1, t: performance.now() };   // (the fall glows it and the friend's boxes)
   return q.el;
 }
+// (ticket 724, Matthew: "the ocean diving animation (especially back up?) leaves behind limbs sometimes") the whole friend in a
+// wrapper of its own, to be moved as one: #figure, and #figure-far after it when there is one (the far leg and the far arm,
+// see-through, drawn after the rest: ticket 136), so no limb stays behind; null when there is no friend drawn
+function figureWrap() {
+  const fig = document.getElementById("figure");
+  if (!fig) return null;
+  const far = document.getElementById("figure-far"), w = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  fig.before(w); w.append(fig);
+  if (far) w.append(far);
+  return w;
+}
 // (after a fall, in the place below: dropping in from above the picture, and landing on bent knees)
 let landFall = false;
 function fallLand() {
   landFall = false;
   const fig = document.getElementById("figure");
   if (!fig) return;
-  const NS = "http://www.w3.org/2000/svg", w = document.createElementNS(NS, "g"), h = fig.getBBox().height || 300;
-  fig.replaceWith(w); w.append(fig);
+  const h = fig.getBBox().height || 300, w = figureWrap();
   // (nothing drawn while they drop in, or the drawing would put them down at once: the controller waits,
   // as on a trip, and its wish is "none" already, so it asks for no drawing)
   entering = true; padWant = "none"; tripNext("dropping in");

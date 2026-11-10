@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.495 (2026-11-09)
+
+Everything in 0.0.494, plus:
+
+- **Fixed: diving and swimming up left a leg and an arm behind** (ticket 724, Matthew: "the ocean diving animation (especially back up?) leaves behind limbs sometimes"). Swimming sideways along the deep ocean's floor, the far leg and the far arm are drawn apart from the rest of you, see-through; the dive moved only the rest, so they stayed where you were while you rose. Now all of you dives and rises together. The same for falling into a pit: the far leg and arm drop in with you.
+
 ## 0.0.494 (2026-11-09)
 
 Everything in 0.0.493, plus:
