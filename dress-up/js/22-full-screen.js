@@ -148,7 +148,9 @@ function tabDesigner(panel, name) {
 }
 // (ticket 375) ⚙️ Advanced, one long row of seventeen parts till now, in boxes: 🌗 the look, 🏠 this game (its page, its code, See
 // also, its version), ✈️ without the Internet (ticket 486), 🎮 playing (a pop-up for new versions, the levers), 🧪 tests and timing, 🚀 effects kept off till fast (its long note a
-// hint on the box's name), 📰 what's new (last, as it was)
+// hint on the box's name), 📰 what's new (last, as it was). (ticket 726, Matthew could not find 🌦️ weather on M's tablet: "I dont see it
+// there", then "Yes, move it up") 🌦️ days and weather FIRST: 🌗 night and day, 🌦️ weather, 🌱 cut plants grow back, the game's own
+// settings a kid looks for, which fell into ⚙️ more at the bottom, under 📰 what's new, about 2,300 px down
 function advLayout(panel) {
   const root = panel.querySelector(":scope > .ctl"); if (!root) return;
   const kids = [...root.children], txt = c => (c.textContent || "").trim(), lbl = kids.find(c => c.classList.contains("lbl"));
@@ -157,6 +159,7 @@ function advLayout(panel) {
     return el("section", { class: "box tabbox advbox" }, [h, ...list]); };
   const note = kids.find(c => c.classList.contains("hint") && /^🚀/.test(txt(c)));
   const made = [
+    box("🌦️ days and weather", pick(c => !!c.querySelector(":scope > .row > .day-night-toggle, :scope > .row > .weather-toggle, :scope > .row > .regrow-toggle"))),   // (ticket 726)
     box("🌗 the look", pick(c => c.classList.contains("theme-row"))),
     box("🏠 this game", pick(c => c.classList.contains("row") && (/^(\u{1F3E0}|\u{1F4BB})/u.test(txt(c)) || !!c.querySelector("button.newer") || c.classList.contains("see-also") || c.classList.contains("licence")))),   // (the version's row by its button: its words come after; ticket 474's See also, near the top, between the code and the version; ticket 500's licence, under the code)
     box("✈️ without the Internet", pick(c => c.classList.contains("offline-help"))),   // (ticket 486: adding the game to a device, for airplane mode, near the top where a parent looks)

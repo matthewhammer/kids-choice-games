@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.496 (2026-11-10)
+
+Everything in 0.0.495, plus:
+
+- **🌗 night and day, 🌦️ weather and 🌱 cut plants grow back are now first in ⚙️ Advanced**, in a box of their own, **🌦️ days and weather** (ticket 726, Matthew: "where is weather control?", then "I dont see it there"). They were in the last box, ⚙️ more, at the very bottom of the tab, under 📰 what's new, where they were hard to find.
+
 ## 0.0.495 (2026-11-09)
 
 Everything in 0.0.494, plus:
