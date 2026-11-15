@@ -328,6 +328,7 @@ function bridgeKeep() {
   const B = state.background;
   if (B.onBridge && B.kind !== "treehouse") delete B.onBridge;
   if (B.onPlatform && (B.kind !== "treehouse" || !entering)) delete B.onPlatform;   // (ticket 269: only on the way in)
+  if (B.onStairs && !entering) delete B.onStairs;   // (ticket 742: only while climbing)
 }
 // (a [data-ladder] group, in the picture's own units, the friend's: through
 // the screen, as the scene may sit in a nested svg of its own; its depth is

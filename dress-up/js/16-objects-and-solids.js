@@ -788,7 +788,7 @@ let arriveSettle = false;
 let arriveSide = null;
 function arrowsClear(side, again = true) {
   const B = state.background, fig = document.getElementById("figure"), M = pic.getScreenCTM(), layer = document.getElementById("ways");
-  if (!fig || !M || !layer || entering || B.onBridge || B.onPlatform || state.body.sit || climb) return;
+  if (!fig || !M || !layer || entering || B.onBridge || B.onPlatform || B.onStairs || state.body.sit || climb) return;
   // (ticket 369, the speed run's arrows312: in the water the strokes swing the arms out and in, the friend's box 97 to 125 across
   // over a stroke; measured narrow, they stood a pad clear and an arm then covered the arrow: room for the stroke's swing there)
   const f = fig.getBoundingClientRect(), mv = moveNow(), pad = 6 + (mv && mv.water ? 0.15 * f.width : 0), meets = (t, px) => t.left - pad < f.right + px && f.left + px < t.right + pad && t.top < f.bottom && f.top < t.bottom;

@@ -488,7 +488,7 @@ function drawNow() {
   figureT = figOver && scened ? { k: figOver.k, dx: figOver.x, dy: figOver.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           : onBr ? { k: figScale(BG) * BRIDGE_TALL * (onBr.W ? onBr.W.s * bridgeScale(onBr.W, onBr.u) : onBr.s * onBr.sc) / BRIDGE_BASE, dx: onBr.x, dy: onBr.y - SCENE.ground, g: gFig, sg: SCENE.ground }
           // (ticket 270: up the spiral staircase, their size the floor's straight below their step, not the screen's height)
-          : scened ? { k: figScale(BG) * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? (sizeSeat.kz ?? sizeSeat.z) - SCENE.ground : (BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
+          : scened ? { k: figScale(BG) * sceneFig(BG.kind) * depthSize(BG, sizeSeat ? (sizeSeat.kz ?? sizeSeat.z) - SCENE.ground : (BG.onStairs ? BG.onStairs.sizeY : BG.kind === "castleroom" && castleWallsOf(BG).stairs ? spiralFloorY(BG.figX ?? 0, BG.figY ?? 0) : null) ?? BG.figY ?? 0), dx: BG.figX ?? 0, dy: BG.figY ?? 0, g: gFig, sg: SCENE.ground }
                    : { k: 1, dx: 0, dy: 0, g: gFig === gStand ? ground : gFig + ground - gStand, sg: ground };
   figureT.base = Math.max(1, ground - neckTop + 90);   // (ticket 331: their height standing, in their own units, that a size in the picture's divides)
   sceneFrame = { left, top, right: -left, bottom, ground: figureT.sg, back: scened && SCENE_BACK[BG.kind] ? SCENE_BACK[BG.kind](top, bottom) : -Infinity };
@@ -1378,7 +1378,7 @@ function drawNow() {
   // (ticket 184: arrived inside something, out of it, once the place is on the screen to measure)
   // (not on a bridge or a platform, sitting or climbing: those stand where they stand)
   if (arriveSettle && scened) { arriveSettle = false;
-    if (!state.body.sit && !BG.onBridge && !BG.onPlatform && !climb) { const was = BG.figX; solidUnstick(400); if (BG.figX !== was) setTimeout(changed, 0); }
+    if (!state.body.sit && !BG.onBridge && !BG.onPlatform && !BG.onStairs && !climb) { const was = BG.figX; solidUnstick(400); if (BG.figX !== was) setTimeout(changed, 0); }
     if (arriveSide) { const sd = arriveSide; arriveSide = null; setTimeout(() => arrowsClear(sd), 0); } }   // (ticket 312: off the nav arrows, once drawn)
   // the friend, among the scene's objects by depth (ticket 99): just before
   // the first standing nearer than their feet, or in front of everything

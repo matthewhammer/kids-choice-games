@@ -1631,7 +1631,7 @@ const SCENE_LFO_THINGS = {
   kitchen: { fast: "🍲 the pot's lid rattling", slow: "♨️ the steam rising" },
   stairhall: { fast: "🕰️ the grandfather clock's pendulum", slow: "💡 the wall lamp's glow" },   // (ticket 741)
   bedroom: { slow: "⭐ the star mobile turning, 💡 the lamp's glow" },
-  laundry: { fast: "🌀 the washer's clothes sloshing", slow: "🧦 the socks on the line swaying" },   // (ticket 742)
+  laundry: { fast: "🌀 the washer's drum turning", slow: "🧦 the socks on the line swaying" },   // (ticket 742)
   furnace: { fast: "🔥 the furnace's flames", slow: "🟠 the furnace's glow, 💡 the bulb swaying" },
   treeroom: { fast: "🍃 the leaves outside the window", slow: "🌳 the limbs outside the window swaying" },
   treetop: { fast: "🍃 the leaves outside the windows, 🐿️ the squirrel peeking", slow: "🌳 the limbs outside the windows swaying, 🏮 the lanterns' glow, ☀️ the light through the thatch" },   // (ticket 516)

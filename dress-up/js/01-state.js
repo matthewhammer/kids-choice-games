@@ -22,7 +22,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, diningroom: 0.7, kitchen: 0.7, stairhall: 0.7, bedroom: 0.7, laundry: 0.7, furnace: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, diningroom: 0.7, kitchen: 0.7, stairhall: 0.55, bedroom: 0.55, laundry: 0.55, furnace: 0.55, /* (ticket 742: under 0.9 of their doors) */ witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, garden: 0.45, spring: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
@@ -1559,7 +1559,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.500", released: "2026-11-15" };
+const VERSION = { number: "0.0.501", released: "2026-11-15" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

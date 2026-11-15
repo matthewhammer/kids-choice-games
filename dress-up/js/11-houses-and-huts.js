@@ -371,13 +371,15 @@ const houseBeside = (kind, sd) => { const R = HOUSE_ROWS.find(r => r.includes(ki
 function houseDoorwaySvg(c, sd, beyond) {
   const { x0, x1, g, k, P } = c, floor = g - 120 * k, w = 96 * k, h = 236 * k, xa = sd < 0 ? x0 + 16 * k : x1 - 16 * k - w, top = floor - h;
   const L = HOUSE_ROOM_LOOK[beyond] || HOUSE_ROOM_LOOK.livingroom, fy = floor - 26 * k;
-  return `<rect x="${f1(xa - 9 * k)}" y="${f1(top - 9 * k)}" width="${f1(w + 18 * k)}" height="${f1(h + 9 * k)}" fill="#ffffff" stroke="#cdbfa6" stroke-width="${f1(1.5 * k)}"/>` +
+  // (Matthew, 2026-11-15: "door on left in stair background has no click/hover over"; "basement laundry room also has an
+  // inactive door") a way through, tapped as its side's arrow is: walked out that side, into the room beyond
+  return `<g class="portal" data-door="1" data-way="${sd < 0 ? "W" : "E"}" data-to="${beyond}">` + `<rect x="${f1(xa - 9 * k)}" y="${f1(top - 9 * k)}" width="${f1(w + 18 * k)}" height="${f1(h + 9 * k)}" fill="#ffffff" stroke="#cdbfa6" stroke-width="${f1(1.5 * k)}"/>` +
     `<rect x="${f1(xa)}" y="${f1(top)}" width="${f1(w)}" height="${f1(h)}" fill="${L.wall}"/>` +
     `<rect x="${f1(xa)}" y="${f1(top)}" width="${f1(w)}" height="${f1(h)}" fill="#000000" opacity="0.18"/>` +
     `<path d="M${P(xa, fy)} H${f1(xa + w)} V${f1(floor)} H${f1(xa)} Z" fill="${L.floor}"/>` +
     `<rect x="${f1(xa)}" y="${f1(fy - 8 * k)}" width="${f1(w)}" height="${f1(8 * k)}" fill="#ffffff" opacity="0.8"/>` +
     // (the doorway's own side, the wall's thickness, on the side toward the room)
-    `<path d="M${P(sd < 0 ? xa + w : xa, top)} l${f1(-sd * 12 * k)} ${f1(8 * k)} V${f1(floor)} l${f1(sd * 12 * k)} 0 Z" fill="#e9e1d2"/>`;
+    `<path d="M${P(sd < 0 ? xa + w : xa, top)} l${f1(-sd * 12 * k)} ${f1(8 * k)} V${f1(floor)} l${f1(sd * 12 * k)} 0 Z" fill="#e9e1d2"/></g>`;
 }
 // the floor and its baseboard, as the living room's: boards spreading toward us (tiles: a grid)
 function houseFloorSvg(c, col, line, tiles = false) {
@@ -568,7 +570,10 @@ function kitchenScene(c) {
 // 🪜 stair hall, east of the living room in the ground floor's row: its stairs rise to the right to a landing, the
 // bedroom's door on it, and tapping the stairs or the door goes up; under the landing, the basement's door (opened by
 // ticket 742, with its rooms). Upstairs, the 🛏️ bedroom, its door back down to the hall.
-const HALL_STAIRS = { n: 11, run: 30, rise: 26, foot: -150 };   // its steps: how many, each one's depth and height, the foot's x (k units)
+// (Matthew, 2026-11-15: "please make a way for 13 steps to be the number of steps, consistently. That's standard in the US")
+// Every staircase in the house has HOUSE_STEPS steps, up to a landing HOUSE_RISE high (k units), each step its share of it
+const HOUSE_STEPS = 13, HOUSE_RISE = 273;
+const HALL_STAIRS = { n: HOUSE_STEPS, run: 30, rise: HOUSE_RISE / HOUSE_STEPS, foot: -150 };   // its steps: how many, each one's depth and height, the foot's x (k units)
 const hallTop = k => HALL_STAIRS.foot * k + HALL_STAIRS.n * HALL_STAIRS.run * k;   // the stairs' top, where the landing begins
 // a sign over a door, white with dark words, as a house's
 // (as wide as its words: about 10.5 units a letter, an emoji two)
@@ -592,29 +597,35 @@ function stairhallScene(c) {
     t += wallObj("doorway to the living room", houseDoorwaySvg(c, -1, "livingroom"));
     // under the landing, the wall down to the floor, and the basement's door in it (closed: ticket 742 opens it)
     t += wallObj("basement door", `<rect x="${f1(tx)}" y="${f1(top)}" width="${f1(x1 + pad - tx)}" height="${f1(floor - top)}" fill="#ece5d6"/>` +
-      `<g class="portal" data-to="laundry">` + houseDoorSvg(c, 250 * k, floor, 86 * k, 190 * k, "#e9dfc9") + houseSign(293 * k, floor - 218 * k, k, "⬇️ basement") + `</g>`);   // (ticket 742)
+      `<g class="portal" data-to="laundry" data-descend="1">` + houseDoorSvg(c, 300 * k, floor, 96 * k, 200 * k, "#e9dfc9") + houseSign(348 * k, floor - 230 * k, k, "⬇️ basement") + `</g>`);   // (ticket 742)
     // a lamp on the wall by the stairs' foot, its glow with the slow LFO
     { const lx = -40 * k, ly = y0 + H * 0.3;
       t += wallObj("wall lamp", `<g pointer-events="none"><circle cx="${f1(lx)}" cy="${f1(ly)}" r="${f1(44 * k)}" fill="#ffe7a0" opacity="0.3">` + sceneLfo(o, "slow", 0.2, "opacity", (v, amp) => (0.3 * (1 + (0.3 + 0.6 * amp) * v)).toFixed(3)) + `</circle>` +
         `<rect x="${f1(lx - 5 * k)}" y="${f1(ly + 10 * k)}" width="${f1(10 * k)}" height="${f1(26 * k)}" fill="#8a6d12"/><path d="M${P(lx - 22 * k, ly + 12 * k)} L${P(lx - 13 * k, ly - 18 * k)} H${f1(lx + 13 * k)} L${P(lx + 22 * k, ly + 12 * k)} Z" fill="#fff1c4" stroke="#c9a227" stroke-width="${f1(1.5 * k)}"/></g>`); }
-    // the stairs, the landing, its railing and the bedroom's door on it: one way up, tapped anywhere on them
+    // the stairs up, the landing and the bedroom's door on it. Tapped, the friend climbs (houseStairsClimb), along the
+    // landing to the door, and in. The stairs, and the door with its sign, are each a way up, tapped only where they are
+    // (Matthew, 2026-11-15: "the click box for 'upstairs' is too big, and covers the door next to the stairs, on the ground
+    // floor"); the landing, its edge and railing between them, is neither
+    const rail = 74 * k;
+    let landing = `<rect x="${f1(tx)}" y="${f1(top)}" width="${f1(x1 + pad - tx)}" height="${f1(22 * k)}" fill="#9c6b3c" stroke="#6b4423" stroke-width="${f1(1.5 * k)}"/>`;
+    for (let x = tx + 22 * k; x < 284 * k; x += 26 * k) landing += `<rect x="${f1(x - 2.5 * k)}" y="${f1(top - rail)}" width="${f1(5 * k)}" height="${f1(rail)}" fill="#ffffff" stroke="#bfb39c" stroke-width="${f1(0.8 * k)}"/>`;
+    landing += `<path d="M${P(tx, top - rail)} H${f1(284 * k)}" fill="none" stroke="#6b3f1e" stroke-width="${f1(8 * k)}" stroke-linecap="round"/>`;
+    t += wallObj("landing", `<g pointer-events="none">` + landing + `</g>`);
     let up = `<path d="M${P(fx, floor)}`;
     for (let i = 0; i < S.n; i++) up += ` V${f1(floor - (i + 1) * rise)} H${f1(fx + (i + 1) * run)}`;
-    up += ` H${f1(x1 + pad)} V${f1(top + 22 * k)} H${f1(tx)} L${P(fx + 26 * k, floor)} Z" fill="#9c6b3c" stroke="#6b4423" stroke-width="${f1(1.5 * k)}"/>`;
+    up += ` L${P(tx, top + 22 * k)} L${P(fx + 26 * k, floor)} Z" fill="#9c6b3c" stroke="#6b4423" stroke-width="${f1(1.5 * k)}"/>`;
     for (let i = 0; i < S.n; i++) up += `<rect x="${f1(fx + i * run)}" y="${f1(floor - (i + 1) * rise)}" width="${f1(run)}" height="${f1(5 * k)}" fill="#c08a52"/>` +
       `<rect x="${f1(fx + i * run)}" y="${f1(floor - (i + 1) * rise + 5 * k)}" width="${f1(4 * k)}" height="${f1(rise - 5 * k)}" fill="#f4eee0"/>`;
     up += `<path d="M${P(fx + 26 * k, floor)} L${P(tx, top + 22 * k)}" stroke="#6b4423" stroke-width="${f1(10 * k)}"/>`;
-    // the bedroom's door on the landing, its sign
-    up += houseDoorSvg(c, 312 * k, top, 84 * k, 168 * k) + houseSign(222 * k, top - 128 * k, k, "🛏️ upstairs");   // (the sign beside the door, under the picture's top)
-    // the banister: a post at the foot, one on each step, the rail along them, and along the landing's edge
-    const rail = 74 * k;
+    // the banister: a post on each step, the rail along them, the posts at the foot and the top
     for (let i = 0; i < S.n; i++) { const bx = fx + (i + 0.5) * run, by = floor - (i + 1) * rise;
       up += `<rect x="${f1(bx - 2.5 * k)}" y="${f1(by - rail + (0.5 * rise))}" width="${f1(5 * k)}" height="${f1(rail - 0.5 * rise)}" fill="#ffffff" stroke="#bfb39c" stroke-width="${f1(0.8 * k)}"/>`; }
-    for (let x = tx + 22 * k; x < 290 * k; x += 26 * k) up += `<rect x="${f1(x - 2.5 * k)}" y="${f1(top - rail)}" width="${f1(5 * k)}" height="${f1(rail)}" fill="#ffffff" stroke="#bfb39c" stroke-width="${f1(0.8 * k)}"/>`;
-    up += `<path d="M${P(fx - 4 * k, floor - rail - 18 * k)} L${P(tx, top - rail)} H${f1(290 * k)}" fill="none" stroke="#6b3f1e" stroke-width="${f1(8 * k)}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    up += `<path d="M${P(fx - 4 * k, floor - rail - 18 * k)} L${P(tx, top - rail)}" fill="none" stroke="#6b3f1e" stroke-width="${f1(8 * k)}" stroke-linecap="round"/>` +
           `<rect x="${f1(fx - 12 * k)}" y="${f1(floor - rail - 22 * k)}" width="${f1(16 * k)}" height="${f1(rail + 22 * k)}" fill="#6b3f1e"/><circle cx="${f1(fx - 4 * k)}" cy="${f1(floor - rail - 26 * k)}" r="${f1(9 * k)}" fill="#6b3f1e"/>` +
           `<rect x="${f1(tx - 6 * k)}" y="${f1(top - rail - 6 * k)}" width="${f1(12 * k)}" height="${f1(rail + 6 * k)}" fill="#6b3f1e"/>`;
-    t += wallObj("stairs up", `<g class="portal" data-to="bedroom">` + up + `</g>`);
+    t += wallObj("stairs up", `<g class="portal" data-to="bedroom" data-climb="up">` + up + `</g>`);
+    t += wallObj("door upstairs", `<g class="portal" data-to="bedroom" data-climb="up">` + houseDoorSvg(c, 300 * k, top, 96 * k, 200 * k) +
+      houseSign(160 * k, top - 130 * k, k, "🛏️ upstairs") + `</g>`);   // (the sign beside the door, under the picture's top)
     // a grandfather clock between the coats and the stairs, its pendulum with the quick LFO
     const gx = -235 * k, gb = floor + 10 * k, gt = gb - 236 * k;
     const clock = `<rect x="${f1(gx - 28 * k)}" y="${f1(gt)}" width="${f1(56 * k)}" height="${f1(gb - gt)}" rx="${f1(6 * k)}" fill="#6b3f1e" stroke="#3e220c" stroke-width="${f1(1.5 * k)}"/>` +
@@ -661,7 +672,7 @@ function bedroomScene(c) {
             `<circle cx="${f1(33 * k)}" cy="${f1(32 * k)}" r="${f1(2.5 * k)}" fill="#d2bfe8"/></pattern></defs>` + all("url(#bg-bedroom-paper)");
     t += houseFloorSvg(c, "#a7b6d4", null) + floorObj("rug", rugSvg(c, rugColorsOf("rose")));
     // the door back down to the hall, its sign
-    t += wallObj("door downstairs", `<g class="portal" data-to="stairhall">` + houseDoorSvg(c, x0 + 26 * k, floor, 90 * k, 200 * k) + houseSign(x0 + 96 * k, floor - 232 * k, k, "🪜 downstairs") + `</g>`);
+    t += wallObj("door downstairs", `<g class="portal" data-to="stairhall" data-descend="1">` + houseDoorSvg(c, x0 + 26 * k, floor, 96 * k, 236 * k) + houseSign(x0 + 96 * k, floor - 268 * k, k, "🪜 downstairs") + `</g>`);
     // the window, and its curtains
     t += wallObj("window", `<g pointer-events="none">` + houseWindowSvg(c, "bg-bedroom-sky", -260 * k, y0 + H * 0.1, -110 * k, y0 + H * 0.38) +
       [-1, 1].map(sd => { const ex = sd < 0 ? -278 * k : -92 * k, ix = sd < 0 ? -252 * k : -118 * k;
@@ -706,7 +717,7 @@ function concreteFloorSvg(c, col) {
     `<rect x="${f1(x0 - pad)}" y="${f1(floor - 10 * k)}" width="${f1(W + 2 * pad)}" height="${f1(12 * k)}" fill="#7d858c"/>`;
 }
 // the basement stairway, coming down along the wall from the stair hall's door, top left, to the floor (mirrored from the hall's)
-const CELLAR_STAIRS = { n: 10, run: 30, rise: 28, top: -400 };
+const CELLAR_STAIRS = { n: HOUSE_STEPS, run: 26, rise: HOUSE_RISE / HOUSE_STEPS, top: -340 };   // (a basement's: steeper, its landing room for its door)
 function laundryScene(c) {
   const { x0, y0, x1, g, W, H, k, P, o, pad } = c, floor = g - 120 * k, S = CELLAR_STAIRS;
   const sx = S.top * k, run = S.run * k, rise = S.rise * k, high = floor - S.n * rise, foot = sx + S.n * run;
@@ -718,10 +729,10 @@ function laundryScene(c) {
       t += wallObj("window", `<g pointer-events="none"><rect x="${f1(wx0)}" y="${f1(wy0)}" width="${f1(wx1 - wx0)}" height="${f1(wy1 - wy0)}" fill="#a9daf5"/>` +
         [...Array(14)].map((_, i) => { const gx = wx0 + (i + 0.5) * (wx1 - wx0) / 14; return `<path d="M${P(gx - 5 * k, wy1)} L${P(gx, wy1 - (10 + 8 * ((i * 7) % 3)) * k)} L${P(gx + 5 * k, wy1)} Z" fill="#5cb85c"/>`; }).join("") +
         `<rect x="${f1(wx0)}" y="${f1(wy0)}" width="${f1(wx1 - wx0)}" height="${f1(wy1 - wy0)}" fill="none" stroke="#ffffff" stroke-width="${f1(8 * k)}"/><path d="M${P((wx0 + wx1) / 2, wy0)} V${f1(wy1)}" stroke="#ffffff" stroke-width="${f1(5 * k)}"/></g>`); }
-    // the stairway down from the hall: its door at the top, the landing, the steps; tapped, back up to the hall
-    let up = `<rect x="${f1(x0 - pad)}" y="${f1(high)}" width="${f1(sx - x0 + pad)}" height="${f1(20 * k)}" fill="#8a6d4a" stroke="#5e4a30" stroke-width="${f1(1.5 * k)}"/>` +
-      houseDoorSvg(c, x0 + 24 * k, high, 84 * k, 160 * k, "#e9dfc9") + houseSign(x0 + 196 * k, high - 112 * k, k, "🪜 upstairs");   // (beside the door, under the picture's top)
-    up += `<path d="M${P(sx, high)}`;
+    // the stairway down from the hall: the landing, its door at the top, the steps. The steps, and the door with its sign,
+    // are each a way back up, tapped, climbed (houseStairsClimb, as the hall's); the landing is neither
+    t += wallObj("landing", `<g pointer-events="none"><rect x="${f1(x0 - pad)}" y="${f1(high)}" width="${f1(sx - x0 + pad)}" height="${f1(20 * k)}" fill="#8a6d4a" stroke="#5e4a30" stroke-width="${f1(1.5 * k)}"/></g>`);
+    let up = `<path d="M${P(sx, high)}`;
     for (let i = 0; i < S.n; i++) up += ` H${f1(sx + (i + 1) * run)} V${f1(high + (i + 1) * rise)}`;
     up += ` L${P(foot - 26 * k, floor)} L${P(sx, high + 22 * k)} Z" fill="#9c7a52" stroke="#5e4a30" stroke-width="${f1(1.5 * k)}"/>`;
     for (let i = 0; i < S.n; i++) up += `<rect x="${f1(sx + i * run)}" y="${f1(high + i * rise)}" width="${f1(run)}" height="${f1(5 * k)}" fill="#c4a378"/>`;
@@ -729,7 +740,9 @@ function laundryScene(c) {
     const rail = 74 * k;
     for (let i = 0; i < S.n; i += 2) up += `<rect x="${f1(sx + (i + 0.5) * run - 2.5 * k)}" y="${f1(high + i * rise - rail + 4 * k)}" width="${f1(5 * k)}" height="${f1(rail)}" fill="#7a5a36"/>`;
     up += `<path d="M${P(sx, high - rail)} L${P(foot, floor - rail)}" stroke="#5e4a30" stroke-width="${f1(7 * k)}" stroke-linecap="round"/>`;
-    t += wallObj("stairs up", `<g class="portal" data-to="stairhall">` + up + `</g>`);
+    t += wallObj("stairs up", `<g class="portal" data-to="stairhall" data-climb="up">` + up + `</g>`);
+    t += wallObj("door upstairs", `<g class="portal" data-to="stairhall" data-climb="up">` + houseDoorSvg(c, x0 + 24 * k, high, 96 * k, 200 * k, "#e9dfc9") +
+      houseSign(x0 + 208 * k, high - 150 * k, k, "🪜 upstairs") + `</g>`);   // (beside the door, under the picture's top)
     // the clothesline across the wall, socks and a shirt on it, swaying with the slow LFO
     const ly = y0 + H * 0.2, lx0 = -60 * k, lx1 = 330 * k;
     t += wallObj("clothesline", `<g pointer-events="none"><path d="M${P(lx0, ly)} Q${P((lx0 + lx1) / 2, ly + 14 * k)} ${P(lx1, ly)}" fill="none" stroke="#6b6b6b" stroke-width="${f1(2 * k)}"/>` +
@@ -760,9 +773,15 @@ function laundryScene(c) {
       `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r + 6 * k)}" fill="#cfd5db" stroke="#9aa3ab" stroke-width="${f1(1.5 * k)}"/>` +
       `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r)}" fill="${i ? "#3d4a57" : "#9fd3ef"}"/>` +
       (i ? `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r * 0.55)}" fill="none" stroke="#56636f" stroke-width="${f1(2 * k)}"/>`
-         : `<g>${sceneLfo(o, "fast", 0, "transform", (v, amp) => `${f1((30 + 60 * amp) * v)} ${f1(cx)} ${f1(cy)}`,
-             `<animateTransform attributeName="transform" type="rotate" values="0 ${f1(cx)} ${f1(cy)};360 ${f1(cx)} ${f1(cy)}" dur="3s" repeatCount="indefinite"/>`)}` +
-           [["#e85d75", -12, 10], ["#f2c12e", 12, 6], ["#ffffff", 0, -14], ["#8bc34a", -14, -6]].map(([col, dx, dy]) => `<ellipse cx="${f1(cx + dx * k)}" cy="${f1(cy + dy * k)}" rx="${f1(12 * k)}" ry="${f1(7 * k)}" fill="${col}"/>`).join("") + `</g>`) +
+         // (Matthew, 2026-11-15: "washing machine animation should rotate 360 degrees, with tumbling of things inside, not go
+         // 'back and forth' like a rocking motion") the drum turning round and round, once a beat of the quick LFO, and
+         // each thing in it turning on its own as it goes, so they tumble
+         // (half a turn a beat, each beat going on from the last: about once round a second, as a washer tumbles; about its
+         // middle, the origin of its own group, so the turns add up without moving it)
+         : `<g transform="translate(${f1(cx)} ${f1(cy)})"><g>${lfoTimed(o, "fast", 0, `<animateTransform attributeName="transform" type="rotate" values="0;180" dur="0.8s" accumulate="sum" repeatCount="indefinite"/>`)}` +
+           [["#e85d75", -12, 10, 0.9], ["#f2c12e", 12, 6, 1.3], ["#ffffff", 0, -14, 0.7], ["#8bc34a", -14, -6, 1.1]].map(([col, dx, dy, dur]) => { const ix = dx * k, iy = dy * k;
+             return `<g><animateTransform attributeName="transform" type="rotate" values="0 ${f1(ix)} ${f1(iy)};-360 ${f1(ix)} ${f1(iy)}" dur="${dur}s" repeatCount="indefinite"/>` +
+               `<ellipse cx="${f1(ix)}" cy="${f1(iy)}" rx="${f1(12 * k)}" ry="${f1(7 * k)}" fill="${col}"/><circle cx="${f1(ix + 7 * k)}" cy="${f1(iy - 3 * k)}" r="${f1(3 * k)}" fill="#ffffff" opacity="0.6"/></g>`; }).join("") + `</g></g>`) +
       `<path d="M${P(cx - r * 0.5, cy - r * 0.6)} Q${P(cx - r * 0.1, cy - r * 0.85)} ${P(cx + r * 0.3, cy - r * 0.75)}" fill="none" stroke="#ffffff" stroke-width="${f1(3 * k)}" opacity="0.7"/>`; }).join(""));
   return SEP + room + SEP + things + SEP + obj("washer and dryer", mb, machines);
 }

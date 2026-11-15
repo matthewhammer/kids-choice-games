@@ -4,6 +4,16 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.501 (2026-11-15)
+
+Everything in 0.0.500, plus, from Matthew and M's first tries of the new rooms:
+
+- **🪜 Climbing the stairs.** Tap the stairs, or the door at their top, and the friend walks to the foot of the stairs, turns sideways and climbs them a step at a time, walks along the landing to the door, and goes in. Going down is the same the other way: through the hall's ⬇️ basement door, the friend comes out of the laundry room's door at the top of its stairs and walks down them; from the 🛏️ bedroom's door, out at the top of the hall's stairs and down.
+- **Every staircase has 13 steps**, as in American houses, up to a landing a little lower than before, so the doors on and under it are taller than the friend. In the stair hall, the bedroom and the basement, the friend is a little smaller, so every door there fits them.
+- **The washer's drum turns all the way round**, about once a second, its clothes tumbling inside it, instead of rocking back and forth.
+- **The doorways between rooms are tappable**, with the glow when you point at one: the open doorways at the sides of the dining room, the kitchen, the stair hall, the laundry room and the furnace room take you through, as the ⬅️ ➡️ arrows do.
+- **Fixed:** the stairs' tap area covered the basement door under the landing. Now the stairs, the door at their top and the basement door are each tapped only where they are.
+
 ## 0.0.500 (2026-11-15)
 
 Everything in 0.0.499, plus:

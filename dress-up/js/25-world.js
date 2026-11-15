@@ -343,12 +343,137 @@ function insideWays(B) {
 }
 // (ticket 740) into a room of the house's row from the one beside it: at the side it came in by, a step in from its doorway
 // (ticket 742: in either of its rows; and back up from the basement, by the hall's basement door)
-const HOUSE_DOOR_ARRIVE = { "laundry>stairhall": [230, 60] };
+const HOUSE_DOOR_ARRIVE = { "laundry>stairhall": [300, 60] };
 function houseArriveSide(from, to, B) {
   const R = HOUSE_ROWS.find(r => r.includes(from) && r.includes(to));
   if (R) { const a = R.indexOf(from), b = R.indexOf(to); if (Math.abs(a - b) === 1) { B.figX = Math.sign(a - b) * 300; B.figY = 50; } return; }
   const at = HOUSE_DOOR_ARRIVE[from + ">" + to];
   if (at) { B.figX = at[0]; B.figY = at[1]; }
+}
+// (ticket 742, Matthew 2026-11-15: "for the stairway --- when we click 'upstairs', we need an animation of climbing stairs
+// sideways, not what is animated now (walking off to right, no stair climb)") Up a house's stairs: walked to their foot,
+// then turned sideways, the way they rise, and up them a step at a time, each a lift onto the next tread early in it,
+// the body following over; their size the wall's foot's all the way up (B.onStairs.sizeY, as up the castle's spiral
+// stair: ticket 270); along the landing to the door, and through it, seen only inside its opening (figClipRect), into
+// the room above, fading in there. The steps are the room's own (HALL_STAIRS, CELLAR_STAIRS), in the stage's units.
+function houseStairsPath(kind) {
+  const k = (SCENE.bottom - SCENE.top) / 700, floor = SCENE.ground - 120 * k;
+  if (kind === "stairhall") {
+    const S = HALL_STAIRS, fx = S.foot * k, run = S.run * k, rise = S.rise * k, top = floor - S.n * rise, dx = 300 * k, dw = 96 * k;
+    return { to: "bedroom", face: "right", foot: fx - 30 * k,
+      pts: [...Array(S.n)].map((_, i) => [fx + (i + 0.5) * run, floor - (i + 1) * rise]).concat([[dx + dw / 2, top]]),
+      door: { x0: dx + 4 * k, x1: dx + dw - 4 * k, y0: top - 200 * k, y1: top } };
+  }
+  if (kind === "laundry") {
+    const S = CELLAR_STAIRS, sx = S.top * k, run = S.run * k, rise = S.rise * k, high = floor - S.n * rise, ft = sx + S.n * run, dx = SCENE.left + 24 * k, dw = 96 * k;
+    return { to: "stairhall", face: "left", foot: ft + 30 * k,
+      pts: [...Array(S.n)].map((_, i) => { const j = S.n - 1 - i; return [sx + (j + 0.5) * run, high + j * rise]; }).concat([[dx + dw / 2, high]]),
+      door: { x0: dx + 4 * k, x1: dx + dw - 4 * k, y0: high - 200 * k, y1: high } };
+  }
+  return null;
+}
+const STAIR_STEP_MS = 280, STAIR_LANDING_SPEED = 110, STAIR_DOOR_MS = 700;   // (a step's time; along the landing, units a second; through the door)
+function houseStairsClimb(door) {
+  const B = state.background, P = houseStairsPath(B.kind);
+  if (!P || !SCENES[P.to]) return false;
+  tripStart(door, "walk");
+  walkTo(P.foot, (SCENE_BACK[B.kind] ? SCENE_BACK[B.kind]() : SCENE.ground) + 2, () => houseStairsUp(P), true);
+  return true;
+}
+function houseStairsUp(P) {
+  const B = state.background, body = state.body, g = SCENE.ground, stop = walkStop;
+  const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to: P.to };
+  climb = null; entering = true;
+  B.onStairs = { sizeY: B.figY ?? 0 };
+  body.facing = P.face; body.turn = ""; body.anim = "walk";
+  const pts = [[B.figX ?? 0, g + (B.figY ?? 0)], ...P.pts], last = pts.length - 2;
+  const legs = pts.slice(1).map((q, i) => i < last ? STAIR_STEP_MS : 1000 * Math.max(8, Math.abs(q[0] - pts[i][0])) / STAIR_LANDING_SPEED);
+  let leg = 0, t0 = 0, phase = "up";
+  const quit = () => { delete B.onStairs; figClipRect = null; };
+  const step = t => {
+    if (walkStop !== stop || !B.onStairs) { quit(); return; }   // (stopped: a new walk, or a new place, in its place)
+    if (!t0) t0 = t;
+    if (phase === "up") {
+      let u = (t - t0) / legs[leg];
+      while (u >= 1 && leg < last) { t0 += legs[leg]; leg++; u = (t - t0) / legs[leg]; }
+      u = Math.min(1, u);
+      const [ax, ay] = pts[leg], [bx, by] = pts[leg + 1], lift = Math.min(1, u * 1.8), e = leg < last ? lift * lift * (3 - 2 * lift) : u;
+      B.figX = +(ax + (bx - ax) * u).toFixed(1); B.figY = +(ay + (by - ay) * e - g).toFixed(1);
+      if (u >= 1 && leg === last) { phase = "in"; t0 = t; body.facing = "back"; }
+    } else {
+      const u = Math.min(1, (t - t0) / STAIR_DOOR_MS), D = P.door;
+      figClipRect = { x0: D.x0, x1: D.x1, y0: D.y0, y1: D.y1 };
+      B.figY = +(D.y1 - g - 10 * u).toFixed(1);
+      if (u >= 1) {
+        quit(); entering = false;
+        trips.push(from);
+        const [fx, fy] = ARRIVE[P.to] || [0, 0];
+        Object.assign(B, { kind: P.to, figX: fx, figY: fy }); body.anim = "none"; body.facing = "front";
+        houseArriveSide(from.kind, P.to, B);
+        changed();
+        const fade = q => { for (const n of figShown) if (n.style) n.style.opacity = q; };
+        const t1 = performance.now(), f = tt => { const v = Math.min(1, (tt - t1) / WALK_IN_MS); if (!entering) fade(v < 1 ? v.toFixed(2) : ""); if (v < 1 && !entering) requestAnimationFrame(f); };
+        fade("0"); requestAnimationFrame(f);
+        return;
+      }
+    }
+    moved(); requestAnimationFrame(step);
+  };
+  changed(); requestAnimationFrame(step);
+}
+// (Matthew, 2026-11-15: "when we enter the basement, let's animate walking down the stairs as the opening animation")
+// Down into a room by its stairs: walked to the door here, back through it (seen only inside it), then there, out of
+// the door at the stairs' top toward us, along the landing and down the steps to their foot, a drop onto each tread
+// late in the step; their size the wall's foot's all the way (B.onStairs). Into the basement by the hall's door under
+// the landing; into the hall by the bedroom's door (its stairs coming down from the bedroom).
+const HOUSE_STAIRS_DOWN = {
+  laundry: { from: "stairhall", door: k => ({ x0: 304 * k, x1: 392 * k, h: 200 * k }) },
+  stairhall: { from: "bedroom", door: k => ({ x0: SCENE.left + 30 * k, x1: SCENE.left + 118 * k, h: 236 * k }) } };
+function houseStairsDownInto(door, to) {
+  const B = state.background, D = HOUSE_STAIRS_DOWN[to], P = houseStairsPath(to);
+  if (!D || D.from !== B.kind || !P || !SCENES[to]) return false;
+  const k = (SCENE.bottom - SCENE.top) / 700, R = D.door(k), back = (SCENE_BACK[B.kind] ? SCENE_BACK[B.kind]() : SCENE.ground) + 2;
+  tripStart(door, "walk");
+  walkTo((R.x0 + R.x1) / 2, back, () => houseStairsDown(P, { ...R, y1: back }, to), true);
+  return true;
+}
+function houseStairsDown(P, R, to) {
+  const B = state.background, body = state.body, g = SCENE.ground, stop = walkStop;
+  const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
+  climb = null; entering = true; body.turn = ""; body.anim = "walk"; body.facing = "back";
+  let phase = "out", t0 = 0, pts = null, legs = null, leg = 0;
+  const quit = () => { delete B.onStairs; figClipRect = null; };
+  const step = t => {
+    if (walkStop !== stop) { quit(); return; }   // (stopped: a new walk in its place)
+    if (!t0) t0 = t;
+    if (phase === "out") {   // back through this room's door, seen only inside it
+      const u = Math.min(1, (t - t0) / STAIR_DOOR_MS);
+      figClipRect = { x0: R.x0, x1: R.x1, y0: R.y1 - R.h, y1: R.y1 };
+      B.figY = +(from.figY - 10 * u).toFixed(1);
+      if (u >= 1) {
+        trips.push(from);
+        const sy = (SCENE_BACK[to] ? SCENE_BACK[to]() : g) + 2 - g, [dx, dy] = P.pts[P.pts.length - 1];
+        Object.assign(B, { kind: to, figX: +dx.toFixed(1), figY: +(dy - g - 10).toFixed(1) }); B.onStairs = { sizeY: sy };
+        pts = [[dx, dy], ...P.pts.slice(0, -1).reverse(), [P.foot, g + sy]];
+        legs = pts.slice(1).map((q, i) => i ? STAIR_STEP_MS : 1000 * Math.max(8, Math.abs(q[0] - pts[0][0])) / STAIR_LANDING_SPEED);
+        phase = "in"; t0 = t; body.facing = "front"; changed();
+      }
+    } else if (phase === "in") {   // out of the door at the stairs' top, toward us
+      const u = Math.min(1, (t - t0) / STAIR_DOOR_MS), D = P.door;
+      figClipRect = { x0: D.x0, x1: D.x1, y0: D.y0, y1: D.y1 };
+      B.figY = +(D.y1 - g - 10 + 10 * u).toFixed(1);
+      if (u >= 1) { figClipRect = null; phase = "down"; t0 = t; leg = 0; body.facing = P.face === "right" ? "left" : "right"; }
+    } else {   // along the landing, and down the steps
+      let u = (t - t0) / legs[leg];
+      while (u >= 1 && leg < legs.length - 1) { t0 += legs[leg]; leg++; u = (t - t0) / legs[leg]; }
+      u = Math.min(1, u);
+      const [ax, ay] = pts[leg], [bx, by] = pts[leg + 1], d = Math.max(0, (u - 0.45) / 0.55), e = leg ? d * d * (3 - 2 * d) : u;
+      B.figX = +(ax + (bx - ax) * u).toFixed(1); B.figY = +(ay + (by - ay) * e - g).toFixed(1);
+      if (u >= 1 && leg === legs.length - 1) { quit(); entering = false; body.anim = "none"; body.facing = "front"; changed(); return; }
+    }
+    moved(); requestAnimationFrame(step);
+  };
+  changed(); requestAnimationFrame(step);
 }
 // (a way's doorway: invisible, and not tapped, the arrow over the picture is; its shape, the triangle, is what the glow frames)
 // (ticket 313) an arrow's triangle's box in the picture, turned to its angle: [left, top, right, bottom]
@@ -1727,7 +1852,7 @@ function worldKeep() {
 // square had of its own follows the template again. ↺ (instanceReset) puts the square back to the template. What is not
 // a setting of the place is never an instance's: where the friend is, their size, what they sit on, the square's things
 // and a crossing's paths (cellKeys: the square's already), the music's LFOs, the choice itself.
-const INSTANCE_SKIP = new Set(["kind", "figX", "figY", "figSize", "figUnit", "seat", "things", "onBridge", "onPlatform", "inside", "castleRoom", "tent", "crossLive", "lfoFast", "lfoSlow", "lfoWings", "instEdit", "big", "designerView", ...CROSS_KEYS]);
+const INSTANCE_SKIP = new Set(["kind", "figX", "figY", "figSize", "figUnit", "seat", "things", "onBridge", "onPlatform", "onStairs", "inside", "castleRoom", "tent", "crossLive", "lfoFast", "lfoSlow", "lfoWings", "instEdit", "big", "designerView", ...CROSS_KEYS]);
 let instanceLast = null, instanceState = null;
 const instanceOf = W => { const B = state.background, cell = W && W.at && W.cells[W.at];
   return cell && (cellHolds(cell, B) || (INSIDES[cell.kind] || []).includes(B.kind)) ? W.at : null; };
