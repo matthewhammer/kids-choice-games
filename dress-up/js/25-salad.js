@@ -11,13 +11,13 @@
 // whose way this follows: while `salad` is set, drawNow hands the picture to saladDraw, its taps taken first). A big
 // wooden bowl in the middle; down the left and the right, little dishes of what goes in a salad, all vegetarian (M and N
 // are: the proteins here are chickpeas, black beans, cheese, egg, seeds and walnuts). A tap on a dish drops a handful into
-// the bowl; 🫗 pours dressing; 🥗 tosses it; 🍴 eats it, a bite at a time, along a Z-order curve from its top left (SALAD_Z), the bowl left;
+// the bowl; 🫗 pours dressing; 🥗 tosses it; 🍴 eats it, a bite at a time, along a Z-order curve from its top left (saladZ), the bowl left;
 // 🗑️ empties it. The salad is kept while the game is open (saladKept), not saved.
 const SALAD_LEFT = [["lettuce", "🥬 lettuce"], ["spinach", "🍃 spinach"], ["tomato", "🍅 tomatoes"], ["cucumber", "🥒 cucumber"], ["carrot", "🥕 carrots"], ["pepper", "🫑 peppers"], ["avocado", "🥑 avocado"]];
 const SALAD_RIGHT = [["chickpea", "chickpeas"], ["bean", "black beans"], ["corn", "🌽 corn"], ["cheese", "🧀 cheese"], ["egg", "🥚 egg"], ["seed", "🌻 seeds"], ["walnut", "walnuts"]];
 // (Matthew, 2026-11-15: "the salad bowels look really empty") a handful is a good many pieces, drawn big in the bowl, the greens
 // a bed of leaves across its bottom; the dishes heaped full
-const SALAD_LEAFY = new Set(["lettuce", "spinach"]), SALAD_MAX = 520, SALAD_BITES = 8;
+const SALAD_LEAFY = new Set(["lettuce", "spinach"]), SALAD_MAX = 520, SALAD_BITES = 32;
 const saladSize = kind => SALAD_LEAFY.has(kind) ? 1.9 : kind === "avocado" || kind === "egg" ? 1.5 : 1.6;
 let salad = null, saladKept = null;
 // (ticket 750, Matthew 2026-11-15: "Let's link that here, with another meal option chip? and when we do it here, let's link
@@ -106,50 +106,71 @@ function saladEnd() {
 }
 // (ticket 753, Matthew 2026-11-15: "I was thinking for the salad, we'd do some kind of
 // https://en.wikipedia.org/wiki/Z-order_curve") The salad is eaten along a Z-order curve. The square around it is cut into
-// a grid of 16 by 16 little patches, put in Z-order (Morton order: a patch's number is its column's and its row's binary
-// digits interleaved, so the curve runs a Z in each quarter, and the quarters themselves in a Z: top left, top right,
-// bottom left, bottom right). Each patch weighs as much salad as its disc takes (of the salad's circle, SALAD_EAT_BODY); the
-// bites cut the curve into runs of equal weight, so each bite takes the same amount (ticket 752). What is eaten is always
-// the curve's beginning, and a patch comes after the patches left of it and above it, so the eaten part grows from the
-// top left with no holes. Drawn, each eaten patch is a disc a little bigger than it, so the eaten edge is scalloped.
-const SALAD_EAT_BODY = [0, -4, 34], SALAD_Z = (() => {
-  const N = 16, H = 38, cs = 2 * H / N, r = 0.78 * cs, [bx, by, br] = SALAD_EAT_BODY, cells = [];
-  const z = (x, y) => { let i = 0; for (let b = 0; b < 4; b++) i |= ((x >> b) & 1) << (2 * b) | ((y >> b) & 1) << (2 * b + 1); return i; };
+// a grid of little patches, put in Z-order (Morton order: a patch's number is its column's and its row's binary digits
+// interleaved, so the curve runs a Z in each quarter, and the quarters themselves in a Z: top left, top right, bottom
+// left, bottom right). (Ticket 755, Matthew: "Let's make the Z order at least 2 levels deeper, so it takes dozens of
+// bites to finish a salad. More realisitic." So 64 by 64 patches, six levels, and 32 bites, each about a forkful.) Each
+// patch weighs as much salad as its disc takes (of the salad's circle, SALAD_EAT_BODY); the bites cut the curve into runs
+// of equal weight, so each bite takes the same amount (ticket 752). What is eaten is always the curve's beginning, and a
+// patch comes after the patches left of it and above it, so the eaten part grows from the top left with no holes.
+// Drawn, each eaten patch is a disc a little bigger than it, each a little different, so the eaten edge is ragged.
+// (Worked out the first time it is wanted, not as the page loads.)
+const SALAD_EAT_BODY = [0, -4, 34], SALAD_Z_LEVELS = 6;
+let saladZMemo = null;
+function saladZ() {
+  if (saladZMemo) return saladZMemo;
+  const L = SALAD_Z_LEVELS, N = 1 << L, H = 38, cs = 2 * H / N, [bx, by, br] = SALAD_EAT_BODY, cells = [], at = new Int32Array(N * N);
   for (let i = 0; i < N * N; i++) {
     let x = 0, y = 0;
-    for (let b = 0; b < 4; b++) { x |= ((i >> (2 * b)) & 1) << b; y |= ((i >> (2 * b + 1)) & 1) << b; }
-    cells.push({ x: bx - H + (x + 0.5) * cs, y: by - H + (y + 0.5) * cs, w: 0 });
+    for (let b = 0; b < L; b++) { x |= ((i >> (2 * b)) & 1) << b; y |= ((i >> (2 * b + 1)) & 1) << b; }
+    // (its disc 0.85 to 1.25 times the patch: past its corners, and never past its neighbours')
+    cells.push({ gx: x, gy: y, x: bx - H + (x + 0.5) * cs, y: by - H + (y + 0.5) * cs, r: cs * (0.85 + 0.4 * (Math.imul(i + 1, 2654435761) >>> 0) / 4294967296), w: 0 });
+    at[y * N + x] = i;
   }
-  // (a patch's weight: the salad its disc takes that no earlier patch's took, from points half a unit apart over the
+  // (a patch's weight: the salad its disc takes that no earlier patch's took, from points 0.3 of a unit apart over the
   // salad's circle, each counted for the first patch along the curve whose disc covers it: so it is even as drawn)
-  for (let px = bx - br; px <= bx + br; px += 0.5) for (let py = by - br; py <= by + br; py += 0.5) {
-    if (Math.hypot(px - bx, py - by) > br) continue;
+  for (let px = bx - br; px <= bx + br; px += 0.3) for (let py = by - br; py <= by + br; py += 0.3) {
+    if ((px - bx) ** 2 + (py - by) ** 2 > br * br) continue;
     const gx = Math.floor((px - bx + H) / cs), gy = Math.floor((py - by + H) / cs);
     let first = Infinity;
     for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const x = gx + dx, y = gy + dy;
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
-      const i = z(x, y); if (i < first && Math.hypot(cells[i].x - px, cells[i].y - py) <= r) first = i; }
+      const i = at[y * N + x], c = cells[i]; if (i < first && (c.x - px) ** 2 + (c.y - py) ** 2 <= c.r * c.r) first = i; }
     if (first < Infinity) cells[first].w++;
   }
   // (ends[k]: the last patch eaten after k bites)
   const total = cells.reduce((s, c) => s + c.w, 0), ends = [-1];
   let acc = 0, k = 1;
   cells.forEach((c, i) => { acc += c.w; while (k <= SALAD_BITES && acc >= total * k / SALAD_BITES - 1e-9) { ends.push(i); k++; } });
-  return { cells, ends, cs, H, r, total };
-})();
-// what is in the bowl, with the bites taken out of it: the curve's first patches, to the end of the last bite
+  return saladZMemo = { cells, at, ends, N, cs, H, total };
+}
+// what is in the bowl, with the bites taken out of it: the curve's first patches, to the end of the last bite. (Drawn as
+// the biggest aligned squares the curve's beginning is made of, at most three of each size, and the discs of only the
+// eaten patches at its edge, beside one not eaten: the others' discs are inside the squares already. So a few hundred
+// shapes at most, not thousands. The squares overlap a hair, so no seam shows between them.)
 function saladEatenSvg(u, inner) {
   if (!salad.taken) return inner;
-  const { cells, ends, cs, H } = SALAD_Z, [bx, by] = SALAD_EAT_BODY, r = SALAD_Z.r * u, M = (H + cs) * u;
+  const { cells, at, ends, N, cs, H } = saladZ(), e = ends[salad.taken], [bx, by] = SALAD_EAT_BODY, M = (H + cs) * u, pad = 0.15;
   let holes = "";
-  for (let i = 0; i <= ends[salad.taken]; i++) { const c = cells[i];
-    if (Math.hypot(c.x - bx, c.y - by) < H + cs) holes += `<circle cx="${f1(c.x * u)}" cy="${f1(c.y * u)}" r="${f1(r)}" fill="#000000"/>`; }
+  for (let i = 0; i <= e; ) {
+    let n = 1; while (i % (n * 4) === 0 && i + n * 4 <= e + 1) n *= 4;
+    const c = cells[i], side = Math.sqrt(n) * cs;
+    holes += `<rect x="${f1((c.x - cs / 2 - pad) * u)}" y="${f1((c.y - cs / 2 - pad) * u)}" width="${f1((side + 2 * pad) * u)}" height="${f1((side + 2 * pad) * u)}" fill="#000000"/>`;
+    i += n;
+  }
+  for (let i = 0; i <= e; i++) {
+    const c = cells[i]; let edge = false;
+    for (let dx = -1; dx <= 1 && !edge; dx++) for (let dy = -1; dy <= 1; dy++) { const x = c.gx + dx, y = c.gy + dy;
+      if (x >= 0 && y >= 0 && x < N && y < N && at[y * N + x] > e) { edge = true; break; } }
+    if (edge && Math.hypot(c.x - bx, c.y - by) < H + cs) holes += `<circle cx="${f1(c.x * u)}" cy="${f1(c.y * u)}" r="${f1(c.r * u)}" fill="#000000"/>`;
+  }
   return `<mask id="meal-bites-salad" maskUnits="userSpaceOnUse" x="${f1(bx * u - M)}" y="${f1(by * u - M)}" width="${f1(2 * M)}" height="${f1(2 * M)}">` +
     `<rect x="${f1(bx * u - M)}" y="${f1(by * u - M)}" width="${f1(2 * M)}" height="${f1(2 * M)}" fill="#ffffff"/>${holes}</mask><g mask="url(#meal-bites-salad)">${inner}</g>`;
 }
 // (ticket 751, Matthew 2026-11-15: "during 'eat it' --- can we animate the fork moving towards/around the edge of the
 // eating edge? for salad") Eating, the fork's tines trace the next bite along the curve, to and fro: a point for each
-// group of four of its patches (the curve a size up, so it shows as Z's), in the curve's order; at each bite it pokes in.
+// group of sixteen of its patches (the curve two sizes up, so it shows as Z's), in the curve's order; at each bite it
+// pokes in.
 // Eaten up, it rests at the bowl's side. (Its tracing and its poke start when it is drawn: saladDraw begins each
 // [data-begin-now] animation, as SMIL put in later would otherwise count from the page's start.)
 function saladForkSvg(u, eaten) {
@@ -157,10 +178,10 @@ function saladForkSvg(u, eaten) {
     `<path d="M${mealXY(-3 * u, -2 * u)} H${f1(-1 * u)} V${f1(2 * u)} H${f1(-3 * u)}" fill="none" stroke="#9aa3ab" stroke-width="${f1(1 * u)}"/>` +
     [-1.5, -0.5, 0.5, 1.5].map(d => `<line x1="${f1(-1 * u)}" y1="${f1(d * u)}" x2="${f1(5 * u)}" y2="${f1(d * u)}" stroke="#9aa3ab" stroke-width="${f1(0.7 * u)}"/>`).join("") + `</g>`;
   if (eaten) return `<g transform="translate(${f1(44 * u)} ${f1(30 * u)}) rotate(-130)">${fork}</g>`;
-  const { cells, ends } = SALAD_Z, pts = [];
+  const { cells, ends } = saladZ(), pts = [];
   for (let i = ends[salad.taken] + 1; i <= ends[salad.taken + 1]; i++) { const c = cells[i], p = pts[pts.length - 1];
     if (!c.w) continue;
-    if (p && p.g === i >> 2) { p.x += c.x * c.w; p.y += c.y * c.w; p.w += c.w; } else pts.push({ g: i >> 2, x: c.x * c.w, y: c.y * c.w, w: c.w }); }
+    if (p && p.g === i >> 4) { p.x += c.x * c.w; p.y += c.y * c.w; p.w += c.w; } else pts.push({ g: i >> 4, x: c.x * c.w, y: c.y * c.w, w: c.w }); }
   const P = pts.map(p => mealXY(p.x / p.w * u, p.y / p.w * u)), path = "M" + P.join(" L") + (P.length < 2 ? ` l${f1(0.5 * u)} 0` : "");
   // (the fork's tips on the curve, a little turned, as held from the bowl's near side; its poke along its own length)
   return `<g pointer-events="none"><g><animateMotion data-begin-now="1" path="${path}" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="${Math.max(2.4, 0.55 * P.length).toFixed(2)}s" begin="indefinite" repeatCount="indefinite"/>` +
@@ -233,6 +254,7 @@ function saladDraw() {
   if (!root) { root = document.createElementNS("http://www.w3.org/2000/svg", "g"); root.id = "salad"; pic.append(root); }
   fitPic();
   root.innerHTML = saladSvg(pic.viewBox.baseVal);
+  if (!saladZMemo && typeof requestIdleCallback === "function") requestIdleCallback(() => saladZ());   // (ticket 755: the curve worked out while the bowl is filled, not at the first bite)
   for (const a of root.querySelectorAll("[data-begin-now]")) try { a.beginElement(); } catch (e) { /* (no SMIL here: the fork simply stands at the edge) */ }
 }
 // a tap at the counter: a dish, into the bowl; the buttons; the bowl, while eating it, a bite (before the picture's own walking)

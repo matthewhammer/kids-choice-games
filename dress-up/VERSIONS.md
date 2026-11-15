@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.509 (2026-11-15)
+
+Everything in 0.0.508, plus:
+
+- **🥗 The salad takes 32 bites, a forkful at a time** (ticket 755). Its Z-order curve goes two levels deeper: the bowl is cut into 64 by 64 little patches (not 16 by 16), still in Z's within Z's from the top left. Each bite is the next forkful along the curve, the same amount every time (a thirty-second of the salad), with a ragged eaten edge and never a hole.
+
 ## 0.0.508 (2026-11-15)
 
 Everything in 0.0.507, plus:
