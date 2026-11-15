@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.499 (2026-11-15)
+
+Everything in 0.0.498, plus:
+
 - **The 🪜 stairs and the 🛏️ bedroom, for M** (ticket 741). From the 🛋️ living room, walk to its right edge and take the ➡️ arrow into the stair hall: a coat rack, a grandfather clock, and stairs up to a landing. Tap the stairs (or the door at the top, 🛏️ upstairs) to go up to the bedroom: a bed to lie in, a star mobile turning over it, a toy chest with a teddy bear on it, a lamp, a window with curtains, and the door 🪜 downstairs, back to the hall. Under the landing is the basement's door, which opens with the basement's rooms (coming next).
 
 ## 0.0.498 (2026-11-15)
