@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.500 (2026-11-15)
+
+Everything in 0.0.499, plus:
+
+- **The basement, for M: the 🧺 laundry room and the 🔥 furnace room** (ticket 742). In the 🪜 stair hall, the door under the landing, ⬇️ basement, now opens: down the stairway into the laundry room, the stairs coming down its wall, with a washer (its clothes sloshing), a dryer, a shelf of soap and towels, socks and a shirt on a clothesline, a basket of clothes, and a little window up at the grass. ➡️ goes on into the furnace room: the furnace, its flames flickering in its little window and glowing on the floor, its ducts up to the ceiling, pipes, a water heater, and a bulb swaying on its cord. Tap the stairs (🪜 upstairs) to go back up to the hall.
+
 ## 0.0.499 (2026-11-15)
 
 Everything in 0.0.498, plus:

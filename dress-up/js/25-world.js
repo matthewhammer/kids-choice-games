@@ -22,7 +22,7 @@
 const WORLD_DIRS = { N: [0, -1], NE: [1, -1], E: [1, 0], SE: [1, 1], S: [0, 1], SW: [-1, 1], W: [-1, 0], NW: [-1, -1] };
 const WORLD_OPP = { N: "S", NE: "SW", E: "W", SE: "NW", S: "N", SW: "NE", W: "E", NW: "SE" };
 const WORLD_ARROWS = { N: "⬆️", NE: "↗️", E: "➡️", SE: "↘️", S: "⬇️", SW: "↙️", W: "⬅️", NW: "↖️" };
-const INSIDES = { house: ["livingroom", "diningroom", "kitchen", "stairhall", "bedroom"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
+const INSIDES = { house: ["livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "laundry", "furnace"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
                   waterfall: ["cave", "caveroom"], castle: ["castleroom"], lake: ["underwater"], hut: ["hutroom", "hutbed", "hutpotion", "hutcenter"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom", "bubblespace", "bubbleroom"];
@@ -342,10 +342,13 @@ function insideWays(B) {
   return [];
 }
 // (ticket 740) into a room of the house's row from the one beside it: at the side it came in by, a step in from its doorway
+// (ticket 742: in either of its rows; and back up from the basement, by the hall's basement door)
+const HOUSE_DOOR_ARRIVE = { "laundry>stairhall": [230, 60] };
 function houseArriveSide(from, to, B) {
-  const a = HOUSE_ROW.indexOf(from), b = HOUSE_ROW.indexOf(to);
-  if (a < 0 || b < 0 || Math.abs(a - b) !== 1) return;
-  B.figX = Math.sign(a - b) * 300; B.figY = 50;
+  const R = HOUSE_ROWS.find(r => r.includes(from) && r.includes(to));
+  if (R) { const a = R.indexOf(from), b = R.indexOf(to); if (Math.abs(a - b) === 1) { B.figX = Math.sign(a - b) * 300; B.figY = 50; } return; }
+  const at = HOUSE_DOOR_ARRIVE[from + ">" + to];
+  if (at) { B.figX = at[0]; B.figY = at[1]; }
 }
 // (a way's doorway: invisible, and not tapped, the arrow over the picture is; its shape, the triangle, is what the glow frames)
 // (ticket 313) an arrow's triangle's box in the picture, turned to its angle: [left, top, right, bottom]
