@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.510 (2026-11-15)
+
+Everything in 0.0.509, plus:
+
+- **🎒 M's food, to collect** (ticket 743). In the 🍳 kitchen, a slice of bread, a cheese sandwich, an apple, a banana, a milk box and a juice box stand on the counter (the kettle made room for them); in the 🍽️ dining room, an orange is on the sideboard. Tap one, and the friend walks over and puts it in the 🎒 backpack; from there it can be held in either hand (🔹 or 🔸), like any other item. At the dining table, a 🎒 button shows the food you brought: tap it, and it comes out of the backpack onto the table, fresh, to eat (a sandwich brought is the main dish). Eaten, it is back on the counter the next time you look. Food is never on the floor: it has no ⬇️ put down.
+
 ## 0.0.509 (2026-11-15)
 
 Everything in 0.0.508, plus:

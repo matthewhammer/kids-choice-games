@@ -54,6 +54,35 @@ function mealStart(door) {
   tripStart(door, "walk");
   walkTo(B.figX ?? 0, SCENE.ground + 30 * k, () => { meal = mealNew(); document.body.classList.add("eating"); if (itemsOpen) itemsShow(false); changed(); });
 }
+// (ticket 743, for M) the food in the 🎒, brought to the table: 🎒 at the top's right says how many; tapped, one of each kind comes
+// out of the pack and onto the table, fresh (a sandwich brought is the main dish), back to the main course
+const MEAL_PACK = [...FOOD_ITEMS];
+const mealPackIds = () => typeof packList === "function" ? [...new Set(packList().filter(o => MEAL_PACK.includes(o.id)).map(o => o.id))] : [];
+function mealUnpack() {
+  const ids = mealPackIds();
+  if (!meal || !ids.length) return;
+  const out = new Set();
+  state.backpack = packList().filter(o => !(ids.includes(o.id) && !out.has(o.id) && out.add(o.id)));
+  const main = ids.includes("sandwich") ? "sandwich" : meal.main;
+  if (main !== meal.main) mealMainPick = main;
+  meal = { ...meal, main, course: "main", left: { ...meal.left, ...Object.fromEntries(ids.map(id => [id, MEAL_FOODS.find(f => f.id === id).bites])) } };
+  const vb = document.getElementById("pic").viewBox.baseVal;   // (said over the plate's middle, as mealSvg places it)
+  meal.say = { text: "from your 🎒!", at: performance.now(), x: vb.x + vb.width / 2, y: vb.y + vb.height * 0.53 };
+  changed(); mealDraw();
+}
+// (ticket 743) a food on the kitchen counter or the sideboard (HOUSE_FOODS), tapped: the friend walks to it, and it flies into the 🎒
+function foodPick(door) {
+  const id = door.dataset.pick, B = state.background, spot = (HOUSE_FOODS[B.kind] || []).find(([f]) => f === id);
+  if (!spot || entering || meal || salad || packList().some(o => o.id === id)) return;
+  const k = (SCENE.bottom - SCENE.top) / 700, x = spot[1] * k, top = houseFoodTop(B.kind, SCENE.ground, k);
+  tripStart(door, "walk");
+  walkTo(x, (SCENE_BACK[B.kind] ? SCENE_BACK[B.kind]() : SCENE.ground) + 4, () => {
+    if (packList().some(o => o.id === id)) return;
+    state.backpack = [...packList(), { id, got: Date.now(), from: B.kind === "kitchen" ? "counter" : "sideboard" }];
+    changed(); draw();
+    packFly(giftSvg(id, B), x, top - 14 * k, true);
+  });
+}
 function mealEnd() {
   if (!meal) return;
   meal = null;
@@ -320,6 +349,12 @@ function mealSvg(vb) {
   const btn = (x, w, label, attr) => `<g ${attr} style="cursor:pointer"><rect x="${f1(x)}" y="${f1(by)}" width="${f1(w)}" height="${f1(10 * u)}" rx="${f1(5 * u)}" fill="#ffffff" stroke="#8a7a60" stroke-width="${f1(0.8 * u)}"/>` +
     `<text x="${f1(x + w / 2)}" y="${f1(by + 6.6 * u)}" text-anchor="middle" font-size="${f1(4.4 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">${label}</text></g>`;
   t += btn(vb.x + 4 * u, 24 * u, "⬅️ back", "data-meal-leave=\"1\"") + (all ? btn(vb.x + vb.width - 30 * u, 26 * u, "🍽️ more", "data-meal-more=\"1\"") : "");
+  // (ticket 743) the food brought in the 🎒, if any: a button at the top's right, its foods' emoji on it
+  const brought = mealPackIds();
+  // (above the drinks, below the words; four foods' emoji at most, and a + for more, so it stays clear of the juice box)
+  if (brought.length) { const shown = brought.slice(0, 4), w = (14 + 5.2 * shown.length + (brought.length > 4 ? 3 : 0)) * u, x = vb.x + vb.width - w - 4 * u, y = vb.y + 10 * u;
+    t += `<g data-meal-unpack="1" style="cursor:pointer"><title>put out the food in your backpack</title><rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(10 * u)}" rx="${f1(5 * u)}" fill="#fff3c4" stroke="#c0392b" stroke-width="${f1(0.8 * u)}"/>` +
+      `<text x="${f1(x + w / 2)}" y="${f1(y + 6.8 * u)}" text-anchor="middle" font-size="${f1(4.6 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">🎒 ${shown.map(id => giftName(id).split(" ")[0]).join("")}${brought.length > 4 ? "+" : ""}</text></g>`; }
   // (tickets 746 and 748) the main dish and the dessert, chosen: a chip for each, between the buttons; the one on the plate ringed
   const cw = 9.5 * u, gap = 1 * u, split = 3 * u, chips = [...MEAL_MAINS.map(m => ["main", m]), ["salad", MEAL_SALAD_CHIP], ...MEAL_DESSERTS.map(d => ["dessert", d])];
   const x0 = cx - (chips.length * cw + (chips.length - 1) * gap + split) / 2;
@@ -344,6 +379,7 @@ for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
   if (ev !== "pointerdown") return;
   if (e.target.closest("[data-meal-leave]")) { mealEnd(); return; }
   if (e.target.closest("[data-meal-salad]")) { saladFromTable(); return; }   // (ticket 750)
+  if (e.target.closest("[data-meal-unpack]")) { mealUnpack(); return; }   // (ticket 743)
   if (e.target.closest("[data-meal-more]")) {
     if (meal.course === "dessert") { meal.left[meal.dessert] = MEAL_FOODS.find(f => f.id === meal.dessert).bites; meal.say = null; } else meal = mealNew(meal.main);
     mealDraw(); return; }

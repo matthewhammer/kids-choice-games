@@ -490,6 +490,8 @@ function diningroomScene(c) {
     return [t, obj("sideboard", sb, side)];
   });
   let s = SEP + room + SEP + things;
+  const food = houseFoodsSvg(c, "diningroom");   // (ticket 743)
+  if (food) s += SEP + obj("food on the sideboard", floor + 8 * k + 0.5, food);
   // three chairs behind the table (their backs over it), the table, and a chair at each end, to sit on
   const backs = part("dining-chair-backs", c.F, () => [-0.55, 0, 0.55].map(u => diningChairSvg(c, u * DINING_TABLE.w / 2 * k, base - DINING_TABLE.d * k - 2 * k, true)).join(""));
   s += SEP + obj("chairs behind the table", base - DINING_TABLE.d * k, backs);
@@ -497,6 +499,24 @@ function diningroomScene(c) {
   s += SEP + obj("dining table", base, `<g class="portal" data-meal="1" data-to="diningroom">` + part("dining-table", [c.F, sceneLfoKey(o, "fast")], () => diningTableSvg(c, base)) + `</g>`);
   diningChairXs(k).forEach((x, i) => { s += SEP + obj(i ? "chair at the right end" : "chair at the left end", base + 1, part("dining-chair-" + i, c.F, () => diningChairSvg(c, x, base))); });
   return s;
+}
+// (ticket 743, for M; Matthew 2026-11-15: "let's not have any food items on the floor.") M's food, on the kitchen counter and the
+// dining room's sideboard, where each stands (x, in k) while it is not in the 🎒: tapped, or gone to as a doorway is, the friend walks
+// over and it goes into the 🎒 (foodPick, js/25-meal.js); eaten at the table, it is back here the next time it is drawn
+const HOUSE_FOODS = { kitchen: [["bread", -22], ["sandwich", 14], ["apple", 43], ["banana", 80], ["milk", 109], ["juice", 126]],   // (clear of the sink and the stove)
+                      diningroom: [["orange", 205]] };
+const HOUSE_FOOD_SCALE = 0.6;
+// the top the food stands on: the counter's, or the sideboard's
+const houseFoodTop = (kind, g, k) => kind === "kitchen" ? g - 216 * k : g - 208 * k;
+function houseFoodsSvg(c, kind) {
+  const { g, k } = c, top = houseFoodTop(kind, g, k), sc = HOUSE_FOOD_SCALE * k, pack = typeof packList === "function" ? packList() : [];
+  const here = (HOUSE_FOODS[kind] || []).filter(([id]) => !pack.some(o => o.id === id));
+  if (!here.length) return "";
+  return part("house-food-" + kind, [c.F, here.map(([id]) => id).join()], () => here.map(([id, x]) =>
+    // (each a doorway of its own, its picture standing on the top; a box a little bigger than it, so a small one is easy to tap)
+    `<g class="portal" data-pick="${id}" data-to="${kind}"><title>${giftName(id)}</title>` +
+    `<rect x="${f1(x * k - 24 * k)}" y="${f1(top - 40 * k)}" width="${f1(48 * k)}" height="${f1(44 * k)}" fill="#000000" opacity="0"/>` +
+    `<g transform="translate(${f1(x * k)} ${f1(top + 1 * k)}) scale(${sc.toFixed(3)})">${giftSvg(id, { held: true })}</g></g>`).join(""));
 }
 // the kitchen: a counter along its back wall with its sink under the window and its stove, the fridge at the left,
 // cupboards above; the pot on the stove rattles its lid with the quick LFO, and steams with the slow one
@@ -529,16 +549,13 @@ function kitchenScene(c) {
     cn += `<rect x="${f1(-245 * k)}" y="${f1(ct)}" width="${f1(385 * k)}" height="${f1(12 * k)}" fill="#7f8c8d" stroke="#5d6869" stroke-width="${f1(1.2 * k)}"/>` +
           `<path d="M${P(-150 * k, ct + 1 * k)} H${f1(-40 * k)} L${P(-48 * k, ct + 8 * k)} H${f1(-142 * k)} Z" fill="#c7d0d6"/>` +
           `<path d="M${P(-95 * k, ct)} V${f1(ct - 34 * k)} Q${P(-95 * k, ct - 46 * k)} ${P(-80 * k, ct - 46 * k)} Q${P(-68 * k, ct - 46 * k)} ${P(-68 * k, ct - 32 * k)}" fill="none" stroke="#aeb6bc" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
-          // a cutting board and a kettle on the counter
+          // a cutting board on the counter (ticket 743: the kettle gone, the counter's middle M's food's, houseFoodsSvg)
           `<path d="M${P(-225 * k, ct - 2 * k)} H${f1(-170 * k)} L${P(-176 * k, ct - 9 * k)} H${f1(-219 * k)} Z" fill="#c9965a"/>` +
           // (ticket 747) a wooden salad bowl on the cutting board, greens heaped in it: tapped, the salad maker (js/25-salad.js)
           `<g class="portal" data-salad="1" data-to="kitchen">` +
           [[-212, -14], [-204, -20], [-194, -22], [-184, -19], [-207, -12], [-189, -13]].map(([lx, ly], i) => `<ellipse cx="${f1(lx * k)}" cy="${f1(ct + ly * k)}" rx="${f1(9 * k)}" ry="${f1(6 * k)}" fill="${["#9ccc65", "#7cb342", "#e53935", "#9ccc65", "#2e7d32", "#fbc02d"][i]}"/>`).join("") +
           `<path d="M${P(-222 * k, ct - 14 * k)} H${f1(-174 * k)} Q${P(-176 * k, ct - 2 * k)} ${P(-198 * k, ct - 2 * k)} Q${P(-220 * k, ct - 2 * k)} ${P(-222 * k, ct - 14 * k)} Z" fill="#c8915a" stroke="#8a5d30" stroke-width="${f1(1.4 * k)}"/>` +
-          `<path d="M${P(-218 * k, ct - 11 * k)} H${f1(-178 * k)}" stroke="#e0b07a" stroke-width="${f1(1.4 * k)}"/></g>` +
-          `<path d="M${P(40 * k, ct)} Q${P(36 * k, ct - 34 * k)} ${P(62 * k, ct - 36 * k)} Q${P(88 * k, ct - 34 * k)} ${P(84 * k, ct)} Z" fill="#c0392b" stroke="#7e2318" stroke-width="${f1(1.5 * k)}"/>` +
-          `<path d="M${P(84 * k, ct - 22 * k)} l${f1(16 * k)} ${f1(-10 * k)}" stroke="#7e2318" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` +
-          `<path d="M${P(48 * k, ct - 34 * k)} Q${P(62 * k, ct - 54 * k)} ${P(76 * k, ct - 34 * k)}" fill="none" stroke="#333333" stroke-width="${f1(3 * k)}"/>`;
+          `<path d="M${P(-218 * k, ct - 11 * k)} H${f1(-178 * k)}" stroke="#e0b07a" stroke-width="${f1(1.4 * k)}"/></g>`;
     // the stove and its oven
     const sv = `<rect x="${f1(140 * k)}" y="${f1(ct)}" width="${f1(100 * k)}" height="${f1(cb - ct)}" fill="#f2f2f2" stroke="#9aa0a6" stroke-width="${f1(1.5 * k)}"/>` +
       `<rect x="${f1(150 * k)}" y="${f1(ct + 26 * k)}" width="${f1(80 * k)}" height="${f1(56 * k)}" rx="${f1(4 * k)}" fill="#3a3f44"/><rect x="${f1(160 * k)}" y="${f1(ct + 34 * k)}" width="${f1(60 * k)}" height="${f1(30 * k)}" fill="#ffb347" opacity="0.35"/>` +
@@ -557,6 +574,8 @@ function kitchenScene(c) {
     return [t, obj("counter and sink", cb, cn) + obj("stove", cb, sv) + obj("fridge", cb, fr)];
   });
   let s = SEP + room + SEP + things;
+  const food = houseFoodsSvg(c, "kitchen");   // (ticket 743)
+  if (food) s += SEP + obj("food on the counter", cb + 0.6, food);
   // the pot on the stove: its lid rattling with the quick LFO, steam rising with the slow one
   s += SEP + obj("pot", cb + 0.5, part("kitchen-pot", [c.F, sceneLfoKey(o, "fast"), sceneLfoKey(o, "slow")], () => {
     const px = 190 * k, pb = ct - 6 * k;

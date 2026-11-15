@@ -2415,7 +2415,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
           ...(it.id === "can" ? [el("div", { class: "pack-water" }, (n => n ? "💧".repeat(n) + "◌".repeat(CAN_HOLDS - n) + ` ${n} of ${CAN_HOLDS} pours` : "empty: fill it at water")(Math.max(0, Math.min(CAN_HOLDS, Math.round((it.t && it.t.water) || 0)))))] : []),
           el("div", { class: "row pack-uses" }, [
             // (ticket 639) take it out: on the floor in front of the friend; a tool: held in the hand, or put away; a bee: let go
-            el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down"),
+            // (ticket 743) food is never put down on a floor: it is eaten at the 🍽️ dining table (its 🎒 button)
+            ...(FOOD_ITEMS.has(it.id) ? [el("span", { class: "hint" }, "🍽️ eat it at the dining table")] : [el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => putDown(i) }, "⬇️ put down")]),
             ...SLOTS.map(([sl, , mark]) => el("button", { "aria-pressed": String(itemIn(sl) === it.id), title: `${mark}: in your ${mark} item, in that hand`, onclick: () => itemSet(sl, it.id) }, slotMark(mark))),   // (ticket 687: any thing, in 🔹 or 🔸, which is in the hand; a tool's where ✋ hold it was)
             ...(it.id === "bottlebee" ? [el("button", { ...(nowhere ? { disabled: "" } : {}), onclick: () => beeFree(i) }, "🐝 let it go")] : [])])]);
       }));

@@ -1571,7 +1571,7 @@ function frontSpot() {
 }
 function putDown(k) {
   const list = packList(), it = list[k], B = state.background;
-  if (!it || B.kind === "none") return;
+  if (!it || B.kind === "none" || FOOD_ITEMS.has(it.id)) return;   // (ticket 743: food is never put down on a floor)
   const [x, z] = frontSpot(), looks = it.t || {};
   const kind = looks.kind && CARRY_KINDS.has(looks.kind) ? looks.kind : THING_KINDS[it.id] && CARRY_KINDS.has(it.id) ? it.id : "item";
   const t = { ...(THING_DEFAULTS[kind] || {}), ...looks, kind, x: Math.round(x), z: Math.round(z), seed: 1 + Math.floor(Math.random() * 99999) };
@@ -2349,6 +2349,7 @@ function enterScene(door, here = false) {
   if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.meal !== undefined) { mealStart(door); return; }   // (ticket 744: the dining table, sat down at)
   if (door.dataset.salad !== undefined) { saladStart(door); return; }   // (ticket 747: the kitchen's salad bowl, a salad made in it)
+  if (door.dataset.pick !== undefined) { foodPick(door); return; }   // (ticket 743: M's food on the counter, into the 🎒)
   if (door.dataset.climb !== undefined && houseStairsClimb(door)) return;   // (ticket 742: a house's stairs, climbed)
   if (door.dataset.descend !== undefined && houseStairsDownInto(door, door.dataset.to)) return;   // (and down them, into the room below)
   if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)

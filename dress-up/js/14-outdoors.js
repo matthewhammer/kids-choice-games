@@ -2815,7 +2815,15 @@ const CHEST_GIFTS = [["gold", "🪙 gold coins"], ["gems", "💎 gems"], ["crown
   ["chocolate", "🍫 a chocolate bar"], ["bottle", "🍾 a glass bottle with a cork"], ["bottlebee", "🐝 a bee in a bottle"], ["net", "🥅 a bug net"],
   ["cavemushroom", "🍄 a little cave mushroom"], ["hammer", "🔨 a hammer"], ["horseshoe", "🧲 a horseshoe"], ["egg", "🥚 a dragon egg"], ["rock", "🪨 a rock"], ["statue", "🗿 a little statue"],
   // (ticket 660, part 3) the 💧 watering can, found in the tree room
-  ["can", "💧 a watering can"]];
+  ["can", "💧 a watering can"],
+  // (ticket 743, for M: "food as items to collect and put into backpack: bread, banana, apple, juice box, milk box, sandwhich", and
+  // her orange) found in the 🍳 kitchen and the 🍽️ dining room, and put out at the table (js/25-meal.js); all vegetarian
+  ["apple", "🍎 an apple"], ["banana", "🍌 a banana"], ["orange", "🍊 an orange"], ["bread", "🍞 a slice of bread"],
+  ["sandwich", "🥪 a cheese sandwich"], ["juice", "🧃 a juice box"], ["milk", "🥛 a milk box"]];
+// (ticket 743, Matthew: "let's not have any food items on the floor.") the food, which a chest may give but nothing puts on a floor:
+// not among the things to put in a place, nor what a floor switch wants
+const FOOD_ITEMS = new Set(["apple", "banana", "orange", "bread", "sandwich", "juice", "milk"]);
+const PLACE_GIFTS = CHEST_GIFTS.filter(([k]) => !FOOD_ITEMS.has(k));
 // (ticket 639) what can be picked up into the 🎒 backpack from a place, with the action press: these kinds of thing, and "item", a thing
 // put down from the backpack (its id, drawn by giftSvg). A thing's id in the backpack: its kind, or an item's own id
 const CARRY_KINDS = new Set(["potion", "toadstool", "cavemushroom", "chocolate", "bottle", "net", "item", "rock"]);   // (a 🗿 statue is an item)   // (a rock: to keep a floor switch pressed)
@@ -2898,6 +2906,28 @@ function giftSvg(id, o = {}) {
       `<circle cx="-17" cy="-14" r="2" fill="#3f464c"/><circle cx="17" cy="-14" r="2" fill="#3f464c"/><circle cx="-14" cy="-34" r="2" fill="#3f464c"/><circle cx="14" cy="-34" r="2" fill="#3f464c"/>`;
     case "rock": return rockSvg(0, -2, 26, 5, ROCK_TONES[0]);
     case "can": return `<g transform="translate(-10 -50)">${canSvg(1)}</g>`;   // (ticket 660, part 3: standing on its foot)
+    // (ticket 743) M's food, standing on the floor, as at the table (js/25-meal.js): its colours; a few shapes each (held: items687's 22)
+    case "apple": return `<path d="M0 -2 C-12 -2 -19 -12 -19 -22 C-19 -32 -10 -37 0 -32 C10 -37 19 -32 19 -22 C19 -12 12 -2 0 -2 Z" fill="#d93a32" stroke="#8e1f1a" stroke-width="2"/>` +
+      `<ellipse cx="-8" cy="-24" rx="4" ry="6" fill="#ffffff" opacity="0.35"/><path d="M0 -32 Q1 -38 4 -42" fill="none" stroke="#5e3a1a" stroke-width="2.5" stroke-linecap="round"/>` +
+      `<path d="M3 -38 Q12 -45 18 -39 Q10 -33 3 -38 Z" fill="#5fae3e" stroke="#2f6b2a" stroke-width="1.2"/>`;
+    case "banana": return `<path d="M-30 -18 Q-10 8 30 -16 Q-8 -14 -30 -18 Z" fill="#f5d33f" stroke="#a8860f" stroke-width="2" stroke-linejoin="round"/>` +
+      `<path d="M-24 -14 Q-6 -2 26 -14" fill="none" stroke="#d9b42a" stroke-width="1.5"/><circle cx="-30" cy="-18" r="2.5" fill="#5e3a1a"/>` +
+      `<path d="M30 -16 l6 -5" stroke="#7a5a1a" stroke-width="4" stroke-linecap="round"/>`;
+    case "orange": return `<circle cx="0" cy="-17" r="17" fill="#f39c1e" stroke="#b8650a" stroke-width="2"/>` +
+      [[-7, -22], [5, -11], [8, -24], [-4, -9]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2" fill="#c96f0c" opacity="0.6"/>`).join("") +
+      `<ellipse cx="-7" cy="-24" rx="4" ry="5" fill="#ffffff" opacity="0.3"/><path d="M0 -33 Q6 -42 14 -38 Q7 -32 0 -33 Z" fill="#5fae3e" stroke="#2f6b2a" stroke-width="1.2"/>`;
+    case "bread": return `<path d="M-20 0 L-20 -26 Q-30 -30 -26 -40 Q-20 -50 0 -48 Q20 -50 26 -40 Q30 -30 20 -26 L20 0 Z" fill="#c98a3c" stroke="#7a4f1a" stroke-width="2" stroke-linejoin="round"/>` +
+      `<path d="M-15 -3 L-15 -29 Q-23 -31 -21 -38 Q-16 -44 0 -43 Q16 -44 21 -38 Q23 -31 15 -29 L15 -3 Z" fill="#f6e2b0"/>` +
+      [[-7, -30], [6, -20], [-3, -12], [8, -35]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="1.6" ry="1.1" fill="#e2c88c"/>`).join("");
+    case "sandwich": return `<path d="M-26 0 L26 0 L-26 -44 Z" fill="#f3d9a4" stroke="#c99a52" stroke-width="2.5" stroke-linejoin="round"/>` +
+      `<path d="M-20 -32 L12 -5" stroke="#7dbb4a" stroke-width="4" stroke-linecap="round"/><path d="M-21 -24 L4 -3" stroke="#e0705a" stroke-width="3.5" stroke-linecap="round"/>` +
+      `<path d="M-22 -16 L-4 -1" stroke="#f2c12e" stroke-width="3" stroke-linecap="round"/>`;
+    case "juice": return `<rect x="-14" y="-44" width="28" height="44" rx="2" fill="#f39c3c" stroke="#a85a12" stroke-width="2"/><rect x="7" y="-43" width="6" height="42" fill="#d97f22"/>` +
+      `<circle cx="-3" cy="-22" r="8" fill="#7cc142" stroke="#4f8a24" stroke-width="1.5"/><path d="M-3 -30 q2 -4 5 -4" fill="none" stroke="#4f8a24" stroke-width="1.5"/>` +
+      `<path d="M4 -44 L8 -58 L15 -61" fill="none" stroke="#f2c12e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case "milk": return `<rect x="-14" y="-40" width="28" height="40" fill="#ffffff" stroke="#8aa0b4" stroke-width="2"/><path d="M-14 -40 L0 -52 L14 -40 Z" fill="#eef3f7" stroke="#8aa0b4" stroke-width="2" stroke-linejoin="round"/>` +
+      `<rect x="-3" y="-58" width="6" height="7" fill="#eef3f7" stroke="#8aa0b4" stroke-width="1.5"/><rect x="-13" y="-30" width="26" height="12" fill="#3b82c4"/>` +
+      `<text x="0" y="-21" font-size="8" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="sans-serif">MILK</text>`;
     case "statue": { const fig = !o.held && typeof statueFigure === "function" ? statueFigure(0.28) : "";   // (ticket 687: in a hand, the plain one: a copy of the friend in the friend's hand is the friend twice)
       const base = `<ellipse cx="0" cy="0" rx="22" ry="6" fill="#6f6c66"/><rect x="-18" y="-10" width="36" height="10" rx="2" fill="#9a968e" stroke="#55524c" stroke-width="2"/>`;
       if (fig) return base + `<g transform="translate(0 -10)">${fig}</g>`;
@@ -3802,8 +3832,8 @@ function fencePieceSvg(o, t, i, s) {
 }
 const THING_PARAMS = {
   // (ticket 639) a thing put down from the backpack: which
-  item: [["id", "🎁 which", "choice", CHEST_GIFTS]], plate: [["opens", "🚪 opens a way out of this room, while it is down", "choice", [["", "no way"], ["N", "⬆️"], ["E", "➡️"], ["S", "⬇️"], ["W", "⬅️"]]], ["switch", "🧩 kind", "choice", [["hold", "⬇️ down only while something is on it"], ["toggle", "🔁 flips each time you step on it"]]],
-          ["wants", "⬇️ what holds it down", "choice", () => [["any", "🪨 anything (a rock, a statue, the friend)"], ...CHEST_GIFTS]],
+  item: [["id", "🎁 which", "choice", PLACE_GIFTS]], plate: [["opens", "🚪 opens a way out of this room, while it is down", "choice", [["", "no way"], ["N", "⬆️"], ["E", "➡️"], ["S", "⬇️"], ["W", "⬅️"]]], ["switch", "🧩 kind", "choice", [["hold", "⬇️ down only while something is on it"], ["toggle", "🔁 flips each time you step on it"]]],
+          ["wants", "⬇️ what holds it down", "choice", () => [["any", "🪨 anything (a rock, a statue, the friend)"], ...PLACE_GIFTS]],
           ["works", "🔗 its trap doors (open while it is down)", "wires"]],   // (Matthew: "will the floor switches control ... trap doors")   // (Matthew: "like legend of zelda ... they had two kinds")   // (a plate: what it wants on it)
   // (Matthew, 2026-10-17: each object rescaled, from a good size: 100% is each kind's own, set in thingSvg)
   all: [["size", "🔎 size", "range", [25, 300, 5]], ["mirror", "↔️ mirror", "toggle"], ["seed", "🎲 another shape", "action", t => Math.floor(1000 + Math.random() * 90000)]],
