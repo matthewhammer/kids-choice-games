@@ -45,4 +45,6 @@ A push to `main` is a deploy. Release each feature as soon as it works; never le
 
 ## Working with Matthew
 
+**Food is vegetarian** (Matthew, 2026-11-15: "M and N are vegetarian. They eat honey, eggs, cheese and other dairy, but no meat as protein. Our proteins are: beans, and lentils, and chickpeas; hummus; seeds; nuts; eggs; cheeses; tofu"; and "No meat or non-vegetarian options please"). Every food the game draws or lists (the meal at the table, the salad maker, the campfire, the 🎒 items) has no meat, poultry, fish or seafood; a dish that usually has meat is made with one of those proteins instead. Animals as animals are fine.
+
 Mint and queue a ticket on the Hazel Work Dashboard for every ask ([its rules](https://github.com/matthewhammer/hazel-work-notes/blob/main/agent-instructions.md)). Show a picture before asking "is this right?". Call the kids M and N only.

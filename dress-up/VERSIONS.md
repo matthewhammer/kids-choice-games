@@ -4,6 +4,15 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.503 (2026-11-15)
+
+Everything in 0.0.502, plus, at the 🍽️ dining table:
+
+- **Choose the main dish** with the chips at the bottom: 🥪 a cheese sandwich (cheese, lettuce and tomato), 🌮 bean tacos (beans, cheese, lettuce and salsa), 🍚 fried rice (with peas, carrots, egg and tofu), or 🍕 a slice of spinach and cheese pizza, eaten from its tip to the crust (tickets 746, 749).
+- **🍊 An orange**, for M, above the plate: eaten from one side, its segments showing.
+- **Dessert** (ticket 748): the chips beside the main dishes clear the plate and serve 🍨 an ice cream sundae (vanilla, chocolate and strawberry, whipped cream, chocolate sauce, sprinkles and a cherry), an ice cream bar on a stick (bitten down to the vanilla inside, the stick left at the end), or 🍧 Italian ice in a paper cup, in 🍋 lemon, 🍒 cherry, 🫐 blue raspberry, 🥭 mango or 🍉 watermelon (the flavors are chips at the top). The main dish's chip goes back to it, as you left it.
+- **Every food is vegetarian**, as M and N are: the proteins are cheese, beans, egg and tofu.
+
 ## 0.0.502 (2026-11-15)
 
 Everything in 0.0.501, plus:
