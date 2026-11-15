@@ -2348,6 +2348,7 @@ function enterScene(door, here = false) {
   // (ticket 525: a cave door linked to a square or a place off the grid: there, out by its twin; unlinked, by kind, below)
   if (door.dataset.passage) { const t = passageOf(door.dataset.passage); if (t && t.dest && passageWalk(door, t)) return; }
   if (door.dataset.meal !== undefined) { mealStart(door); return; }   // (ticket 744: the dining table, sat down at)
+  if (door.dataset.salad !== undefined) { saladStart(door); return; }   // (ticket 747: the kitchen's salad bowl, a salad made in it)
   if (door.dataset.climb !== undefined && houseStairsClimb(door)) return;   // (ticket 742: a house's stairs, climbed)
   if (door.dataset.descend !== undefined && houseStairsDownInto(door, door.dataset.to)) return;   // (and down them, into the room below)
   if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)

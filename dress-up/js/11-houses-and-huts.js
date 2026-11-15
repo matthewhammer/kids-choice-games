@@ -531,6 +531,11 @@ function kitchenScene(c) {
           `<path d="M${P(-95 * k, ct)} V${f1(ct - 34 * k)} Q${P(-95 * k, ct - 46 * k)} ${P(-80 * k, ct - 46 * k)} Q${P(-68 * k, ct - 46 * k)} ${P(-68 * k, ct - 32 * k)}" fill="none" stroke="#aeb6bc" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>` +
           // a cutting board and a kettle on the counter
           `<path d="M${P(-225 * k, ct - 2 * k)} H${f1(-170 * k)} L${P(-176 * k, ct - 9 * k)} H${f1(-219 * k)} Z" fill="#c9965a"/>` +
+          // (ticket 747) a wooden salad bowl on the cutting board, greens heaped in it: tapped, the salad maker (js/25-salad.js)
+          `<g class="portal" data-salad="1" data-to="kitchen">` +
+          [[-212, -14], [-204, -20], [-194, -22], [-184, -19], [-207, -12], [-189, -13]].map(([lx, ly], i) => `<ellipse cx="${f1(lx * k)}" cy="${f1(ct + ly * k)}" rx="${f1(9 * k)}" ry="${f1(6 * k)}" fill="${["#9ccc65", "#7cb342", "#e53935", "#9ccc65", "#2e7d32", "#fbc02d"][i]}"/>`).join("") +
+          `<path d="M${P(-222 * k, ct - 14 * k)} H${f1(-174 * k)} Q${P(-176 * k, ct - 2 * k)} ${P(-198 * k, ct - 2 * k)} Q${P(-220 * k, ct - 2 * k)} ${P(-222 * k, ct - 14 * k)} Z" fill="#c8915a" stroke="#8a5d30" stroke-width="${f1(1.4 * k)}"/>` +
+          `<path d="M${P(-218 * k, ct - 11 * k)} H${f1(-178 * k)}" stroke="#e0b07a" stroke-width="${f1(1.4 * k)}"/></g>` +
           `<path d="M${P(40 * k, ct)} Q${P(36 * k, ct - 34 * k)} ${P(62 * k, ct - 36 * k)} Q${P(88 * k, ct - 34 * k)} ${P(84 * k, ct)} Z" fill="#c0392b" stroke="#7e2318" stroke-width="${f1(1.5 * k)}"/>` +
           `<path d="M${P(84 * k, ct - 22 * k)} l${f1(16 * k)} ${f1(-10 * k)}" stroke="#7e2318" stroke-width="${f1(4 * k)}" stroke-linecap="round"/>` +
           `<path d="M${P(48 * k, ct - 34 * k)} Q${P(62 * k, ct - 54 * k)} ${P(76 * k, ct - 34 * k)}" fill="none" stroke="#333333" stroke-width="${f1(3 * k)}"/>`;

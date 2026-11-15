@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.504 (2026-11-15)
+
+Everything in 0.0.503, plus:
+
+- **🥗 A salad maker, on the kitchen counter** (ticket 747). In the 🍳 kitchen, tap the wooden salad bowl on the cutting board, and look down at the counter: a big bowl in the middle, and little dishes down both sides: lettuce, spinach, tomatoes, cucumber, carrots, peppers and avocado on the left; egg, chickpeas, seeds, black beans, walnuts, corn and cheese on the right. Tap a dish to drop a handful into the bowl (the greens make a bed of leaves across it), 🫗 for dressing, 🥗 to toss it, and 🍴 to eat it, a bite at a time, until it is all gone. 🗑️ empties the bowl; ⬅️ back (or Escape) takes you back to the kitchen, and your salad is still in the bowl when you come back. Every ingredient is vegetarian.
+
 ## 0.0.503 (2026-11-15)
 
 Everything in 0.0.502, plus, at the 🍽️ dining table:
