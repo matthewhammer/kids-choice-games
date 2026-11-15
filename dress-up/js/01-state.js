@@ -22,7 +22,7 @@ const HOUSE_COLOR_DEFAULTS = {
 // (ticket 50) where people can sit, per place: see seatsHere
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
-                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, diningroom: 0.7, kitchen: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
+                    treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, diningroom: 0.7, kitchen: 0.7, stairhall: 0.7, bedroom: 0.7, witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
                     waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, garden: 0.45, spring: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
@@ -39,7 +39,7 @@ const figScale = B => (B.figSize ?? 100) / 100 * bodyScale();
 // kept between 0.3 and 1.5. A castle room's comes from its perspective
 // (roomFrame: the eye's height on the wall); rooms drawn flatter, with big
 // things at their back walls, vanish far above the picture.
-const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: -60, diningroom: -60, kitchen: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
+const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: -60, diningroom: -60, kitchen: -60, stairhall: -60, bedroom: -60, witchroom: -60, healerroom: -60, hutroom: -60, hutbed: -60, hutpotion: -60, hutcenter: -60, tent: -60, imagination: -60, emptyroom: -60, bubblespace: -60, bubbleroom: -60 };
 // (ticket 214, Matthew: "this scene, and the forest clearing scene, and maybe others, should scale the player down more
 // dramatically as they go 'into' the scene (heading N)"; "each picture should have its own setting for how much we get
 // smaller as we move a certain number of fractions of picture N. north-ward scaling factor") Each place's 🔭 setting,
@@ -49,7 +49,7 @@ const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: 
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
                    "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard", "garden", "spring"];   // (desert: ticket 501; garden, spring: ticket 660)
-const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "diningroom", "kitchen", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
+const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom"];
 const northDefault = kind => kind === "dungeon" ? 1 : NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {

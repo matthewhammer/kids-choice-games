@@ -70,7 +70,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["beach", "🏖️ beach"], ["sea", "🌊 open water"], ["witch", "🧙 witch's woods"],
   ["cemetery", "🌿 cemetery"], ["lake", "🦆 lake"], ["house", "🏠 house and yard"], ["farmyard", "🚜 farm yard"],   // (farmyard: ticket 502, for M)
   ["treehouse", "🌳 tree house"], ["treeroom", "🪜 inside the tree house"], ["treetop", "⭕ the round room at the top of the tree"],   // (treetop: ticket 516)
-  ["livingroom", "🛋️ living room"], ["diningroom", "🍽️ dining room"], ["kitchen", "🍳 kitchen"], ["witchroom", "🧙 inside the witch's hut"],   // (diningroom, kitchen: ticket 740, for M)
+  ["livingroom", "🛋️ living room"], ["diningroom", "🍽️ dining room"], ["kitchen", "🍳 kitchen"], ["stairhall", "🪜 the stairs"], ["bedroom", "🛏️ bedroom"], ["witchroom", "🧙 inside the witch's hut"],   // (diningroom, kitchen: ticket 740, for M)
   ["clearing", "🌲 forest clearing"], ["healerroom", "🌿 inside the healer's hut"], ["fairyforest", "🧚 fairy forest"], ["mountains", "⛰️ mountain trail"],
   ["waterfall", "💦 jungle waterfall"], ["campsite", "🏕️ camp site"],
   ["tent", "⛺ inside a tent"], ["cave", "🪨 cave behind the falls"], ["caveroom", "🦇 cave room"],
@@ -90,7 +90,7 @@ const PLACE_GROUPS = [
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall", "spring"]],   // (spring: ticket 660)
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
-  ["home", "🏠 home", ["house", "livingroom", "diningroom", "kitchen", "treehouse", "treeroom", "treetop", "farmyard", "garden"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard; ticket 660: the 🌻 garden)
+  ["home", "🏠 home", ["house", "livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "treehouse", "treeroom", "treetop", "farmyard", "garden"]],   // (ticket 502: the 🚜 farm yard, outdoors with the house's yard; ticket 660: the 🌻 garden)
   ["witch", "🧙 the witch's", ["witch", "witchroom", "cemetery"]],
   ["castles", "🏰 castles", ["castle", "castleroom"]],
   ["hut", "🛖 the grass hut", ["hut", "hutroom", "hutbed", "hutpotion", "hutcenter"]],

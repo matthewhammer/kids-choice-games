@@ -153,7 +153,7 @@ SCENE_BACK.castleroom = () => { const W = castleWallsOf(state.background); retur
 // wall as the room is drawn (livingroomScene, treeroomScene, witchroomScene,
 // healerroomScene; the tent's far wall, tentScene), in front of which the
 // friend stops, as in the imagination
-for (const [kind, up] of [["livingroom", 120], ["diningroom", 112], ["kitchen", 108], ["treeroom", 110], ["bubbleroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70], ["hutroom", HUT_UP], ["hutbed", HUT_UP], ["hutpotion", HUT_UP], ["hutcenter", HUT_UP], ["treetop", HUT_UP]])
+for (const [kind, up] of [["livingroom", 120], ["diningroom", 112], ["kitchen", 108], ["stairhall", 112], ["bedroom", 112], ["treeroom", 110], ["bubbleroom", 110], ["witchroom", 100], ["healerroom", 100], ["tent", 70], ["hutroom", HUT_UP], ["hutbed", HUT_UP], ["hutpotion", HUT_UP], ["hutcenter", HUT_UP], ["treetop", HUT_UP]])
   SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
 // (ticket 214, Matthew: "the horz blue line in each scene is wrong, and always too high -- it doesn't correspond with
 // where we'd walk or run -- we'd need to fly") Each outdoor place's back limit at the far edge of its own ground, as
