@@ -353,7 +353,7 @@ const HOUSE_EARS = { fox: `<path d="MX Y m-30 0 l10 -24 l12 24 Z m40 0 l10 -24 l
   bunny: `<path d="MX Y m-22 0 q-6 -46 8 -46 q8 0 6 46 Z m30 0 q-2 -46 8 -46 q14 0 8 46 Z" fill="C"/>`, bear: `<path d="MX Y m-24 0 a12 12 0 1 1 0.1 0 Z m48 0 a12 12 0 1 1 0.1 0 Z" fill="C"/>`,
   cat: `<path d="MX Y m-34 0 l6 -26 l18 26 Z m46 0 l18 -26 l6 26 Z" fill="C"/>`, frog: `<path d="MX Y m-20 4 a12 12 0 1 1 0.1 0 Z m40 0 a12 12 0 1 1 0.1 0 Z" fill="C"/>` };
 // (the places reached through a door, put in a square: a roof over them; the cave's, rock)
-const FLY_ROOFS = { livingroom: "#a8463a", witchroom: "#4a3456", treeroom: "#8a5a2b", treetop: "#8a5a2b", healerroom: "#c9a45a", tent: "#d9822b",
+const FLY_ROOFS = { livingroom: "#a8463a", diningroom: "#a8463a", kitchen: "#a8463a", witchroom: "#4a3456", treeroom: "#8a5a2b", treetop: "#8a5a2b", healerroom: "#c9a45a", tent: "#d9822b",
                     castleroom: "#6a6f80", hutroom: "#c9a45a", hutbed: "#c9a45a", hutpotion: "#c9a45a", hutcenter: "#c9a45a" };
 function flyLookOf(kind, key, o = state.background, cell = {}) {
   if (FLY_LOOKS[kind]) return FLY_LOOKS[kind](key, o, cell || {});

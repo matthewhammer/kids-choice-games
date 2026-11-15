@@ -22,7 +22,7 @@
 const WORLD_DIRS = { N: [0, -1], NE: [1, -1], E: [1, 0], SE: [1, 1], S: [0, 1], SW: [-1, 1], W: [-1, 0], NW: [-1, -1] };
 const WORLD_OPP = { N: "S", NE: "SW", E: "W", SE: "NW", S: "N", SW: "NE", W: "E", NW: "SE" };
 const WORLD_ARROWS = { N: "⬆️", NE: "↗️", E: "➡️", SE: "↘️", S: "⬇️", SW: "↙️", W: "⬅️", NW: "↖️" };
-const INSIDES = { house: ["livingroom"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
+const INSIDES = { house: ["livingroom", "diningroom", "kitchen"], treehouse: ["treeroom", "treetop"], witch: ["witchroom"], clearing: ["healerroom"], campsite: ["tent"],
                   waterfall: ["cave", "caveroom"], castle: ["castleroom"], lake: ["underwater"], hut: ["hutroom", "hutbed", "hutpotion", "hutcenter"] };
 const INSIDE_KINDS = new Set(Object.values(INSIDES).flat());
 const ELSEWHERE = ["imagination", "emptyroom", "bubblespace", "bubbleroom"];
@@ -329,13 +329,23 @@ function worldWaysAim(d) {
 // and an arrow over the picture when the friend is near; one leading nowhere is not there at all.
 function insideWays(B) {
   const to = kd => { const P = kd && kd !== "none" && PLACES.find(p => p[0] === kd); return P ? [{ d: "S", to: kd, attrs: `data-to="${kd}"`, label: P[1] }] : []; };
-  if (B.kind === "livingroom") return to(B.livingOut);
+  // (ticket 740) the house's rooms, a row west to east (HOUSE_ROW): each the next one's way to the side
+  const beside = ["W", "E"].flatMap((d, i) => { const kd = houseBeside(B.kind, i ? 1 : -1), P = kd && PLACES.find(p => p[0] === kd);
+    return P ? [{ d, to: kd, attrs: `data-to="${kd}"`, label: P[1] }] : []; });
+  if (B.kind === "livingroom") return [...to(B.livingOut), ...beside];
+  if (beside.length) return beside;
   if (B.kind === "hutroom") return to(B.hutCenter ? "hutcenter" : "hut");   // (ticket 278: toward us, out of the grass hut; 282: into its center, with one)
   if (B.kind === "hutcenter") return to("hut");
   if (B.kind === "treetop") return to(B.treetopBack);   // (ticket 516)
   if (B.kind === "treeroom") return to(B["treeBack" + Math.max(1, Math.min(6, B.houses ?? 4, Math.round(B.inside ?? 1)))]);
   if (B.kind === "castleroom") { const K = castleOf(B); return castleSouthWays(K, Math.max(1, Math.min(K.rooms.length, Math.round(B.castleRoom ?? 1)))); }
   return [];
+}
+// (ticket 740) into a room of the house's row from the one beside it: at the side it came in by, a step in from its doorway
+function houseArriveSide(from, to, B) {
+  const a = HOUSE_ROW.indexOf(from), b = HOUSE_ROW.indexOf(to);
+  if (a < 0 || b < 0 || Math.abs(a - b) !== 1) return;
+  B.figX = Math.sign(a - b) * 300; B.figY = 50;
 }
 // (a way's doorway: invisible, and not tapped, the arrow over the picture is; its shape, the triangle, is what the glow frames)
 // (ticket 313) an arrow's triangle's box in the picture, turned to its angle: [left, top, right, bottom]
@@ -358,8 +368,9 @@ const wayTri = (x, y, a, k) => { const r = 28 * k;
   return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${a})"><path d="M${f1(-0.6 * r)} ${f1(-0.8 * r)} L${f1(0.9 * r)} 0 L${f1(-0.6 * r)} ${f1(0.8 * r)} Z" fill="#000000" opacity="0"/></g>`; };
 function insideWaysSvg(B, x0, y0, x1, y1) {
   const IW = insideWays(B), k = (y1 - y0) / 700;
-  // (where the world's ways toward us are: worldWaysSvg's AT)
-  const AT = { S: [0, y1 - 30 * k, 90], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140] };
+  // (where the world's ways toward us are: worldWaysSvg's AT; ticket 740: and its ways to the sides, as a world square's)
+  const AT = { S: [0, y1 - 30 * k, 90], SE: [x1 - 60 * k, y1 - 50 * k, 40], SW: [x0 + 60 * k, y1 - 50 * k, 140],
+               E: [x1 - 45 * k, SCENE.ground + 40 * k, 0], W: [x0 + 45 * k, SCENE.ground + 40 * k, 180] };
   const ways = IW.map(w => [w.d, ...AT[w.d], { kind: w.to }, w.label, w.attrs]); wayHomes = {};
   worldWaysAt = [...ways, ...doorWays(B, k)];   // (ticket 525: and the cave doors' arrows; their doorways are the passages' own)
   worldWaysHud();

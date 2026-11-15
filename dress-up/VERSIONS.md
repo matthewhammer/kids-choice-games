@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.498 (2026-11-15)
+
+Everything in 0.0.497, plus:
+
+- **Two new rooms in the 🏠 house, for M: the 🍽️ dining room and the 🍳 kitchen** (ticket 740). From the 🛋️ living room, walk to its left edge and take the ⬅️ arrow into the dining room; from there, ⬅️ again into the kitchen. ➡️ goes back the way you came, and you arrive at that room's doorway. The dining room has a table set for four (plates, forks and knives, cups, a bowl of fruit, two candles), chairs behind it and a chair at each end to sit on, a chandelier, a sideboard of plates, a window and a painting of fruit. The kitchen has a fridge (with a drawing stuck on it), a counter with a sink under the window, a kettle and a cutting board, cupboards, and a stove with a pot that rattles its lid and steams. Both are in the 🏠 home group of the place picker, and their candles, chandelier, pot and steam follow the music's 🎛️ LFOs. More rooms are coming: the stairs, the bedroom and the basement.
+
 ## 0.0.497 (2026-11-10)
 
 Everything in 0.0.496, plus:
