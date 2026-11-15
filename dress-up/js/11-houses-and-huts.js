@@ -493,7 +493,8 @@ function diningroomScene(c) {
   // three chairs behind the table (their backs over it), the table, and a chair at each end, to sit on
   const backs = part("dining-chair-backs", c.F, () => [-0.55, 0, 0.55].map(u => diningChairSvg(c, u * DINING_TABLE.w / 2 * k, base - DINING_TABLE.d * k - 2 * k, true)).join(""));
   s += SEP + obj("chairs behind the table", base - DINING_TABLE.d * k, backs);
-  s += SEP + obj("dining table", base, part("dining-table", [c.F, sceneLfoKey(o, "fast")], () => diningTableSvg(c, base)));
+  // (ticket 744: tapped, or walked to and gone through, the table is sat down at, the meal on it seen from above: js/25-meal.js)
+  s += SEP + obj("dining table", base, `<g class="portal" data-meal="1" data-to="diningroom">` + part("dining-table", [c.F, sceneLfoKey(o, "fast")], () => diningTableSvg(c, base)) + `</g>`);
   diningChairXs(k).forEach((x, i) => { s += SEP + obj(i ? "chair at the right end" : "chair at the left end", base + 1, part("dining-chair-" + i, c.F, () => diningChairSvg(c, x, base))); });
   return s;
 }

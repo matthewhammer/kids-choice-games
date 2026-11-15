@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.502 (2026-11-15)
+
+Everything in 0.0.501, plus:
+
+- **🍽️ A meal at the dining table, for M** (ticket 744). Tap the table in the 🍽️ dining room and sit down to it: the table seen from above, a place set on a woven mat, with a plate, the fork on a napkin at its left, the knife and the spoon at its right, a glass of water, a little plate of bread, and the drinks. On the plate: a 🥪 sandwich, a 🍎 apple and a 🍌 banana; above it a 🧃 juice box and a 🥛 milk box. Tap a food to take a bite ("nom!", "crunch!", "yum!"), and again, and it is eaten bit by bit from one corner or end across, until it is gone and only crumbs are left; tap a drink to sip it ("slurp!") until the box is squeezed flat. When it is all eaten up, 🍽️ more food lays the table again. ⬅️ back to the table (or Escape) gets up again.
+
 ## 0.0.501 (2026-11-15)
 
 Everything in 0.0.500, plus, from Matthew and M's first tries of the new rooms:

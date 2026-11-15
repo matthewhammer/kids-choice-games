@@ -25,6 +25,7 @@ let stillMemo = { in: null, out: null };
 const stillScene = text => { if (text !== stillMemo.in) stillMemo = { in: text, out: text.replace(ANIMS_RE, "") }; return stillMemo.out; };
 function drawNow() {
   if (typeof flight !== "undefined" && flight) { flightDraw(); return; }   // (ticket 691: flying, the world from above instead: js/25-flight.js)
+  if (typeof meal !== "undefined" && meal) { mealDraw(); return; }   // (ticket 744: at the table, the place setting from above: js/25-meal.js)
   const { face: F, body: B } = state;
   // (ticket 123) treading water: the strokes for now, on top of any pose
   // (ticket 132: any animation from the Body tab, the same way; `tread` is only treading in water)
