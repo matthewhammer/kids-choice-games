@@ -78,9 +78,28 @@ function mealBite(id, x, y) {
 // edge of what is left a row of teeth marks. A mask: the food where it is white, gone where black, so a bite cuts only
 // the food, and what is under it shows (the plate, or an apple's inside). a0, a1: the angles from S across the food.
 // (inset: a food's inside, under its skin, eaten that much behind the skin's edge: the cut face, a band along the bite)
-function mealBitten(id, [sx, sy], a0, a1, D, taken, total, inner, inset = 0) {
+// (Matthew, 2026-11-15: "the way that the salad goes away seems like we eat it in some exponentially accelerated way. Can we
+// make the bites more 'same sized' each time?") Each bite takes the same share of the food's area: `body` says its shape. A
+// round food, [cx, cy, r] (a circle as large as it): the reach from S whose disc covers taken/total of that circle (the two
+// circles' overlap, solved for); "wedge", a food eaten from its point (a pizza slice from its tip), whose eaten area grows
+// as the reach squared; none, a long food eaten from its end (a banana, an ice cream bar), a length a bite
+function mealOverlap(a, b, d) {   // (the area two circles share: radii a and b, their middles d apart)
+  if (d >= a + b) return 0;
+  if (d <= Math.abs(a - b)) return Math.PI * Math.min(a, b) ** 2;
+  const x = clamp((d * d + a * a - b * b) / (2 * d * a), -1, 1), y = clamp((d * d + b * b - a * a) / (2 * d * b), -1, 1);
+  return a * a * Math.acos(x) + b * b * Math.acos(y) - 0.5 * Math.sqrt(Math.max(0, (-d + a + b) * (d + a - b) * (d - a + b) * (d + a + b)));
+}
+function mealReach(f, [sx, sy], D, body) {
+  if (body === "wedge") return D * Math.sqrt(f);
+  if (!Array.isArray(body)) return D * f;
+  const [cx, cy, rb] = body, d = Math.hypot(sx - cx, sy - cy), want = f * Math.PI * rb * rb;
+  let lo = 0, hi = d + rb;
+  for (let i = 0; i < 32; i++) { const m = (lo + hi) / 2; if (mealOverlap(m, rb, d) < want) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+function mealBitten(id, [sx, sy], a0, a1, D, taken, total, inner, inset = 0, body = null) {
   if (!taken) return inner;
-  const R = Math.max(0, D * taken / total - inset), n = 6, rs = Math.max(D / total * 0.42, 1);
+  const R = Math.max(0, mealReach(taken / total, [sx, sy], D, body) - inset), n = 6, rs = Math.max(D / total * 0.42, 1);
   let holes = `<circle cx="${f1(sx)}" cy="${f1(sy)}" r="${f1(R)}" fill="#000000"/>`;
   for (let i = 0; i <= n; i++) { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180;
     holes += `<circle cx="${f1(sx + Math.cos(a) * R)}" cy="${f1(sy + Math.sin(a) * R)}" r="${f1(rs)}" fill="#000000"/>`; }
@@ -101,7 +120,7 @@ function mealFoodSvg(id, u) {
       `<path d="M${mealXY(x + s + 2 * u, y - s + 4 * u)} L${mealXY(x + s + 2 * u, y + s + 2 * u)} L${mealXY(x - s + 4 * u, y + s + 2 * u)} Z" fill="#f3d9a4" stroke="#c99a52" stroke-width="${f1(1.4 * u)}"/>` +
       `<path d="M${mealXY(x + s, y - s + 7 * u)} L${mealXY(x - s + 7 * u, y + s)}" stroke="#e0705a" stroke-width="${f1(2 * u)}" stroke-linecap="round"/>` +
       `<path d="M${mealXY(x - s + 4.5 * u, y + s - 6 * u)} L${mealXY(x + s - 6 * u, y - s + 4.5 * u)}" stroke="#f2c12e" stroke-width="${f1(1.6 * u)}" stroke-linecap="round"/>` +
-      `<path d="M${mealXY(x + s + 2 * u, y - s + 9.5 * u)} L${mealXY(x - s + 9.5 * u, y + s + 2 * u)}" stroke="#f2c12e" stroke-width="${f1(1.6 * u)}" stroke-linecap="round"/>`), x, y, s * 1.2);
+      `<path d="M${mealXY(x + s + 2 * u, y - s + 9.5 * u)} L${mealXY(x - s + 9.5 * u, y + s + 2 * u)}" stroke="#f2c12e" stroke-width="${f1(1.6 * u)}" stroke-linecap="round"/>`, 0, [x + 1 * u, y + 1 * u, 1.2 * s]), x, y, s * 1.2);
   }
   if (id === "tacos") {   // two tacos lying on the plate: folded shells, their filling at the open edge (beans, cheese, lettuce, salsa)
     const x = -9 * u, y = -2 * u;
@@ -113,7 +132,7 @@ function mealFoodSvg(id, u) {
         [...Array(7)].map((_, i) => `<circle cx="${f1(tx - R + 3 * u + i * 3.1 * u)}" cy="${f1(ty - 1.2 * u + (i % 2) * 0.8 * u)}" r="${f1(1.1 * u)}" fill="#4a2c3a"/>`).join("") +
         [...Array(6)].map((_, i) => `<path d="M${mealXY(tx - R + 4 * u + i * 3.4 * u, ty - 2.6 * u)} l${f1(1.6 * u)} ${f1(1.4 * u)}" stroke="#f6d743" stroke-width="${f1(1 * u)}" stroke-linecap="round"/>`).join("") +
         [...Array(4)].map((_, i) => `<circle cx="${f1(tx - R + 5 * u + i * 5.2 * u)}" cy="${f1(ty - 0.2 * u)}" r="${f1(0.9 * u)}" fill="#e0402b"/>`).join("") + `</g>`; };
-    return g(mealBitten(id, [x - 17 * u, y - 2 * u], -55, 55, 36 * u, taken, f.bites, shell(x - 2 * u, y - 7 * u) + shell(x + 2 * u, y + 6 * u)), x, y, 15 * u);
+    return g(mealBitten(id, [x - 17 * u, y - 2 * u], -55, 55, 36 * u, taken, f.bites, shell(x - 2 * u, y - 7 * u) + shell(x + 2 * u, y + 6 * u), 0, [x, y, 13 * u]), x, y, 15 * u);
   }
   if (id === "friedrice") {   // a heap of fried rice: its grains, peas, bits of carrot, scrambled egg and cubes of tofu
     const x = -9 * u, y = -2 * u, r = 14 * u, R = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -125,18 +144,18 @@ function mealFoodSvg(id, u) {
     for (let i = 82; i < 92; i++) { const [gx, gy] = at(i); heap += `<rect x="${f1(gx - 0.9 * u)}" y="${f1(gy - 0.9 * u)}" width="${f1(1.8 * u)}" height="${f1(1.8 * u)}" fill="#f08a24" transform="rotate(${Math.round(R(i, 4) * 90)} ${f1(gx)} ${f1(gy)})"/>`; }   // carrots
     for (let i = 92; i < 100; i++) { const [gx, gy] = at(i); heap += `<path d="M${mealXY(gx - 1.6 * u, gy)} q${f1(1 * u)} ${f1(-1.4 * u)} ${f1(2.2 * u)} ${f1(-0.4 * u)} q${f1(1.2 * u)} ${f1(1 * u)} ${f1(-0.4 * u)} ${f1(1.8 * u)} q${f1(-1.4 * u)} ${f1(0.4 * u)} ${f1(-1.8 * u)} ${f1(-1.4 * u)} Z" fill="#f6d743"/>`; }   // egg
     for (let i = 100; i < 107; i++) { const [gx, gy] = at(i); heap += `<rect x="${f1(gx - 1.4 * u)}" y="${f1(gy - 1.4 * u)}" width="${f1(2.8 * u)}" height="${f1(2.8 * u)}" rx="${f1(0.4 * u)}" fill="#f7efdc" stroke="#d8c39a" stroke-width="${f1(0.4 * u)}" transform="rotate(${Math.round(R(i, 5) * 90)} ${f1(gx)} ${f1(gy)})"/>`; }   // tofu
-    return g(mealBitten(id, [x - r - 1 * u, y + r * 0.6], -80, 30, 2.2 * r, taken, f.bites, heap), x, y, r * 1.1);
+    return g(mealBitten(id, [x - r - 1 * u, y + r * 0.6], -80, 30, 2.2 * r, taken, f.bites, heap, 0, [x, y, r]), x, y, r * 1.1);
   }
   if (id === "orange") {   // a round orange above the plate, a leaf at its top; eaten from its right side, its segments showing
     const x = -8 * u, y = -38 * u, r = 7 * u;
     if (!L) return [0, 1, 2].map(i => `<path d="M${mealXY(x - 3 * u + i * 3 * u, y + 2 * u)} q${f1(1.5 * u)} ${f1(-2 * u)} ${f1(3 * u)} 0" stroke="#f39c12" stroke-width="${f1(1.4 * u)}" fill="none" stroke-linecap="round"/>`).join("");
     const S = [x + r + 0.5 * u, y], inside = `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r * 0.95)}" fill="#ffc06a"/>` +
       [...Array(8)].map((_, i) => { const a = i * Math.PI / 4; return `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + Math.cos(a) * r * 0.9)}" y2="${f1(y + Math.sin(a) * r * 0.9)}" stroke="#fff3d6" stroke-width="${f1(0.6 * u)}"/>`; }).join("");
-    return g(mealBitten(id + "-in", S, 100, 260, 2.05 * r, taken, f.bites, inside, 1.6 * u) + mealBitten(id, S, 100, 260, 2.05 * r, taken, f.bites,
+    return g(mealBitten(id + "-in", S, 100, 260, 2.05 * r, taken, f.bites, inside, 1.6 * u, [x, y, r]) + mealBitten(id, S, 100, 260, 2.05 * r, taken, f.bites,
       `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#f39c12" stroke="#c8780a" stroke-width="${f1(u)}"/>` +
       [[-3, -2], [2, 3], [-1, 4], [3, -3], [-4, 2]].map(([dx, dy]) => `<circle cx="${f1(x + dx * u)}" cy="${f1(y + dy * u)}" r="${f1(0.45 * u)}" fill="#e08a0a"/>`).join("") +
       `<circle cx="${f1(x - 2.4 * u)}" cy="${f1(y - 2.4 * u)}" r="${f1(1.6 * u)}" fill="#ffd08a" opacity="0.6"/><circle cx="${f1(x)}" cy="${f1(y - r + 1 * u)}" r="${f1(0.8 * u)}" fill="#6b8e23"/>` +
-      `<path d="M${mealXY(x, y - r + 1 * u)} q${f1(-4 * u)} ${f1(-3 * u)} ${f1(-6 * u)} ${f1(-1 * u)} q${f1(3 * u)} ${f1(2.6 * u)} ${f1(6 * u)} ${f1(1 * u)} Z" fill="#4caf50"/>`), x, y, r * 1.3);
+      `<path d="M${mealXY(x, y - r + 1 * u)} q${f1(-4 * u)} ${f1(-3 * u)} ${f1(-6 * u)} ${f1(-1 * u)} q${f1(3 * u)} ${f1(2.6 * u)} ${f1(6 * u)} ${f1(1 * u)} Z" fill="#4caf50"/>`, 0, [x, y, r]), x, y, r * 1.3);
   }
   if (id === "pizza") {   // a slice of spinach and cheese pizza: tomato sauce at its edge, melted mozzarella, ricotta, spinach; its crust at the back; eaten from its tip to the crust
     const tipX = -25 * u, tipY = 8 * u, cA = [0, -19 * u], cB = [4 * u, 9 * u];   // (its tip, on the plate's left; its crust's two ends, at the right)
@@ -151,7 +170,7 @@ function mealFoodSvg(id, u) {
     for (let i = 0; i < 5; i++) { const [px, py] = inSlice(0.35 + 0.55 * R(i, 6), 0.2 + 0.6 * R(i, 7)); pz += `<circle cx="${f1(px)}" cy="${f1(py)}" r="${f1(1.6 * u)}" fill="#ffffff" stroke="#efe6d2" stroke-width="${f1(0.3 * u)}"/>`; }   // ricotta
     pz += `<path d="M${mealXY(...cA)} Q${mealXY(6 * u, -6 * u)} ${mealXY(...cB)}" fill="none" stroke="#c98a3c" stroke-width="${f1(4.4 * u)}" stroke-linecap="round"/>` +   // the crust
       `<path d="M${mealXY(cA[0] + 0.6 * u, cA[1] + 1 * u)} Q${mealXY(5.4 * u, -6 * u)} ${mealXY(cB[0] - 0.4 * u, cB[1] - 1 * u)}" fill="none" stroke="#e3b06a" stroke-width="${f1(1.4 * u)}" stroke-linecap="round"/>`;
-    return g(mealBitten(id, [tipX - 1 * u, tipY + 0.4 * u], -60, 30, 34 * u, taken, f.bites, pz), -10 * u, -2 * u, 15 * u);
+    return g(mealBitten(id, [tipX - 1 * u, tipY + 0.4 * u], -60, 30, 34 * u, taken, f.bites, pz, 0, "wedge"), -10 * u, -2 * u, 15 * u);
   }
   if (id === "sundae") {   // a glass bowl on the plate: three scoops (vanilla, chocolate, strawberry), whipped cream, chocolate sauce, sprinkles, a cherry
     const bowl = `<circle cx="0" cy="0" r="${f1(21 * u)}" fill="#eaf6fb" stroke="#a9cfe2" stroke-width="${f1(1.6 * u)}"/><circle cx="0" cy="0" r="${f1(17 * u)}" fill="none" stroke="#ffffff" stroke-width="${f1(1 * u)}" opacity="0.7"/>`;
@@ -162,7 +181,7 @@ function mealFoodSvg(id, u) {
       [0, 1, 2, 3, 4].map(i => { const a = i * 1.26; return `<circle cx="${f1(Math.cos(a) * 3.2 * u)}" cy="${f1(Math.sin(a) * 3.2 * u - 1 * u)}" r="${f1(3 * u)}" fill="#ffffff"/>`; }).join("") +
       [["#e85d75", -9, 2], ["#5dade2", 9, 3], ["#f2c12e", -2, 11], ["#8bc34a", 4, -10], ["#e85d75", 11, -2], ["#5dade2", -4, -11]].map(([col, dx, dy], i) => `<rect x="${f1(dx * u)}" y="${f1(dy * u)}" width="${f1(2.2 * u)}" height="${f1(0.8 * u)}" rx="${f1(0.4 * u)}" fill="${col}" transform="rotate(${i * 37} ${f1(dx * u)} ${f1(dy * u)})"/>`).join("") +
       `<circle cx="${f1(1 * u)}" cy="${f1(-2 * u)}" r="${f1(2.6 * u)}" fill="#d62f2f"/><path d="M${mealXY(1 * u, -4.4 * u)} q${f1(1 * u)} ${f1(-3 * u)} ${f1(4 * u)} ${f1(-4 * u)}" stroke="#4e7a2a" stroke-width="${f1(0.7 * u)}" fill="none"/>`;
-    return g(bowl + mealBitten(id, [-22 * u, 2 * u], -65, 65, 40 * u, taken, f.bites, scoops) + spoon, 0, 0, 22 * u);
+    return g(bowl + mealBitten(id, [-22 * u, 2 * u], -65, 65, 40 * u, taken, f.bites, scoops, 0, [0, 0, 14 * u]) + spoon, 0, 0, 22 * u);
   }
   if (id === "icebar") {   // an ice cream bar lying on the plate: chocolate outside, vanilla inside, on its stick; eaten from its top down to the stick
     const bar = (w, h, col, extra = "") => `<rect x="${f1(-w / 2)}" y="${f1(-h / 2)}" width="${f1(w)}" height="${f1(h)}" rx="${f1(w * 0.45)}" fill="${col}"${extra}/>`;
@@ -183,15 +202,15 @@ function mealFoodSvg(id, u) {
     const R = (i, j) => { const v = Math.sin(i * 91.7 + j * 47.3) * 43758.5453; return v - Math.floor(v); };
     const ice = `<circle cx="0" cy="0" r="${f1(13.5 * u)}" fill="${col}"/>` + [...Array(40)].map((_, i) => { const a = R(i, 1) * 6.283, d = Math.sqrt(R(i, 2)) * 12.5 * u;
       return `<circle cx="${f1(Math.cos(a) * d)}" cy="${f1(Math.sin(a) * d)}" r="${f1((0.5 + 0.5 * R(i, 3)) * u)}" fill="${i % 3 ? "#ffffff" : dark}" opacity="${i % 3 ? 0.55 : 0.35}"/>`; }).join("");
-    return g(cup + mealBitten(id, [15 * u, -2 * u], 115, 245, 30 * u, taken, f.bites, ice) + scoop, 0, 0, 18 * u);
+    return g(cup + mealBitten(id, [15 * u, -2 * u], 115, 245, 30 * u, taken, f.bites, ice, 0, [0, 0, 13.5 * u]) + scoop, 0, 0, 18 * u);
   }
   if (id === "apple") {   // red and round, a stem and a leaf; bitten, its white inside shows
     const x = 15 * u, y = -9 * u, r = 8 * u;
     if (!L) return `<path d="M${mealXY(x - 2 * u, y - 4 * u)} Q${mealXY(x + 3 * u, y)} ${mealXY(x - 2 * u, y + 4 * u)}" stroke="#f3e6b8" stroke-width="${f1(3 * u)}" stroke-linecap="round"/>` + `<line x1="${f1(x - 2 * u)}" y1="${f1(y - 4 * u)}" x2="${f1(x - 3 * u)}" y2="${f1(y - 7 * u)}" stroke="#6b4423" stroke-width="${f1(u)}"/>`;
     // (its pale inside, under the skin: what a bite shows)
     const S = [x + r + 0.5 * u, y];
-    return g(mealBitten(id + "-in", S, 100, 260, 2.05 * r, taken, f.bites, `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r * 0.95)}" fill="#f7efd2"/>`, 1.8 * u) + mealBitten(id, S, 100, 260, 2.05 * r, taken, f.bites, `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#d62f2f" stroke="#9a1f1f" stroke-width="${f1(u)}"/><circle cx="${f1(x - 3 * u)}" cy="${f1(y - 3 * u)}" r="${f1(2.2 * u)}" fill="#ff8a80" opacity="0.7"/>` +
-      `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + 1 * u)}" y2="${f1(y - 3 * u)}" stroke="#6b4423" stroke-width="${f1(1.2 * u)}" stroke-linecap="round"/><path d="M${mealXY(x + 1 * u, y - 2 * u)} q${f1(4 * u)} ${f1(-3 * u)} ${f1(6 * u)} 0 q${f1(-3 * u)} ${f1(3 * u)} ${f1(-6 * u)} 0 Z" fill="#5cb85c"/>`), x, y, r * 1.3);
+    return g(mealBitten(id + "-in", S, 100, 260, 2.05 * r, taken, f.bites, `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r * 0.95)}" fill="#f7efd2"/>`, 1.8 * u, [x, y, r]) + mealBitten(id, S, 100, 260, 2.05 * r, taken, f.bites, `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(r)}" fill="#d62f2f" stroke="#9a1f1f" stroke-width="${f1(u)}"/><circle cx="${f1(x - 3 * u)}" cy="${f1(y - 3 * u)}" r="${f1(2.2 * u)}" fill="#ff8a80" opacity="0.7"/>` +
+      `<line x1="${f1(x)}" y1="${f1(y)}" x2="${f1(x + 1 * u)}" y2="${f1(y - 3 * u)}" stroke="#6b4423" stroke-width="${f1(1.2 * u)}" stroke-linecap="round"/><path d="M${mealXY(x + 1 * u, y - 2 * u)} q${f1(4 * u)} ${f1(-3 * u)} ${f1(6 * u)} 0 q${f1(-3 * u)} ${f1(3 * u)} ${f1(-6 * u)} 0 Z" fill="#5cb85c"/>`, 0, [x, y, r]), x, y, r * 1.3);
   }
   if (id === "banana") {   // a yellow crescent, its tips brown; eaten from its right end along to its left
     const x = 4 * u, y = 15 * u, w = 17 * u;
@@ -205,7 +224,7 @@ function mealFoodSvg(id, u) {
   if (id === "bread") {   // a slice on the little plate at the top left: its crust, its crumb
     const x = -36 * u, y = -30 * u, s = 9 * u;
     if (!L) return mealCrumbs(x, y, s, "#c98a3c");
-    return g(mealBitten(id, [x + s + 0.5 * u, y - s * 1.2], 80, 190, 2.4 * s, taken, f.bites, `<path d="M${mealXY(x - s, y + s)} V${f1(y - s * 0.3)} Q${mealXY(x - s, y - s * 1.2)} ${mealXY(x, y - s * 1.2)} Q${mealXY(x + s, y - s * 1.2)} ${mealXY(x + s, y - s * 0.3)} V${f1(y + s)} Z" fill="#f6e2b3" stroke="#b9772f" stroke-width="${f1(2 * u)}"/>`), x, y, s * 1.2);
+    return g(mealBitten(id, [x + s + 0.5 * u, y - s * 1.2], 80, 190, 2.4 * s, taken, f.bites, `<path d="M${mealXY(x - s, y + s)} V${f1(y - s * 0.3)} Q${mealXY(x - s, y - s * 1.2)} ${mealXY(x, y - s * 1.2)} Q${mealXY(x + s, y - s * 1.2)} ${mealXY(x + s, y - s * 0.3)} V${f1(y + s)} Z" fill="#f6e2b3" stroke="#b9772f" stroke-width="${f1(2 * u)}"/>`, 0, [x, y - 0.1 * s, 1.15 * s]), x, y, s * 1.2);
   }
   // the drinks, at the top right: a box seen from above, its straw; each sip squeezes it a little, at the last it is flat
   const juice = id === "juice", x = juice ? 30 * u : 48 * u, y = juice ? -34 * u : -26 * u, w = 11 * u, h = 15 * u, sq = 1 - 0.13 * taken, flat = !L;

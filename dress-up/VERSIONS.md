@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.507 (2026-11-15)
+
+Everything in 0.0.506, plus:
+
+- **🍴 Bites are the same size each time** (ticket 752). Eating sped up as it went, because the eaten part grew with the square of how far it reached. Now each bite takes the same share of the food: the salad goes away an eighth at a time, and the sandwich, tacos, fried rice, orange, apple, bread, sundae and Italian ice each lose the same amount at every bite (the pizza slice too, from its tip to its crust).
+
 ## 0.0.506 (2026-11-15)
 
 Everything in 0.0.505, plus:
