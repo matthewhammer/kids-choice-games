@@ -104,6 +104,22 @@ function saladEnd() {
   if (root) root.remove();
   changed();
 }
+// (Matthew, 2026-11-15: "during 'eat it' --- can we animate the fork moving towards/around the edge of the eating edge? for
+// salad") Eating, the fork is at the eaten edge: its tines at the edge's middle, just into what is left, sweeping slowly
+// along the edge (turning about where the eating began, so it keeps to the edge), and at each bite poking in from where
+// the edge was to where it is now. Eaten up, it rests at the bowl's side. (Its poke starts when it is drawn: saladDraw
+// begins each [data-begin-now] animation, as SMIL put in later would otherwise count from the page's start.)
+const SALAD_EAT_FROM = [-37, -4], SALAD_EAT_ACROSS = 74;   // (where the eating begins, the bowl's left edge, and how far it goes, in u)
+function saladForkSvg(u, eaten) {
+  const fork = `<g stroke-linecap="round"><line x1="${f1(-2 * u)}" y1="0" x2="${f1(-24 * u)}" y2="0" stroke="#9aa3ab" stroke-width="${f1(1.8 * u)}"/>` +
+    `<path d="M${mealXY(-3 * u, -2 * u)} H${f1(-1 * u)} V${f1(2 * u)} H${f1(-3 * u)}" fill="none" stroke="#9aa3ab" stroke-width="${f1(1 * u)}"/>` +
+    [-1.5, -0.5, 0.5, 1.5].map(d => `<line x1="${f1(-1 * u)}" y1="${f1(d * u)}" x2="${f1(5 * u)}" y2="${f1(d * u)}" stroke="#9aa3ab" stroke-width="${f1(0.7 * u)}"/>`).join("") + `</g>`;
+  if (eaten) return `<g transform="translate(${f1(44 * u)} ${f1(30 * u)}) rotate(-130)">${fork}</g>`;
+  const [sx, sy] = SALAD_EAT_FROM.map(v => v * u), D = SALAD_EAT_ACROSS * u, R = D * salad.taken / SALAD_BITES, Rp = D * Math.max(0, salad.taken - 1) / SALAD_BITES;
+  // (the sweep, about where the eating began; in it, the fork at the edge, a little turned, as held from the bowl's near side)
+  return `<g pointer-events="none"><animateTransform attributeName="transform" type="rotate" values="-26 ${f1(sx)} ${f1(sy)};26 ${f1(sx)} ${f1(sy)};-26 ${f1(sx)} ${f1(sy)}" dur="3.4s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>` +
+    `<g transform="translate(${f1(sx + R + 2 * u)} ${f1(sy)}) rotate(-24)"><g><animateTransform data-begin-now="1" attributeName="transform" type="translate" values="${f1(Rp - R)} 0;${f1(4 * u)} 0;0 0" keyTimes="0;0.55;1" dur="0.5s" begin="indefinite" fill="freeze"/>${fork}</g></g></g>`;
+}
 function saladSvg(vb) {
   const u = Math.min(vb.width / 150, vb.height / 112), cx = vb.x + vb.width / 2, cy = vb.y + vb.height * 0.5, now = performance.now();
   // the counter: pale stone, flecked
@@ -135,9 +151,8 @@ function saladSvg(vb) {
   t += `<g${shake}><circle cx="0" cy="${f1(-4 * u)}" r="${f1(39 * u)}" fill="#c8915a" stroke="#8a5d30" stroke-width="${f1(1.4 * u)}"/><circle cx="0" cy="${f1(-4 * u)}" r="${f1(35 * u)}" fill="#a8743f"/>` +
     `<circle cx="0" cy="${f1(-4 * u)}" r="${f1(37 * u)}" fill="none" stroke="#e0b07a" stroke-width="${f1(1 * u)}" opacity="0.7"/>` +
     `<g data-salad-bowl="1" style="cursor:pointer"><circle cx="0" cy="${f1(-4 * u)}" r="${f1(35 * u)}" fill="#000000" opacity="0"/>` +
-    (eaten ? "" : mealBitten("salad", [-37 * u, -4 * u], -60, 60, 74 * u, salad.taken, SALAD_BITES, inside)) + `</g>` +
-    (salad.eat ? `<g stroke-linecap="round"><line x1="${f1(30 * u)}" y1="${f1(20 * u)}" x2="${f1(46 * u)}" y2="${f1(36 * u)}" stroke="#9aa3ab" stroke-width="${f1(1.8 * u)}"/>` +
-      [-1.4, -0.4, 0.6, 1.6].map(d => `<line x1="${f1(28 * u + d * u)}" y1="${f1(18 * u - d * u)}" x2="${f1(24 * u + d * u)}" y2="${f1(14 * u - d * u)}" stroke="#9aa3ab" stroke-width="${f1(0.7 * u)}"/>`).join("") + `</g>` : "") + `</g>`;
+    (eaten ? "" : mealBitten("salad", SALAD_EAT_FROM.map(v => v * u), -60, 60, SALAD_EAT_ACROSS * u, salad.taken, SALAD_BITES, inside)) + `</g>` +
+    (salad.eat ? saladForkSvg(u, eaten) : "") + `</g>`;
   const S = salad.say;
   if (S && now - S.at < 900) t += `<text class="meal-say" x="0" y="${f1(-20 * u)}" text-anchor="middle" font-size="${f1(6 * u)}" font-weight="bold" fill="#2e7d32" stroke="#ffffff" stroke-width="${f1(0.8 * u)}" paint-order="stroke" font-family="sans-serif">${S.text}</text>`;
   t += `</g>`;
@@ -171,6 +186,7 @@ function saladDraw() {
   if (!root) { root = document.createElementNS("http://www.w3.org/2000/svg", "g"); root.id = "salad"; pic.append(root); }
   fitPic();
   root.innerHTML = saladSvg(pic.viewBox.baseVal);
+  for (const a of root.querySelectorAll("[data-begin-now]")) try { a.beginElement(); } catch (e) { /* (no SMIL here: the fork simply stands at the edge) */ }
 }
 // a tap at the counter: a dish, into the bowl; the buttons; the bowl, while eating it, a bite (before the picture's own walking)
 for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {

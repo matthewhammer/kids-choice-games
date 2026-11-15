@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.506 (2026-11-15)
+
+Everything in 0.0.505, plus:
+
+- **🍴 The fork follows the salad as you eat it** (ticket 751). With 🍴 eat it, the fork sits at the edge of what has been eaten, its tines just into the salad that is left, and sweeps slowly back and forth along that edge; at each bite it pokes in, from where the edge was to where it is now. When the salad is all eaten up, the fork rests at the side of the bowl.
+
 ## 0.0.505 (2026-11-15)
 
 Everything in 0.0.504, plus:
