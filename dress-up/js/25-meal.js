@@ -30,7 +30,13 @@ const MEAL_DESSERTS = [{ id: "sundae", name: "🍨 ice cream sundae", emoji: "�
 const MEAL_ICE_FLAVORS = [["lemon", "🍋 lemon", "#fff59d", "#f2d335"], ["cherry", "🍒 cherry", "#ef5350", "#c62828"], ["blueraspberry", "🫐 blue raspberry", "#64b5f6", "#1e6fc2"],
                           ["mango", "🥭 mango", "#ffc260", "#f08a00"], ["watermelon", "🍉 watermelon", "#ff8a99", "#e84a5f"]];
 const MEAL_OFF_PLATE = new Set(["orange", "bread", "juice", "milk"]);
-let mealIceFlavor = "lemon";   // (the Italian ice's flavor last chosen, for this visit)
+let mealIceFlavor = "lemon";
+// (a dish's chip: its emoji, or for the ice cream bar, which has none, a little bar on its stick; x its chip's left, y its top)
+const mealChipIcon = (m, x, y, cw, u) => m.id === "icebar"
+  ? `<g transform="translate(${f1(x + cw / 2)} ${f1(y + 5 * u)}) rotate(-30)"><rect x="${f1(-2 * u)}" y="${f1(-3.6 * u)}" width="${f1(4 * u)}" height="${f1(6 * u)}" rx="${f1(1.8 * u)}" fill="#5a3a22"/><rect x="${f1(-0.6 * u)}" y="${f1(2.2 * u)}" width="${f1(1.2 * u)}" height="${f1(2.6 * u)}" fill="#e6c690"/></g>`
+  : `<text x="${f1(x + cw / 2)}" y="${f1(y + 7.2 * u)}" text-anchor="middle" font-size="${f1(6 * u)}" font-family="sans-serif">${m.emoji}</text>`;
+// (ticket 750) the salad maker, a choice at the table too: its chip after the main dishes
+const MEAL_SALAD_CHIP = { id: "salad", name: "🥗 make a salad", emoji: "🥗" };   // (the Italian ice's flavor last chosen, for this visit)
 const MEAL_FOODS = [...MEAL_MAINS, ...MEAL_SIDES, ...MEAL_DESSERTS];
 let mealMainPick = "sandwich";   // (the main dish last chosen at the table, for this visit)
 const mealOnTable = main => [MEAL_MAINS.find(m => m.id === main) || MEAL_MAINS[0], ...MEAL_SIDES];
@@ -262,13 +268,12 @@ function mealSvg(vb) {
   const by = vb.y + vb.height - 18 * u;
   const btn = (x, w, label, attr) => `<g ${attr} style="cursor:pointer"><rect x="${f1(x)}" y="${f1(by)}" width="${f1(w)}" height="${f1(10 * u)}" rx="${f1(5 * u)}" fill="#ffffff" stroke="#8a7a60" stroke-width="${f1(0.8 * u)}"/>` +
     `<text x="${f1(x + w / 2)}" y="${f1(by + 6.6 * u)}" text-anchor="middle" font-size="${f1(4.4 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">${label}</text></g>`;
-  t += btn(vb.x + 4 * u, 30 * u, "⬅️ back", "data-meal-leave=\"1\"") + (all ? btn(vb.x + vb.width - 34 * u, 30 * u, "🍽️ more", "data-meal-more=\"1\"") : "");
+  t += btn(vb.x + 4 * u, 24 * u, "⬅️ back", "data-meal-leave=\"1\"") + (all ? btn(vb.x + vb.width - 30 * u, 26 * u, "🍽️ more", "data-meal-more=\"1\"") : "");
   // (tickets 746 and 748) the main dish and the dessert, chosen: a chip for each, between the buttons; the one on the plate ringed
-  const cw = 10.5 * u, gap = 1.5 * u, split = 4 * u, chips = [...MEAL_MAINS.map(m => ["main", m]), ...MEAL_DESSERTS.map(d => ["dessert", d])];
+  const cw = 9.5 * u, gap = 1 * u, split = 3 * u, chips = [...MEAL_MAINS.map(m => ["main", m]), ["salad", MEAL_SALAD_CHIP], ...MEAL_DESSERTS.map(d => ["dessert", d])];
   const x0 = cx - (chips.length * cw + (chips.length - 1) * gap + split) / 2;
   t += chips.map(([kind, m], i) => { const on = kind === meal.course && (kind === "main" ? m.id === meal.main : m.id === meal.dessert), x = x0 + i * (cw + gap) + (kind === "dessert" ? split : 0);
-    const icon = m.id === "icebar" ? `<g transform="translate(${f1(x + cw / 2)} ${f1(by + 5 * u)}) rotate(-30)"><rect x="${f1(-2 * u)}" y="${f1(-3.6 * u)}" width="${f1(4 * u)}" height="${f1(6 * u)}" rx="${f1(1.8 * u)}" fill="#5a3a22"/><rect x="${f1(-0.6 * u)}" y="${f1(2.2 * u)}" width="${f1(1.2 * u)}" height="${f1(2.6 * u)}" fill="#e6c690"/></g>`
-      : `<text x="${f1(x + cw / 2)}" y="${f1(by + 7.2 * u)}" text-anchor="middle" font-size="${f1(6 * u)}" font-family="sans-serif">${m.emoji}</text>`;
+    const icon = mealChipIcon(m, x, by, cw, u);
     return `<g data-meal-${kind}="${m.id}" style="cursor:pointer"><title>${m.name}</title><rect x="${f1(x)}" y="${f1(by)}" width="${f1(cw)}" height="${f1(10 * u)}" rx="${f1(3 * u)}" fill="${on ? "#fff3c4" : "#ffffff"}" stroke="${on ? "#c0392b" : "#8a7a60"}" stroke-width="${f1((on ? 1.4 : 0.8) * u)}"/>` + icon + `</g>`; }).join("");
   return t;
 }
@@ -287,6 +292,7 @@ for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
   e.stopPropagation(); e.preventDefault();
   if (ev !== "pointerdown") return;
   if (e.target.closest("[data-meal-leave]")) { mealEnd(); return; }
+  if (e.target.closest("[data-meal-salad]")) { saladFromTable(); return; }   // (ticket 750)
   if (e.target.closest("[data-meal-more]")) {
     if (meal.course === "dessert") { meal.left[meal.dessert] = MEAL_FOODS.find(f => f.id === meal.dessert).bites; meal.say = null; } else meal = mealNew(meal.main);
     mealDraw(); return; }

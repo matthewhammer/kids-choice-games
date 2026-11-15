@@ -19,7 +19,31 @@ const SALAD_RIGHT = [["chickpea", "chickpeas"], ["bean", "black beans"], ["corn"
 // a bed of leaves across its bottom; the dishes heaped full
 const SALAD_LEAFY = new Set(["lettuce", "spinach"]), SALAD_MAX = 520, SALAD_BITES = 8;
 const saladSize = kind => SALAD_LEAFY.has(kind) ? 1.9 : kind === "avocado" || kind === "egg" ? 1.5 : 1.6;
-let salad = null, saladKept = null;   // (the salad being made: its pieces, where each lies; its dressing; eating it, how many bites taken)
+let salad = null, saladKept = null;
+// (ticket 750, Matthew 2026-11-15: "Let's link that here, with another meal option chip? and when we do it here, let's link
+// back to the other meal options, somehow.") Made from the dining table (its 🥗 chip): the meal as it was, kept to go back
+// to; the salad maker shows the table's dishes in a row at its top, each going back to the table with that dish, and its
+// ⬅️ back goes back to the table, not to the kitchen
+let saladFrom = null, mealStash = null;
+function saladFromTable() {
+  if (!meal) return;
+  mealStash = meal; meal = null;
+  const root = document.getElementById("pic").querySelector(":scope > #meal");
+  if (root) root.remove();
+  salad = saladKept || saladNew(); saladFrom = "table";
+  changed();
+}
+// (pick: "main:tacos" or "dessert:sundae", the dish chosen; none, the meal as it was left)
+function saladToTable(pick) {
+  saladKept = salad; salad = null; saladFrom = null;
+  const root = document.getElementById("pic").querySelector(":scope > #salad");
+  if (root) root.remove();
+  meal = mealStash || mealNew(); mealStash = null;
+  const [kind, id] = (pick || "").split(":"), f = MEAL_FOODS.find(q => q.id === id);
+  if (kind === "main" && f) { if (id !== meal.main) { mealMainPick = id; meal = { ...meal, main: id, left: { ...meal.left, [id]: f.bites } }; } meal.course = "main"; }
+  if (kind === "dessert" && f) { if (!(meal.course === "dessert" && meal.dessert === id)) { meal.left[id] = f.bites; meal.dessert = id; } meal.course = "dessert"; }
+  changed();
+}   // (the salad being made: its pieces, where each lies; its dressing; eating it, how many bites taken)
 const saladNew = () => ({ items: [], dressing: 0, eat: false, taken: 0, n: 0, shake: 0, say: null });
 // a deterministic chance, from a number and a slot
 const saladR = (i, j) => { const v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); };
@@ -73,6 +97,7 @@ function saladStart(door) {
 }
 function saladEnd() {
   if (!salad) return;
+  if (saladFrom === "table") { saladToTable(); return; }   // (ticket 750: back to the table it was made from)
   saladKept = salad; salad = null;
   document.body.classList.remove("eating");
   const root = document.getElementById("pic").querySelector(":scope > #salad");
@@ -119,7 +144,16 @@ function saladSvg(vb) {
   // the words at the top, and the buttons
   const empty = !salad.items.length;
   const title = eaten ? "😋 All eaten up!" : salad.eat ? "🍴 Tap the salad to take a bite" : empty ? "🥗 Tap a dish to put it in the bowl" : "🥗 Add more, or toss it, or eat it!";
-  t += `<text x="${f1(cx)}" y="${f1(vb.y + 6.5 * u)}" text-anchor="middle" font-size="${f1(5 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">${title}</text>`;
+  // (ticket 750) made from the table: the table's dishes in a row at the top, the main dishes and this salad at the left, the
+  // desserts at the right; each goes back to the table with that dish
+  const atTable = saladFrom === "table";
+  t += `<text x="${f1(cx)}" y="${f1(vb.y + 6.5 * u)}" text-anchor="middle" font-size="${f1(5 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">${atTable && !eaten && !salad.eat ? "🥗 Your salad" : title}</text>`;
+  if (atTable) {
+    const cw = 9.5 * u, gap = 1 * u, cy0 = vb.y + 1.6 * u, chip = (x, m, pick, on) => `<g ${pick ? `data-salad-meal="${pick}"` : ""} style="cursor:pointer"><title>${m.name}</title>` +
+      `<rect x="${f1(x)}" y="${f1(cy0)}" width="${f1(cw)}" height="${f1(9 * u)}" rx="${f1(3 * u)}" fill="${on ? "#fff3c4" : "#ffffff"}" stroke="${on ? "#c0392b" : "#8a7a60"}" stroke-width="${f1((on ? 1.4 : 0.8) * u)}"/>` + mealChipIcon(m, x, cy0 - 0.6 * u, cw, u) + `</g>`;
+    t += [...MEAL_MAINS.map(m => [m, "main:" + m.id, false]), [MEAL_SALAD_CHIP, "", true]].map(([m, pick, on], i) => chip(vb.x + 4 * u + i * (cw + gap), m, pick, on)).join("") +
+      MEAL_DESSERTS.map((m, i) => chip(vb.x + vb.width - 4 * u - (MEAL_DESSERTS.length - i) * (cw + gap) + gap, m, "dessert:" + m.id, false)).join("");
+  }
   const by = vb.y + vb.height - 16 * u;
   const btn = (x, w, label, attr, dim = false) => `<g ${attr} style="cursor:pointer"${dim ? ` opacity="0.45"` : ""}><rect x="${f1(x)}" y="${f1(by)}" width="${f1(w)}" height="${f1(10 * u)}" rx="${f1(5 * u)}" fill="#ffffff" stroke="#8a7a60" stroke-width="${f1(0.8 * u)}"/>` +
     `<text x="${f1(x + w / 2)}" y="${f1(by + 6.6 * u)}" text-anchor="middle" font-size="${f1(3.9 * u)}" font-weight="bold" fill="#4a3a28" font-family="sans-serif">${label}</text></g>`;
@@ -145,6 +179,8 @@ for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
   if (ev !== "pointerdown") return;
   const on = sel => e.target.closest(sel);
   if (on("[data-salad-leave]")) { saladEnd(); return; }
+  const dish = on("[data-salad-meal]");
+  if (dish) { saladToTable(dish.dataset.saladMeal); return; }   // (ticket 750: back to the table, with that dish)
   if (on("[data-salad-empty]")) { salad = saladNew(); saladDraw(); return; }
   if (on("[data-salad-make]")) { salad.eat = false; saladDraw(); return; }
   if (!salad.items.length) { const add = on("[data-salad-add]"); if (add) saladAdd(add.dataset.saladAdd); return; }

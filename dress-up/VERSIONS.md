@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.505 (2026-11-15)
+
+Everything in 0.0.504, plus:
+
+- **🥗 A salad at the dining table** (ticket 750). Among the table's dish chips, 🥗 opens the salad maker right there. Made from the table, the salad maker shows the table's dishes and desserts in a row along its top: tap one to go back to the table with that dish. ⬅️ back goes back to the table, your meal as you left it, and your salad stays in the bowl for next time. (From the kitchen's counter, it is as before.)
+
 ## 0.0.504 (2026-11-15)
 
 Everything in 0.0.503, plus:
