@@ -49,6 +49,8 @@ try {
     Object.assign(B, { kind: "livingroom", livingOut: "forest" }); await feet("bottom"); r.bottom = ways();
     document.querySelector('#ways .way-arrow[data-way="S"]').click(); r.took = await until(() => B.kind === "forest" && !entering);
     return JSON.stringify(r); })()`));
+  // (since ticket 742 the living room also has its way W, to the dining room: this is about the way toward us, S)
+  for (const k of ["forest", "none", "house", "bottom"]) if (living[k]) living[k] = { ...living[k], portals: living[k].portals.filter(p => p.way === "S"), arrows: living[k].arrows.filter(a => a.way === "S") };
   const L = living.forest;
   ok("the living room's way toward us, to the forest: one invisible doorway S with its own data-to, no ▼", L.portals.length === 1 && L.portals[0].way === "S" && L.portals[0].to === "forest" && !L.portals[0].seen && L.south === 0, L);
   ok("its nav arrow, hidden while the friend is at the back, shown near the bottom, saying where", L.arrows.length === 1 && !L.arrows[0].near && living.bottom.arrows[0].near && /forest/.test(living.bottom.arrows[0].words), { back: L.arrows, bottom: living.bottom.arrows });
