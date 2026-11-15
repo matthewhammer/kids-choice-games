@@ -11,7 +11,7 @@
 // whose way this follows: while `salad` is set, drawNow hands the picture to saladDraw, its taps taken first). A big
 // wooden bowl in the middle; down the left and the right, little dishes of what goes in a salad, all vegetarian (M and N
 // are: the proteins here are chickpeas, black beans, cheese, egg, seeds and walnuts). A tap on a dish drops a handful into
-// the bowl; 🫗 pours dressing; 🥗 tosses it; 🍴 eats it, a bite at a time, from one edge across (mealBitten), the bowl left;
+// the bowl; 🫗 pours dressing; 🥗 tosses it; 🍴 eats it, a bite at a time, along a Z-order curve from its top left (SALAD_Z), the bowl left;
 // 🗑️ empties it. The salad is kept while the game is open (saladKept), not saved.
 const SALAD_LEFT = [["lettuce", "🥬 lettuce"], ["spinach", "🍃 spinach"], ["tomato", "🍅 tomatoes"], ["cucumber", "🥒 cucumber"], ["carrot", "🥕 carrots"], ["pepper", "🫑 peppers"], ["avocado", "🥑 avocado"]];
 const SALAD_RIGHT = [["chickpea", "chickpeas"], ["bean", "black beans"], ["corn", "🌽 corn"], ["cheese", "🧀 cheese"], ["egg", "🥚 egg"], ["seed", "🌻 seeds"], ["walnut", "walnuts"]];
@@ -104,22 +104,68 @@ function saladEnd() {
   if (root) root.remove();
   changed();
 }
-// (Matthew, 2026-11-15: "during 'eat it' --- can we animate the fork moving towards/around the edge of the eating edge? for
-// salad") Eating, the fork is at the eaten edge: its tines at the edge's middle, just into what is left, sweeping slowly
-// along the edge (turning about where the eating began, so it keeps to the edge), and at each bite poking in from where
-// the edge was to where it is now. Eaten up, it rests at the bowl's side. (Its poke starts when it is drawn: saladDraw
-// begins each [data-begin-now] animation, as SMIL put in later would otherwise count from the page's start.)
-const SALAD_EAT_FROM = [-37, -4], SALAD_EAT_ACROSS = 74, SALAD_EAT_BODY = [0, -4, 34];   // (and the salad's own circle: each bite the same share of it)   // (where the eating begins, the bowl's left edge, and how far it goes, in u)
+// (ticket 753, Matthew 2026-11-15: "I was thinking for the salad, we'd do some kind of
+// https://en.wikipedia.org/wiki/Z-order_curve") The salad is eaten along a Z-order curve. The square around it is cut into
+// a grid of 16 by 16 little patches, put in Z-order (Morton order: a patch's number is its column's and its row's binary
+// digits interleaved, so the curve runs a Z in each quarter, and the quarters themselves in a Z: top left, top right,
+// bottom left, bottom right). Each patch weighs as much salad as its disc takes (of the salad's circle, SALAD_EAT_BODY); the
+// bites cut the curve into runs of equal weight, so each bite takes the same amount (ticket 752). What is eaten is always
+// the curve's beginning, and a patch comes after the patches left of it and above it, so the eaten part grows from the
+// top left with no holes. Drawn, each eaten patch is a disc a little bigger than it, so the eaten edge is scalloped.
+const SALAD_EAT_BODY = [0, -4, 34], SALAD_Z = (() => {
+  const N = 16, H = 38, cs = 2 * H / N, r = 0.78 * cs, [bx, by, br] = SALAD_EAT_BODY, cells = [];
+  const z = (x, y) => { let i = 0; for (let b = 0; b < 4; b++) i |= ((x >> b) & 1) << (2 * b) | ((y >> b) & 1) << (2 * b + 1); return i; };
+  for (let i = 0; i < N * N; i++) {
+    let x = 0, y = 0;
+    for (let b = 0; b < 4; b++) { x |= ((i >> (2 * b)) & 1) << b; y |= ((i >> (2 * b + 1)) & 1) << b; }
+    cells.push({ x: bx - H + (x + 0.5) * cs, y: by - H + (y + 0.5) * cs, w: 0 });
+  }
+  // (a patch's weight: the salad its disc takes that no earlier patch's took, from points half a unit apart over the
+  // salad's circle, each counted for the first patch along the curve whose disc covers it: so it is even as drawn)
+  for (let px = bx - br; px <= bx + br; px += 0.5) for (let py = by - br; py <= by + br; py += 0.5) {
+    if (Math.hypot(px - bx, py - by) > br) continue;
+    const gx = Math.floor((px - bx + H) / cs), gy = Math.floor((py - by + H) / cs);
+    let first = Infinity;
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) { const x = gx + dx, y = gy + dy;
+      if (x < 0 || y < 0 || x >= N || y >= N) continue;
+      const i = z(x, y); if (i < first && Math.hypot(cells[i].x - px, cells[i].y - py) <= r) first = i; }
+    if (first < Infinity) cells[first].w++;
+  }
+  // (ends[k]: the last patch eaten after k bites)
+  const total = cells.reduce((s, c) => s + c.w, 0), ends = [-1];
+  let acc = 0, k = 1;
+  cells.forEach((c, i) => { acc += c.w; while (k <= SALAD_BITES && acc >= total * k / SALAD_BITES - 1e-9) { ends.push(i); k++; } });
+  return { cells, ends, cs, H, r, total };
+})();
+// what is in the bowl, with the bites taken out of it: the curve's first patches, to the end of the last bite
+function saladEatenSvg(u, inner) {
+  if (!salad.taken) return inner;
+  const { cells, ends, cs, H } = SALAD_Z, [bx, by] = SALAD_EAT_BODY, r = SALAD_Z.r * u, M = (H + cs) * u;
+  let holes = "";
+  for (let i = 0; i <= ends[salad.taken]; i++) { const c = cells[i];
+    if (Math.hypot(c.x - bx, c.y - by) < H + cs) holes += `<circle cx="${f1(c.x * u)}" cy="${f1(c.y * u)}" r="${f1(r)}" fill="#000000"/>`; }
+  return `<mask id="meal-bites-salad" maskUnits="userSpaceOnUse" x="${f1(bx * u - M)}" y="${f1(by * u - M)}" width="${f1(2 * M)}" height="${f1(2 * M)}">` +
+    `<rect x="${f1(bx * u - M)}" y="${f1(by * u - M)}" width="${f1(2 * M)}" height="${f1(2 * M)}" fill="#ffffff"/>${holes}</mask><g mask="url(#meal-bites-salad)">${inner}</g>`;
+}
+// (ticket 751, Matthew 2026-11-15: "during 'eat it' --- can we animate the fork moving towards/around the edge of the
+// eating edge? for salad") Eating, the fork's tines trace the next bite along the curve, to and fro: a point for each
+// group of four of its patches (the curve a size up, so it shows as Z's), in the curve's order; at each bite it pokes in.
+// Eaten up, it rests at the bowl's side. (Its tracing and its poke start when it is drawn: saladDraw begins each
+// [data-begin-now] animation, as SMIL put in later would otherwise count from the page's start.)
 function saladForkSvg(u, eaten) {
   const fork = `<g stroke-linecap="round"><line x1="${f1(-2 * u)}" y1="0" x2="${f1(-24 * u)}" y2="0" stroke="#9aa3ab" stroke-width="${f1(1.8 * u)}"/>` +
     `<path d="M${mealXY(-3 * u, -2 * u)} H${f1(-1 * u)} V${f1(2 * u)} H${f1(-3 * u)}" fill="none" stroke="#9aa3ab" stroke-width="${f1(1 * u)}"/>` +
     [-1.5, -0.5, 0.5, 1.5].map(d => `<line x1="${f1(-1 * u)}" y1="${f1(d * u)}" x2="${f1(5 * u)}" y2="${f1(d * u)}" stroke="#9aa3ab" stroke-width="${f1(0.7 * u)}"/>`).join("") + `</g>`;
   if (eaten) return `<g transform="translate(${f1(44 * u)} ${f1(30 * u)}) rotate(-130)">${fork}</g>`;
-  const S = SALAD_EAT_FROM.map(v => v * u), [sx, sy] = S, D = SALAD_EAT_ACROSS * u, body = SALAD_EAT_BODY.map(v => v * u);
-  const R = mealReach(salad.taken / SALAD_BITES, S, D, body), Rp = mealReach(Math.max(0, salad.taken - 1) / SALAD_BITES, S, D, body);
-  // (the sweep, about where the eating began; in it, the fork at the edge, a little turned, as held from the bowl's near side)
-  return `<g pointer-events="none"><animateTransform attributeName="transform" type="rotate" values="-26 ${f1(sx)} ${f1(sy)};26 ${f1(sx)} ${f1(sy)};-26 ${f1(sx)} ${f1(sy)}" dur="3.4s" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" repeatCount="indefinite"/>` +
-    `<g transform="translate(${f1(sx + R + 2 * u)} ${f1(sy)}) rotate(-24)"><g><animateTransform data-begin-now="1" attributeName="transform" type="translate" values="${f1(Rp - R)} 0;${f1(4 * u)} 0;0 0" keyTimes="0;0.55;1" dur="0.5s" begin="indefinite" fill="freeze"/>${fork}</g></g></g>`;
+  const { cells, ends } = SALAD_Z, pts = [];
+  for (let i = ends[salad.taken] + 1; i <= ends[salad.taken + 1]; i++) { const c = cells[i], p = pts[pts.length - 1];
+    if (!c.w) continue;
+    if (p && p.g === i >> 2) { p.x += c.x * c.w; p.y += c.y * c.w; p.w += c.w; } else pts.push({ g: i >> 2, x: c.x * c.w, y: c.y * c.w, w: c.w }); }
+  const P = pts.map(p => mealXY(p.x / p.w * u, p.y / p.w * u)), path = "M" + P.join(" L") + (P.length < 2 ? ` l${f1(0.5 * u)} 0` : "");
+  // (the fork's tips on the curve, a little turned, as held from the bowl's near side; its poke along its own length)
+  return `<g pointer-events="none"><g><animateMotion data-begin-now="1" path="${path}" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="${Math.max(2.4, 0.55 * P.length).toFixed(2)}s" begin="indefinite" repeatCount="indefinite"/>` +
+    `<g transform="rotate(-24)"><g><animateTransform data-begin-now="1" attributeName="transform" type="translate" values="${f1(-6 * u)} 0;${f1(2 * u)} 0;0 0" keyTimes="0;0.55;1" dur="0.45s" begin="indefinite" fill="freeze"/>` +
+    `<g transform="translate(${f1(-5 * u)} 0)">${fork}</g></g></g></g></g>`;
 }
 function saladSvg(vb) {
   const u = Math.min(vb.width / 150, vb.height / 112), cx = vb.x + vb.width / 2, cy = vb.y + vb.height * 0.5, now = performance.now();
@@ -141,7 +187,7 @@ function saladSvg(vb) {
   const at = (i, sd) => [sd * (i < 4 ? 65 : 50) * u, (-34 + (i % 4) * 18) * u];
   SALAD_LEFT.forEach((d, i) => { t += dish(d, ...at(i, -1)); });
   SALAD_RIGHT.forEach((d, i) => { t += dish(d, ...at(i, 1)); });
-  // the big wooden bowl, and what is in it; dressing over it; eaten from its left edge across (the bowl left)
+  // the big wooden bowl, and what is in it; dressing over it; eaten along the Z-order curve (the bowl left)
   const shake = now - salad.shake < 520 ? ` class="salad-shake"` : "";
   const leaves = salad.items.filter(it => SALAD_LEAFY.has(it.kind)).length, bedR = Math.min(SALAD_BOWL + 3, 12 + leaves * 0.9);
   let inside = leaves ? `<circle cx="0" cy="${f1(-4 * u)}" r="${f1(bedR * u)}" fill="#7cb342"/>` +
@@ -152,7 +198,7 @@ function saladSvg(vb) {
   t += `<g${shake}><circle cx="0" cy="${f1(-4 * u)}" r="${f1(39 * u)}" fill="#c8915a" stroke="#8a5d30" stroke-width="${f1(1.4 * u)}"/><circle cx="0" cy="${f1(-4 * u)}" r="${f1(35 * u)}" fill="#a8743f"/>` +
     `<circle cx="0" cy="${f1(-4 * u)}" r="${f1(37 * u)}" fill="none" stroke="#e0b07a" stroke-width="${f1(1 * u)}" opacity="0.7"/>` +
     `<g data-salad-bowl="1" style="cursor:pointer"><circle cx="0" cy="${f1(-4 * u)}" r="${f1(35 * u)}" fill="#000000" opacity="0"/>` +
-    (eaten ? "" : mealBitten("salad", SALAD_EAT_FROM.map(v => v * u), -60, 60, SALAD_EAT_ACROSS * u, salad.taken, SALAD_BITES, inside, 0, SALAD_EAT_BODY.map(v => v * u))) + `</g>` +
+    (eaten ? "" : saladEatenSvg(u, inside)) + `</g>` +
     (salad.eat ? saladForkSvg(u, eaten) : "") + `</g>`;
   const S = salad.say;
   if (S && now - S.at < 900) t += `<text class="meal-say" x="0" y="${f1(-20 * u)}" text-anchor="middle" font-size="${f1(6 * u)}" font-weight="bold" fill="#2e7d32" stroke="#ffffff" stroke-width="${f1(0.8 * u)}" paint-order="stroke" font-family="sans-serif">${S.text}</text>`;
@@ -207,7 +253,8 @@ for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
   const add = on("[data-salad-add]");
   if (add) { saladAdd(add.dataset.saladAdd); return; }
   if (salad.eat && on("[data-salad-bowl]") && salad.taken < SALAD_BITES) {
-    salad.taken++; salad.say = { text: salad.taken < SALAD_BITES ? ["crunch!", "nom!", "yum!", "munch!"][salad.taken % 4] : "all eaten! 😋", at: performance.now() };
+    salad.taken++; mealCrunch("salad");
+    salad.say = { text: salad.taken < SALAD_BITES ? ["crunch!", "nom!", "yum!", "munch!"][salad.taken % 4] : "all eaten! 😋", at: performance.now() };
     saladDraw();
   }
 }, true);

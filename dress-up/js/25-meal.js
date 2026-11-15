@@ -62,11 +62,43 @@ function mealEnd() {
   if (root) root.remove();
   changed();
 }
+// (ticket 754, Matthew 2026-11-15: "for the eating steps, can we add a sound effect in MIDI that sounds like a bite? Maybe
+// some combination of white noise and crunch sounds in the MIDI world. somehow?") A bite's sound, on the music's own synth
+// (no sound file), as the bubble's pop: a chomp, a low note (about MIDI note 40, E2) dropping a fifth as the teeth meet, a
+// thud of breath (low noise), and the crunch, white noise in short crackly grains, each through a band of its own,
+// scattered over a tenth of a second and dying away. How crisp the food is (MEAL_CRISP) sets how many grains and how loud:
+// an apple, the salad, a taco shell crisp; bread, a banana, ice cream soft. A sip is a slurp: noise through a narrow
+// band sliding up, and a few little gurgles. Each one a little different (its grains' times and bands are random). None
+// while the music is muted; at most one in 60 ms.
+const MEAL_CRISP = { salad: 1, apple: 1, tacos: 0.9, pizza: 0.7, italianice: 0.6, sandwich: 0.5, friedrice: 0.45, orange: 0.45, icebar: 0.35, bread: 0.3, sundae: 0.15, banana: 0.1 };
+let mealCrunchLast = 0;
+function mealCrunch(id, drink = false) {
+  const now = performance.now();
+  if (state.music.mute || now - mealCrunchLast < 60 || typeof audioReady !== "function" || !audioReady() || !tapeOut) return;
+  mealCrunchLast = now;
+  const A = audio, t = A.currentTime + 0.01, out = gainOf(A, tapeOut, 0.35), r = Math.random;
+  if (drink) {
+    const bp = filter(A, amp(A, out, t, 1.1, 0.05, 0.1), "bandpass", 450, 5);
+    bp.frequency.setValueAtTime(450, t); bp.frequency.exponentialRampToValueAtTime(1900, t + 0.3);
+    noise(A, bp, t, t + 0.7);
+    for (let i = 0; i < 3; i++) { const at = t + 0.06 + i * 0.07 + r() * 0.02, f = 260 + r() * 220, o = tone(A, amp(A, out, at, 0.25, 0.002, 0.018), "sine", f, at, at + 0.1);
+      o.frequency.exponentialRampToValueAtTime(f * 1.6, at + 0.04); }
+  } else {
+    const crisp = MEAL_CRISP[id] ?? 0.5, m = 40 + Math.floor(r() * 3);
+    const o = tone(A, amp(A, out, t, 0.5, 0.003, 0.035), "sine", hz(m + 7), t, t + 0.3);
+    o.frequency.setValueAtTime(hz(m + 7), t); o.frequency.exponentialRampToValueAtTime(hz(m), t + 0.06);
+    noise(A, filter(A, amp(A, out, t, 0.12 + 0.1 * crisp, 0.002, 0.03), "lowpass", 900), t, t + 0.25);
+    const n = 2 + Math.round(6 * crisp);
+    for (let i = 0; i < n; i++) { const at = t + 0.004 + (i / n) * (0.05 + 0.09 * crisp) + r() * 0.012;
+      noise(A, filter(A, amp(A, out, at, (0.55 - 0.3 * i / n) * (0.25 + 0.75 * crisp), 0.001, 0.005 + r() * 0.01), "bandpass", 1200 + r() * 3800, 1.2 + r()), at, at + 0.1); }
+  }
+  setTimeout(() => out.disconnect(), 1500);
+}
 // a bite of food id (a sip of a drink); what it says, where
 function mealBite(id, x, y) {
   const f = MEAL_FOODS.find(q => q.id === id);
   if (!meal || !f || !(meal.left[id] > 0)) return;
-  meal.left[id]--; meal.n++;
+  meal.left[id]--; meal.n++; mealCrunch(id, f.drink);
   const words = f.drink ? MEAL_SIPS : MEAL_SAYS;
   meal.say = { text: meal.left[id] ? words[meal.n % words.length] : f.drink ? "all gone! 😋" : "all eaten! 😋", at: performance.now(), x, y };
   mealDraw();

@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.508 (2026-11-15)
+
+Everything in 0.0.507, plus:
+
+- **🥗 The salad is eaten along a Z-order curve** (ticket 753). The bowl is cut into a grid of little patches, in Z-order: a Z across the top-left quarter, then the top-right, the bottom-left and the bottom-right, each quarter in Z's of its own. Each bite eats the next stretch of the curve, the same amount of salad every time (an eighth, give or take a patch), so the eaten part grows from the top left with bite-marked edges and no holes. The fork's tines trace the next bite along the curve, to and fro, and poke in at each bite.
+- **🔊 Every bite crunches** (ticket 754). A bite has a sound, played on the game's own synth like the bubbles' pop: a low chomp, and a crunch of white noise in short crackly bursts over it. Crisp foods crunch more (the salad, an apple, a taco, the pizza), soft ones less (bread, a banana, ice cream); a sip of juice or milk is a slurp. Each bite sounds a little different. No sound while the music is muted (🔇).
+
 ## 0.0.507 (2026-11-15)
 
 Everything in 0.0.506, plus:
