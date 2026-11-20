@@ -337,7 +337,54 @@ const INSTRUMENTS = {
       o.frequency.exponentialRampToValueAtTime(f * (1 + 0.014 * x), t + dt + 0.06);
     }
   },
+  // (ticket 804) the little chip of the Pinball in Hazel (matthewhammer.org/hazeljs-examples/pinball/), its sounds as made
+  // there: a lead on a pulse wave a quarter on, with vibrato on a long note (its knob: how much); an arpeggio on a thinner
+  // pulse, an eighth on (its knob: how long each note rings); a triangle bass; and drums of noise
+  chiplead(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.95, o = A.createOscillator();
+    o.setPeriodicWave(pulseWave(A, 0.25)); o.frequency.setValueAtTime(f, t);
+    o.connect(held(A, out, t, 0.11 * v, 0.004, end - 0.02, 0.008)); o.start(t); o.stop(end + 0.1);
+    if (dur >= 0.3 && x > 0) {
+      const l = A.createOscillator(), lg = A.createGain(); l.frequency.value = 6;
+      lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(14 * x / 50, t + Math.min(0.25, dur));
+      l.connect(lg); lg.connect(o.detune); l.start(t); l.stop(end + 0.1);
+    }
+  },
+  chiparp(A, out, t, m, dur, v, x = 50) {
+    const end = t + Math.min(dur * 0.8 * ring(x), 0.6), o = A.createOscillator();
+    o.setPeriodicWave(pulseWave(A, 0.125)); o.frequency.setValueAtTime(hz(m), t);
+    o.connect(held(A, out, t, 0.032 * v, 0.004, end - 0.02, 0.008)); o.start(t); o.stop(end + 0.1);
+  },
+  chipbass(A, out, t, m, dur, v, x = 50) {
+    const end = t + dur * 0.9 * ring(x);
+    tone(A, held(A, out, t, 0.3 * v, 0.004, end - 0.02, 0.008), "triangle", hz(m), t, end + 0.1);
+  },
+  chipkick(A, out, t, m, dur, v, x = 50) {
+    const k = ring(x), o = tone(A, held(A, out, t, 0.5 * v, 0.004, t + 0.08 * k, 0.008), "sine", 160, t, t + 0.1 * k + 0.1);
+    o.frequency.exponentialRampToValueAtTime(45, t + 0.1 * k);
+  },
+  chipsnare(A, out, t, m, dur, v, x = 50) {
+    const k = ring(x), g = A.createGain(); g.gain.setValueAtTime(0.22 * v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12 * k); g.connect(out);
+    noise(A, filter(A, g, "bandpass", 1900, 0.7), t, t + 0.12 * k + 0.02);
+    const o = tone(A, held(A, out, t, 0.15 * v, 0.004, t + 0.04, 0.008), "triangle", 190, t, t + 0.1); o.frequency.exponentialRampToValueAtTime(150, t + 0.06);
+  },
+  chiphat(A, out, t, m, dur, v, x = 50) {
+    const k = ring(x), g = A.createGain(); g.gain.setValueAtTime(0.06 * v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03 * k); g.connect(out);
+    noise(A, filter(A, g, "highpass", 7000), t, t + 0.03 * k + 0.02);
+  },
 };
+// (ticket 804) a pulse wave, on for `duty` of each cycle (its first 32 harmonics), one for each audio context and duty
+const pulseWaves = new WeakMap();
+function pulseWave(A, duty) {
+  if (!pulseWaves.has(A)) pulseWaves.set(A, {});
+  const kept = pulseWaves.get(A);
+  if (!kept[duty]) {
+    const n = 32, re = new Float32Array(n), im = new Float32Array(n);
+    for (let k = 1; k < n; k++) re[k] = 2 * Math.sin(Math.PI * k * duty) / (Math.PI * k);
+    kept[duty] = A.createPeriodicWave(re, im);
+  }
+  return kept[duty];
+}
 
 // --- the tunes: so many beats a minute (a beat is 4 steps), steps a bar
 // ("bar", 16 unless it says), the steps shifted later by "swing" (every
@@ -1230,6 +1277,159 @@ const TUNES = {
     lfo: { hi: "A", soloHi: "B" },
     plan: [["intro", 4], ["kitIn", 4], ["groove", 8], ["theme", 8], ["bassSolo", 8], ["bongoSolo", 4], ["drumBreak", 4], ["organSolo", 8], ["rhythmSolo", 4], ["gtrSolo", 8], ["theme", 8, 2], ["outro", 4]],
   }) },
+  // (ticket 804; Matthew: "please update dress-up with a new music category: \"pin ball\", with the same tracks") the three
+  // tunes of the Pinball in Hazel (matthewhammer.org/hazeljs-examples/pinball/), note for note, on its little chip: Overdrive
+  // on most of its tables, Bumper storm on the Volcano, the Funfair and the Portals, Orbit on the Ocean and the Moon.
+  // Written from its pinball/sound.js by a script, which also checked that they play the same notes at the same steps
+  overdrive: { name: "🏎️ overdrive", key: "E minor", make: () => ({ bpm: 172, room: 0.6, level: 0.5, parts: [
+      { name: "leadA", inst: "chiplead", line: lineOf(
+        "E5:4 B4:2 E5:2 G5:2 F#5:2 E5:2 B4:2 | " +
+        "C5:4 G4:2 C5:2 E5:2 D5:2 C5:2 G4:2 | " +
+        "D5:4 A4:2 D5:2 F#5:2 A5:2 G5:2 F#5:2 | " +
+        "F#5:6 D#5:2 B4:2 D#5:2 F#5:2 B5:2") },
+      { name: "bassA", inst: "chipbass", line: lineOf(
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2 | " +
+        "C3:2 C4:2 C3:2 C4:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "B2:2 B3:2 B2:2 B3:2 B2:2 B3:2 B2:2 F#3:2") },
+      { name: "arpA", inst: "chiparp", line: lineOf(
+        "E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 | " +
+        "C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 | " +
+        "B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1 B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1") },
+      { name: "leadB", inst: "chiplead", line: lineOf(
+        "E5:4 B4:2 E5:2 G5:2 F#5:2 E5:2 G5:2 | " +
+        "A5:2 G5:2 E5:2 C5:2 E5:2 G5:2 C6:2 B5:2 | " +
+        "A5:4 F#5:2 D5:2 F#5:2 A5:2 D6:2 C6:2 | " +
+        "B5:8 B5:1 A5:1 G5:1 F#5:1 D#5:1 F#5:1 B5:2") },
+      { name: "bassB", inst: "chipbass", line: lineOf(
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2 | " +
+        "C3:2 C4:2 C3:2 C4:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "B2:2 B3:2 B2:2 B3:2 B2:2 B3:2 B2:2 F#3:2") },
+      { name: "arpB", inst: "chiparp", line: lineOf(
+        "E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 | " +
+        "C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 | " +
+        "B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1 B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1") },
+      { name: "leadC", inst: "chiplead", line: lineOf(
+        "A4:2 C5:2 E5:2 A5:2 G5:2 E5:2 C5:2 E5:2 | " +
+        "G5:4 F#5:2 E5:2 D5:2 E5:4 B4:2 | " +
+        "C5:2 E5:2 G5:2 C6:2 B5:2 G5:2 E5:2 G5:2 | " +
+        "A5:6 F#5:2 D5:2 F#5:2 A5:4 | " +
+        "C6:2 B5:2 A5:2 E5:2 A5:2 B5:2 C6:2 D6:2 | " +
+        "E6:4 B5:2 G5:2 E5:2 G5:2 B5:2 E6:2 | " +
+        "D#6:4 B5:2 F#5:2 D#5:2 F#5:2 B5:2 D#6:2 | " +
+        "F#6:8 r:8") },
+      { name: "bassC", inst: "chipbass", line: lineOf(
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2 | " +
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2 | " +
+        "C3:2 C4:2 C3:2 C4:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2 | " +
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2 | " +
+        "B2:2 B3:2 B2:2 B3:2 B2:2 B3:2 B2:2 F#3:2 | " +
+        "B2:2 B3:2 B2:2 B3:2 B2:2 B3:2 B2:2 F#3:2") },
+      { name: "arpC", inst: "chiparp", line: lineOf(
+        "A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 | " +
+        "E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 | " +
+        "C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 D4:1 F#4:1 A4:1 D5:1 A4:1 F#4:1 A4:1 F#4:1 | " +
+        "A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 | " +
+        "E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 E4:1 G4:1 B4:1 E5:1 B4:1 G4:1 B4:1 G4:1 | " +
+        "B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1 B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1 | " +
+        "B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1 B3:1 D#4:1 F#4:1 B4:1 F#4:1 D#4:1 F#4:1 D#4:1") },
+      { name: "kick", inst: "chipkick", line: hitsOf("x.......x.x.....") },
+      { name: "snare4", inst: "chipsnare", line: hitsOf("....x.......x... ....x.......x... ....x.......x... ....x.......xxxx") },
+      { name: "hats4", inst: "chiphat", line: hitsOf("..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.........") },
+      { name: "snare8", inst: "chipsnare", line: hitsOf("....x.......x... ....x.......x... ....x.......x... ....x.......x... ....x.......x... ....x.......x... ....x.......x... ....x.......xxxx") },
+      { name: "hats8", inst: "chiphat", line: hitsOf("..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.......x. ..x...x.........") },
+    ], form: [S(4, "leadA bassA arpA kick snare4 hats4"), S(4, "leadB bassB arpB kick snare4 hats4"), S(8, "leadC bassC arpC kick snare8 hats8")] }) },
+  bumperstorm: { name: "💥 bumper storm", key: "D minor", make: () => ({ bpm: 184, room: 0.6, level: 0.5, parts: [
+      { name: "leadA", inst: "chiplead", line: lineOf(
+        "D5:2 r:1 D5:2 r:1 F5:2 A5:2 r:1 A5:2 G5:1 F5:2 | " +
+        "A#4:2 r:1 A#4:2 r:1 D5:2 F5:2 r:1 F5:2 E5:1 D5:2 | " +
+        "C5:2 r:1 C5:2 r:1 E5:2 G5:2 r:1 G5:2 A5:1 G5:2 | " +
+        "A5:4 G5:2 E5:2 C#5:2 E5:2 A4:2 C#5:2") },
+      { name: "bassA", inst: "chipbass", line: lineOf(
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "A#2:2 A#3:2 A#2:2 A#3:2 A#2:2 A#3:2 A#2:2 F3:2 | " +
+        "C3:2 C4:2 C3:2 C4:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2") },
+      { name: "arpA", inst: "chiparp", line: lineOf(
+        "D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 | " +
+        "A#3:1 D4:1 F4:1 A#4:1 F4:1 D4:1 F4:1 D4:1 A#3:1 D4:1 F4:1 A#4:1 F4:1 D4:1 F4:1 D4:1 | " +
+        "C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1 A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1") },
+      { name: "leadB", inst: "chiplead", line: lineOf(
+        "D6:2 r:1 D6:2 r:1 C6:2 A5:2 r:1 A5:2 C6:1 D6:2 | " +
+        "F6:2 r:1 F6:2 r:1 D6:2 A#5:2 r:1 A#5:2 C6:1 D6:2 | " +
+        "E6:2 r:1 E6:2 r:1 C6:2 G5:2 r:1 G5:2 A5:1 A#5:2 | " +
+        "A5:8 A5:1 G5:1 F5:1 E5:1 C#5:1 E5:1 A5:2") },
+      { name: "bassB", inst: "chipbass", line: lineOf(
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "A#2:2 A#3:2 A#2:2 A#3:2 A#2:2 A#3:2 A#2:2 F3:2 | " +
+        "C3:2 C4:2 C3:2 C4:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2") },
+      { name: "arpB", inst: "chiparp", line: lineOf(
+        "D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 | " +
+        "A#3:1 D4:1 F4:1 A#4:1 F4:1 D4:1 F4:1 D4:1 A#3:1 D4:1 F4:1 A#4:1 F4:1 D4:1 F4:1 D4:1 | " +
+        "C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1 A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1") },
+      { name: "leadC", inst: "chiplead", line: lineOf(
+        "G5:2 A#5:2 D6:2 A#5:2 G5:2 D5:2 G5:2 A#5:2 | " +
+        "A5:4 F5:2 D5:2 F5:2 A5:2 D6:4 | " +
+        "F5:2 D5:2 A#4:2 D5:2 G5:2 E5:2 C5:2 E5:2 | " +
+        "A5:2 C#6:2 E6:2 C#6:2 A5:2 E5:2 C#5:2 E5:2") },
+      { name: "bassC", inst: "chipbass", line: lineOf(
+        "G2:2 G3:2 G2:2 G3:2 G2:2 G3:2 G2:2 D3:2 | " +
+        "D3:2 D4:2 D3:2 D4:2 D3:2 D4:2 D3:2 A3:2 | " +
+        "A#2:2 A#3:2 A#2:2 A#3:2 C3:2 C4:2 C3:2 G3:2 | " +
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2") },
+      { name: "arpC", inst: "chiparp", line: lineOf(
+        "G4:1 A#4:1 D5:1 G5:1 D5:1 A#4:1 D5:1 A#4:1 G4:1 A#4:1 D5:1 G5:1 D5:1 A#4:1 D5:1 A#4:1 | " +
+        "D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 D4:1 F4:1 A4:1 D5:1 A4:1 F4:1 A4:1 F4:1 | " +
+        "A#3:1 D4:1 F4:1 A#4:1 F4:1 D4:1 F4:1 D4:1 C4:1 E4:1 G4:1 C5:1 G4:1 E4:1 G4:1 E4:1 | " +
+        "A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1 A3:1 C#4:1 E4:1 A4:1 E4:1 C#4:1 E4:1 C#4:1") },
+      { name: "kick", inst: "chipkick", line: hitsOf("x..x....x..x....") },
+      { name: "snare4", inst: "chipsnare", line: hitsOf("....x.......x... ....x.......x... ....x.......x... ....x.......xxxx") },
+      { name: "hats4", inst: "chiphat", line: hitsOf("..x...x...x...x. ..x...x...x...x. ..x...x...x...x. ..x...x...x.....") },
+    ], form: [S(4, "leadA bassA arpA kick snare4 hats4"), S(4, "leadB bassB arpB kick snare4 hats4"), S(4, "leadC bassC arpC kick snare4 hats4")] }) },
+  orbit: { name: "🪐 orbit", key: "A minor", make: () => ({ bpm: 140, room: 0.6, level: 0.5, parts: [
+      { name: "leadA", inst: "chiplead", line: lineOf(
+        "E5:6 A5:4 G5:2 E5:4 | " +
+        "D5:6 G5:4 F5:2 D5:4 | " +
+        "C5:6 F5:4 E5:2 C5:2 A4:2 | " +
+        "B4:6 G#4:4 B4:2 E5:4") },
+      { name: "bassA", inst: "chipbass", line: lineOf(
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2 | " +
+        "G2:2 G3:2 G2:2 G3:2 G2:2 G3:2 G2:2 D3:2 | " +
+        "F2:2 F3:2 F2:2 F3:2 F2:2 F3:2 F2:2 C3:2 | " +
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2") },
+      { name: "arpA", inst: "chiparp", line: lineOf(
+        "A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 | " +
+        "G4:1 B4:1 D5:1 G5:1 D5:1 B4:1 D5:1 B4:1 G4:1 B4:1 D5:1 G5:1 D5:1 B4:1 D5:1 B4:1 | " +
+        "F4:1 A4:1 C5:1 F5:1 C5:1 A4:1 C5:1 A4:1 F4:1 A4:1 C5:1 F5:1 C5:1 A4:1 C5:1 A4:1 | " +
+        "E4:1 G#4:1 B4:1 E5:1 B4:1 G#4:1 B4:1 G#4:1 E4:1 G#4:1 B4:1 E5:1 B4:1 G#4:1 B4:1 G#4:1") },
+      { name: "leadB", inst: "chiplead", line: lineOf(
+        "A5:4 C6:4 A5:4 F5:4 | " +
+        "B5:4 D6:4 B5:4 G5:4 | " +
+        "C6:2 B5:2 A5:2 E5:2 A5:2 C6:2 E6:4 | " +
+        "E6:4 D6:2 C6:2 B5:2 G#5:2 E5:4") },
+      { name: "bassB", inst: "chipbass", line: lineOf(
+        "F2:2 F3:2 F2:2 F3:2 F2:2 F3:2 F2:2 C3:2 | " +
+        "G2:2 G3:2 G2:2 G3:2 G2:2 G3:2 G2:2 D3:2 | " +
+        "A2:2 A3:2 A2:2 A3:2 A2:2 A3:2 A2:2 E3:2 | " +
+        "E2:2 E3:2 E2:2 E3:2 E2:2 E3:2 E2:2 B2:2") },
+      { name: "arpB", inst: "chiparp", line: lineOf(
+        "F4:1 A4:1 C5:1 F5:1 C5:1 A4:1 C5:1 A4:1 F4:1 A4:1 C5:1 F5:1 C5:1 A4:1 C5:1 A4:1 | " +
+        "G4:1 B4:1 D5:1 G5:1 D5:1 B4:1 D5:1 B4:1 G4:1 B4:1 D5:1 G5:1 D5:1 B4:1 D5:1 B4:1 | " +
+        "A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 A4:1 E4:1 C4:1 E4:1 C4:1 | " +
+        "E4:1 G#4:1 B4:1 E5:1 B4:1 G#4:1 B4:1 G#4:1 E4:1 G#4:1 B4:1 E5:1 B4:1 G#4:1 B4:1 G#4:1") },
+      { name: "kick", inst: "chipkick", line: hitsOf("x.........x.....") },
+      { name: "snare4", inst: "chipsnare", line: hitsOf("....x.......x... ....x.......x... ....x.......x... ....x.......xxxx") },
+      { name: "hats4", inst: "chiphat", line: hitsOf("..x...x.x.....x. ..x...x.x.....x. ..x...x.x.....x. ..x...x.x.......") },
+    ], form: [S(4, "leadA bassA arpA kick snare4 hats4"), S(4, "leadB bassB arpB kick snare4 hats4")] }) },
 };
 // each background's own tune
 const SCENE_TUNE = { starfield: "vibes", blackhole: "vibes", bridge: "vibes", alienplanet: "cemetery", stationlab: "vibes", stationgarden: "cemetery", stationbunks: "lullaby", stationkitchen: "cushions", stationmess: "skatepark", hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
@@ -1280,6 +1480,7 @@ const TUNE_GROUPS = [
   ["chase", "🏃 chase", ["treechase", "duckdash", "housechase"]],
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
   ["chest", "🎁 chest opening", Object.keys(CHEST_TUNES)],   // (ticket 631)
+  ["pinball", "🎱 pin ball", ["overdrive", "bumperstorm", "orbit"]],   // (ticket 804: the Pinball in Hazel's three)
 ];
 // (ticket 631) a chest's flourish, played once, over the music, on the music's own instruments (as long as it lasts, no loop)
 function chestFlourish(id) {
@@ -1429,7 +1630,7 @@ const stepSecs = T => 60 / T.bpm / 4;
 const swingOf = (T, at) => !Number.isInteger(at) ? 0 : (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
-const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat"]);
+const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat", "chipkick", "chipsnare", "chiphat"]);
 // (bend: half steps more, even for a drum: where its LFO is, see below)
 function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null, bend = 0, wob = null) {
   const p = song.T.parts[ev.part], dur = ev.len * sd,
@@ -1759,14 +1960,16 @@ const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁",
                     shaker: "🧂", conga: "🪘", bubble: "🫧", pizz: "🎻", pluck: "🎸", chop: "🎸", melodica: "🎹", ghost: "👻",
                     bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", wahbass: "🎸", harpsichord: "🎼",
                     vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡",
-                    bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸" };
+                    bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸",
+                    chiplead: "🕹️", chiparp: "🕹️", chipbass: "🕹️", chipkick: "🥁", chipsnare: "🥁", chiphat: "🎩" };
 // each instrument's own knob, by name (what it does is in INSTRUMENTS)
 const INST_KNOB = { steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
                     bell: "✨ ring", rim: "✨ length", snare: "✨ length", hat: "✨ length", shaker: "✨ length", cowbell: "✨ length",
                     chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", wahbass: "🎸 wah", organ: "🎹 bright",
                     melodica: "〰️ vibrato", flute: "〰️ vibrato", ghost: "〰️ waver", vibes: "🌀 wobble", pad: "🌅 swell",
                     bubble: "🫧 bloop", bird: "🐦 chirp", lead: "✨ bright", zap: "⚡ fall",
-                    bassgtr: "🎸 growl", bongo: "🎵 pitch", openhat: "✨ length", tonewheel: "🌀 spin", funkgtr: "🦆 wah", twang: "〰️ whammy" };
+                    bassgtr: "🎸 growl", bongo: "🎵 pitch", openhat: "✨ length", tonewheel: "🌀 spin", funkgtr: "🦆 wah", twang: "〰️ whammy",
+                    chiplead: "〰️ vibrato", chiparp: "✨ length", chipbass: "✨ length", chipkick: "💥 boom", chipsnare: "✨ length", chiphat: "✨ length" };
 // "panA" reads "pan A", "bassSolo" "bass Solo"
 const partName = n => n.replace(/([a-z])([A-Z])/g, "$1 $2");
 // A channel's move up or down: minus, its interval (a tap goes to the
