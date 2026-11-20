@@ -41,7 +41,7 @@ A push to `main` is a deploy. Release each feature as soon as it works; never le
 - Test browsers muted (`--mute-audio`); the game muted (🔇) before any click.
 - A hidden browser pane runs no `requestAnimationFrame` and stalls Web Animations: stub or finish them before calling a trip broken.
 - Copied SVGs in one page need their own ids. A regex in an injected template string needs doubled backslashes.
-- Without a browser: load the parts in node as `check_load.mjs` does, call `drawNow()`, render with `ffmpeg -i x.svg x.png`. Refactors: `tools/same_friend.mjs` compares the friend byte for byte.
+- Without a browser: load the parts in node as `check_load.mjs` does, call `drawNow()`, render with `ffmpeg -i x.svg x.png`. `tools/render_place.mjs index.html out.svg background.kind=starfield ...` does that for a place: its scene and the friend, from the defaults and `part.key=value` steps (ticket 798). Refactors: `tools/same_friend.mjs` compares the friend byte for byte.
 
 ## Working with Matthew
 

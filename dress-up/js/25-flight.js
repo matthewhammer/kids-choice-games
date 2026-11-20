@@ -264,6 +264,9 @@ const FLY_LOOKS = {
   bubblespace: (k, o) => flyRect(0, 0, FT, FT, "#bfe3f7") + [...Array(Math.max(4, Math.min(14, Math.round((o.bubbleCount ?? 30) / 2.5))))].map((_, i) => flyC(80 + (FT - 160) * flyR(k, i), 80 + (FT - 160) * flyR(k, 20 + i), 22 + 36 * flyR(k, 40 + i), "#ffffff40", ` stroke="${o.bubbleAColor || "#ffffff"}" stroke-width="4"`)).join(""),
   treehouse: (k, o) => flyTreehouse(k, o),
   castle: (k, o) => flyCastle(k, o),
+  // (ticket 798: the starfield from above: deep space, its stars, and its planet's color as a glow)
+  starfield: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
+    (PLANET_LOOKS[o.spacePlanet] ? flyC(FT * 0.7, FT * 0.3, 60, PLANET_LOOKS[o.spacePlanet].base) : ""),
 };
 FLY_LOOKS.bubbleroom = FLY_LOOKS.bubblespace;
 // (ticket 691, Matthew: "let's add more detail to the top-down views for each square -- the tree house tree? the castle doesn't
@@ -360,7 +363,7 @@ function flyLookOf(kind, key, o = state.background, cell = {}) {
   if (kind === "cave" || kind === "caveroom") return FLY_LOOKS.cavecross(key);
   return flyRect(0, 0, FT, FT, "#7caa4c") + flyRoof(0.2 * FT, 0.16 * FT, 0.6 * FT, 0.5 * FT, FLY_ROOFS[kind] || "#8a6a5a");
 }
-const FLY_WET = new Set(["sea", "deepsea", "underwater", "bubblespace", "bubbleroom", "imagination", "emptyroom"]);   // (no paths drawn on them)
+const FLY_WET = new Set(["sea", "deepsea", "underwater", "bubblespace", "bubbleroom", "imagination", "emptyroom", "starfield"]);   // (no paths drawn on them)
 // a square's ways, as paths from its middle to the edges it leads off, meeting the neighbour's there
 const FLY_EDGE = { N: [0.5, 0], NE: [1, 0], E: [1, 0.5], SE: [1, 1], S: [0.5, 1], SW: [0, 1], W: [0, 0.5], NW: [0, 0] };
 function flyPathsSvg(kind, ways) {

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.511 (2026-11-20)
+
+Everything in 0.0.510, plus:
+
+- **🚀 Space, and its first place: ✨ the starfield** (ticket 798, for N: a world in space). Under 🏞️ Background, a new group, 🚀 space, has ✨ starfield: deep space, the galaxy's faint band across it and a few far galaxies; a nebula's glow (🌌: none, violet, teal, rose, gold or rainbow); stars, as many as 🌟 says (20 to 1,500), drawn as the camp site's night sky draws them, so its ⭐ settings (shape, size, brightness, twinkle) work here too, and placed where 🎲 other stars puts them; and a planet in the distance (🪐: ringed and violet, ocean and islands, lava, ice, a banded giant, rainbow-striped, or jungle green), with its size, where it is (↔️), and up to four moons (🌑). The friend floats among the stars. The starfield can be a square of a world, and seen from above, flying, it is deep space with its stars and its planet's glow. Its tune is 🔮 crystal-ball vibes. More of space is coming: a starship's bridge, the alien planet, the space station.
+
 ## 0.0.510 (2026-11-15)
 
 Everything in 0.0.509, plus:

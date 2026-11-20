@@ -80,13 +80,17 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   // (ticket 501, for M) the desert
   ["desert", "🏜️ desert"],
   // (ticket 660, M's garden) the garden, to plant in, and the spring, to fill a watering can at
-  ["garden", "🌻 garden"], ["spring", "💧 spring"]];
+  ["garden", "🌻 garden"], ["spring", "💧 spring"],
+  // (ticket 798, for N: a world in space) the starfield
+  ["starfield", "✨ starfield"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
   ["imagination", "💭 imagination", ["emptyroom", "imagination"]],
   // (ticket 290, for N: bubbles, a kind of place of its own: bubble space, moved here, and the bubble room)
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
+  // (ticket 798, for N) 🚀 space: the starfield, to begin with
+  ["space", "🚀 space", ["starfield"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall", "spring"]],   // (spring: ticket 660)
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
@@ -630,6 +634,16 @@ const TABS = [
       ["range", "skyDay", "📅 the day of the month", 1, 31, 1, 31],
       ["range", "skyHour", "🕰️ the hour (the sun's own time there: 12 is noon)", 0, 23, 0, 23],
       ["note", "skySays", () => skySays(state.background)]]],
+    // (ticket 798, for N) ✨ the starfield: 🎲 where its stars are, how many, a nebula's glow, and a planet in the distance and
+    // its moons (its stars look as ⭐ says, as the camp site's night sky)
+    ["group", "space", "✨ the starfield", [
+      ["action", "spaceSeed", "🎲 other stars", () => { state.background.spaceSeed = 1 + Math.floor(Math.random() * 99999); }],
+      ["range", "spaceStars", "🌟 how many stars", 20, 1500, 150, 700],
+      ["choice", "spaceNebula", "🌌 a nebula", SPACE_NEBULAS],
+      ["choice", "spacePlanet", "🪐 a planet in the distance", SPACE_PLANETS],
+      ["range", "spacePlanetSize", "🪐 the planet's size", 5, 100, 20, 60],
+      ["range", "spacePlanetX", "↔️ where the planet is (0 = far left)", 0, 100, 10, 90],
+      ["range", "spaceMoons", "🌑 its moons", 0, 4, 0, 3]]],
     // the cave behind the falls: gems on its walls, sparkling
     ["range", "caveGems", "💎 gems on the walls", 0, 40, 6, 30],
     ["choice", "gemShape", "✨ sparkles: shape", STAR_SHAPES],
@@ -1254,6 +1268,7 @@ const SHOWN_WHEN = {
   ...Object.fromEntries(["leverShine", "leverShineColor", "leverFlicker"].map(k => ["background." + k, b => b.kind === "treetop" || (b.kind === "castleroom" && roomHereNowOf(b)[1] === "trap") || (b.things || []).some(t => t.kind === "lever")])),   // (ticket 317)
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
+  "background.space": b => b.kind === "starfield",   // (ticket 798)
   "background.bubbleBurstCount": b => (b.bubbleBurst ?? 40) > 0,   // (ticket 329)
   "background.bubblePopInst": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopPitch": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopKnob": b => (b.bubblePopVol ?? 40) > 0,
   "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)
@@ -1317,7 +1332,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || b.kind === "starfield" || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),
