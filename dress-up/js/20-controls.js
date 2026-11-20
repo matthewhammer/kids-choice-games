@@ -83,7 +83,7 @@ const PLACES = [["none", "none"], ["emptyroom", "🔲 empty room"], ["bubblespac
   ["garden", "🌻 garden"], ["spring", "💧 spring"],
   // (ticket 798, for N: a world in space) the starfield
   ["starfield", "✨ starfield"], ["bridge", "🛸 the starship's bridge"], ["alienplanet", "👽 the alien planet"],
-  ["stationlab", "🧪 the space station\'s lab"], ["stationgarden", "🌱 the space station\'s greenhouse"], ["stationbunks", "🛏️ the space station\'s sleeping quarters"], ["stationkitchen", "🍳 the space station\'s kitchen"], ["stationmess", "🍽️ the space station\'s mess hall"]];
+  ["blackhole", "🕳️ the black hole"], ["stationlab", "🧪 the space station\'s lab"], ["stationgarden", "🌱 the space station\'s greenhouse"], ["stationbunks", "🛏️ the space station\'s sleeping quarters"], ["stationkitchen", "🍳 the space station\'s kitchen"], ["stationmess", "🍽️ the space station\'s mess hall"]];
 // (where the way toward us can lead from a room outside the castle: any place but those found by a number of their own)
 const BEHIND_PLACES = [["none", "🧱 nowhere"], ...PLACES.filter(([kd]) => !["none", "castleroom", "treeroom"].includes(kd))];
 const PLACE_GROUPS = [
@@ -91,7 +91,7 @@ const PLACE_GROUPS = [
   // (ticket 290, for N: bubbles, a kind of place of its own: bubble space, moved here, and the bubble room)
   ["bubbles", "🫧 bubbles", ["bubblespace", "bubbleroom"]],
   // (ticket 798, for N) 🚀 space: the starfield, to begin with
-  ["space", "🚀 space", ["starfield", "bridge", "alienplanet", "stationlab", "stationgarden", "stationbunks", "stationkitchen", "stationmess"]],
+  ["space", "🚀 space", ["starfield", "bridge", "alienplanet", "blackhole", "stationlab", "stationgarden", "stationbunks", "stationkitchen", "stationmess"]],
   ["woods", "🌲 woods", ["forest", "clearing", "healerroom", "fairyforest", "woodpath", "crossing", "mountains", "pasture"]],   // (ticket 503: the pasture, out in the open as the mountain trail is)
   ["water", "💧 water", ["lake", "beach", "sea", "underwater", "deepsea", "waterfall", "spring"]],   // (spring: ticket 660)
   ["camping", "🏕️ camping", ["campsite", "tent", "cave", "caveroom", "cavecross"]],
@@ -651,7 +651,9 @@ const TABS = [
       ["choice", "spacePlanet", "🪐 a planet in the distance", SPACE_PLANETS],
       ["range", "spacePlanetSize", "🪐 the planet's size", 5, 100, 20, 60],
       ["range", "spacePlanetX", "↔️ where the planet is (0 = far left)", 0, 100, 10, 90],
-      ["range", "spaceMoons", "🌑 its moons", 0, 4, 0, 3]]],
+      ["range", "spaceMoons", "🌑 its moons", 0, 4, 0, 3],
+      // (ticket 800) which universe: the people's, or the cats' (🕳️ the black hole goes between them)
+      ["choice", "universe", "🌌 which universe", [["people", "🧑 the people universe"], ["cats", "🐱 the cat universe"]]]]],
     // (ticket 798, for N) 👽 the alien planet: its sky, how many grey aliens, and whether its rainbow animals are there
     ["group", "alien", "👽 the alien planet", [
       ["choice", "alienSky", "🌅 its sky", ALIEN_SKIES],
@@ -1285,7 +1287,7 @@ const SHOWN_WHEN = {
   "background.objectsOff": b => b.kind !== "none",
   "background.bubbles": b => b.kind === "bubblespace",   // (ticket 220)
   "background.alien": b => b.kind === "alienplanet",   // (ticket 798)
-  "background.space": b => b.kind === "starfield" || b.kind === "bridge" || b.kind.startsWith("station"),   // (ticket 798: the bridge's windshield looks out on it)
+  "background.space": b => ["starfield", "bridge", "blackhole", "alienplanet"].includes(b.kind) || b.kind.startsWith("station"),   // (ticket 798: the bridge's windshield looks out on it)
   "background.bubbleBurstCount": b => (b.bubbleBurst ?? 40) > 0,   // (ticket 329)
   "background.bubblePopInst": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopPitch": b => (b.bubblePopVol ?? 40) > 0, "background.bubblePopKnob": b => (b.bubblePopVol ?? 40) > 0,
   "background.bubbleroom": b => b.kind === "bubbleroom",   // (ticket 290)
@@ -1349,7 +1351,7 @@ const SHOWN_WHEN = {
   // (a tent's door looks out on the camp: its time of day and its fire)
   ...Object.fromEntries(["campTime", "fireOn"].map(key => ["background." + key, b => b.kind === "campsite" || b.kind === "tent"])),
   ...Object.fromEntries(["starShape", "starSize", "starBright", "starTwinkle"].map(key =>
-    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || b.kind === "starfield" || b.kind === "bridge" || b.kind.startsWith("station") || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
+    ["background." + key, b => ((b.kind === "campsite" || b.kind === "tent") && nightBy(b.campTime, b, false)) || (b.kind === "fairyforest" && nightBy(b.fairyTime, b, true)) || b.kind === "starfield" || b.kind === "bridge" || b.kind === "blackhole" || b.kind.startsWith("station") || (b.kind === "castleroom" && castleOf(b).rooms[Math.round(b.castleRoom ?? 1) - 1] === "trap")])),   // (and the trap room's: the sparkles of a boulder lifted)
   "background.tent": b => b.kind === "tent",
   "background.flameSize": b => b.kind === "campsite" && b.fireOn,
   ...Object.fromEntries(["seeHouse", "seeTree", "seeWitch", "seeCastle", "seeHealer"].map(key => ["background." + key, b => b.kind === "clearing"])),

@@ -269,6 +269,8 @@ const FLY_LOOKS = {
   bridge: (k, o) => flyRect(0, 0, FT, FT, "#1c2232") + flyRect(40, 30, FT - 80, 70, "#283048") + [[0.5, 0.62], [0.22, 0.5], [0.78, 0.5]].map(([u, v], i) => flyC(u * FT, v * FT, i ? 34 : 44, i ? "#3a5a90" : "#9a2a38")).join(""),
   // (the alien planet from above: its violet ground, glowing pools, crystals)
   alienplanet: (k, o) => flyRect(0, 0, FT, FT, "#5b3f8f") + [0, 1, 2].map(i => flyC(120 + 260 * i, 200 + 140 * flyR(k, i), 40, "#7ef9ff80")).join("") + [0, 1, 2, 3].map(i => flyC(80 + 200 * i, 560 - 90 * flyR(k, 10 + i), 22, "#ff9bf0")).join(""),
+  // (ticket 800: the black hole from above: its disk round a black middle)
+  blackhole: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + flyC(FT / 2, FT / 2, 170, o.universe === "cats" ? "#ff6fae" : "#ff7a1a") + flyC(FT / 2, FT / 2, 120, "#ffd166") + flyC(FT / 2, FT / 2, 95, "#000000"),
   starfield: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
     (PLANET_LOOKS[o.spacePlanet] ? flyC(FT * 0.7, FT * 0.3, 60, PLANET_LOOKS[o.spacePlanet].base) : ""),
 };
@@ -369,7 +371,7 @@ function flyLookOf(kind, key, o = state.background, cell = {}) {
   if (kind === "cave" || kind === "caveroom") return FLY_LOOKS.cavecross(key);
   return flyRect(0, 0, FT, FT, "#7caa4c") + flyRoof(0.2 * FT, 0.16 * FT, 0.6 * FT, 0.5 * FT, FLY_ROOFS[kind] || "#8a6a5a");
 }
-const FLY_WET = new Set(["sea", "deepsea", "underwater", "bubblespace", "bubbleroom", "imagination", "emptyroom", "starfield"]);   // (no paths drawn on them)
+const FLY_WET = new Set(["sea", "deepsea", "underwater", "bubblespace", "bubbleroom", "imagination", "emptyroom", "starfield", "blackhole"]);   // (no paths drawn on them)
 // a square's ways, as paths from its middle to the edges it leads off, meeting the neighbour's there
 const FLY_EDGE = { N: [0.5, 0], NE: [1, 0], E: [1, 0.5], SE: [1, 1], S: [0.5, 1], SW: [0, 1], W: [0, 0.5], NW: [0, 0] };
 function flyPathsSvg(kind, ways) {

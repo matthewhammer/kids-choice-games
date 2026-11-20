@@ -1232,7 +1232,7 @@ const TUNES = {
   }) },
 };
 // each background's own tune
-const SCENE_TUNE = { starfield: "vibes", bridge: "vibes", alienplanet: "cemetery", stationlab: "vibes", stationgarden: "cemetery", stationbunks: "lullaby", stationkitchen: "cushions", stationmess: "skatepark", hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
+const SCENE_TUNE = { starfield: "vibes", blackhole: "vibes", bridge: "vibes", alienplanet: "cemetery", stationlab: "vibes", stationgarden: "cemetery", stationbunks: "lullaby", stationkitchen: "cushions", stationmess: "skatepark", hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", treetop: "treechase", livingroom: "cushions", diningroom: "cushions", kitchen: "cushions", stairhall: "cushions", bedroom: "lullaby", laundry: "cushions", furnace: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", caveroom: "steppers", farmyard: "forest", desert: "canyon", woodpath: "forest", pasture: "forest", garden: "cemetery", spring: "roots", crossing: "forest", cavecross: "steppers", dungeon: "steppers", castle: "castlewaltz", castleroom: "ballroom",
@@ -1616,6 +1616,7 @@ function applyMix(instant = false) {
 const TORCH_LFO_THINGS = { fast: "🔥 the torches' flames", slow: "🔆 the torches' glow" };
 const SCENE_LFO_THINGS = {
   starfield: { fast: "⭐ the stars twinkling" },   // (ticket 798)
+  blackhole: { fast: "⭐ the stars twinkling" },   // (ticket 800)
   alienplanet: { fast: "🦋 the rainbow butterflies bobbing" },   // (ticket 798)
   imagination: { fast: "🗺️ the map's dotted paths", slow: "✨ the room's glow" },
   bubbleroom: { slow: "🫧 the foam, when it moves" },

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.516 (2026-11-20)
+
+Everything in 0.0.515, plus:
+
+- **🕳️ The black hole, and 🐱 the cat universe** (ticket 800, for N). A new place under 🚀 space: a black hole, its disk of hot gas wheeling round it, the light bent over its top. Falling in is safe: tap it, and the friend spins in and comes out of the black hole of a parallel universe, the cat universe, where the friend is a cat (in the cat's suit, whatever they wore: their own clothes come back in the people universe), the alien planet's grey aliens are alien cats (green, violet, blue and pink, with glowing antennae), cats crew the starship's bridge, one in each chair, and cats live in every room of the space station: on the lab's bench, asleep on a greenhouse shelf and on the bunks, on the kitchen counter, on the mess hall's stools. The cat universe's black hole has a cat's ears and whiskers, its gas pink and teal; falling into it brings the friend back to the people universe. The words under the picture say which universe they are in, and 🏞️ Background's 🌌 which universe switches it too.
+
 ## 0.0.515 (2026-11-20)
 
 Everything in 0.0.514, plus:

@@ -221,6 +221,8 @@ function bridgeScene(c) {
   s += SEP + part("bridge-things", [c.F], () =>
     obj("the left console", g - 40 * k, bridgeConsoleSvg(-250 * k, g - 40 * k, k, 0, o)) + obj("the right console", g - 40 * k, bridgeConsoleSvg(250 * k, g - 40 * k, k, 1, o)) +
     BRIDGE_CHAIRS.map(([x, dz, name, sc], i) => obj(name, g + dz * k, bridgeChairSvg(x * k, g + dz * k, k, sc, i === 0))).join(""));
+  // (ticket 800) in the cat universe, cats crew the bridge, one in each chair
+  if (catverse()) s += SEP + part("bridge-cats", [c.F], () => catverseCats(BRIDGE_CHAIRS.map(([x, dz, name], i) => [`a cat in ${name.replace(/^the /, "the ")}`, x * k, g + dz * k - 72 * k, k * 1.3, i, "sit"])));
   return s;
 }
 Object.assign(SCENES, { bridge: bridgeScene });
@@ -334,14 +336,15 @@ function alienplanetScene(c) {
     `<rect x="${f1(x0 - pad)}" y="${f1(g + 90 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + pad)}" fill="${gr2}"/>` +
     [0, 1, 2, 3].map(i => `<ellipse cx="${f1(x0 + W * (0.1 + 0.8 * R(i, 8821)))}" cy="${f1(hz + (40 + 160 * R(i, 8822)) * k)}" rx="${f1((30 + 40 * R(i, 8823)) * k)}" ry="${f1(8 * k)}" fill="#7ef9ff" opacity="0.35"><animate attributeName="opacity" values="0.35;0.15;0.35" dur="${3 + i}s" repeatCount="indefinite"/></ellipse>`).join("")));
   // what stands on it, each at its depth: crystals and stone mushrooms, plants, the aliens, the animals
-  s += SEP + part("alien-things", [c.F, sky, aliens, animals, sceneLfoKey(o, "fast")], () => {
+  s += SEP + part("alien-things", [c.F, sky, aliens, animals, catverse(), sceneLfoKey(o, "fast")], () => {
     const things = [
       ["crystals, left", -0.38, -10, (x, y) => alienCrystalsSvg(x, y, k, 1.2, 0)], ["crystals, far right", 0.36, -70, (x, y) => alienCrystalsSvg(x, y, k, 0.8, 1)],
       ["stone mushroom", -0.18, -60, (x, y) => alienMushroomRockSvg(x, y, k, 1, "#9b6bd6")], ["stone mushroom, right", 0.44, 40, (x, y) => alienMushroomRockSvg(x, y, k, 0.8, "#4fb3a8")],
       ["curling fern", -0.45, 60, (x, y) => alienPlantSvg(x, y, k, 0, 0)], ["bulb plant", 0.22, -30, (x, y) => alienPlantSvg(x, y, k, 1, 1)],
       ["tube plant", 0.08, -115, (x, y) => alienPlantSvg(x, y, k, 2, 2)], ["bulb plant, left", -0.14, 100, (x, y) => alienPlantSvg(x, y, k, 1, 3)]];
     [[-0.3, 30, true], [0.3, -40, false], [0.12, 80, false], [-0.12, -80, false]].slice(0, aliens).forEach(([u, dz, wave], i) =>
-      things.push([`grey alien ${i + 1}`, u, dz, (x, y) => greyAlienSvg(x, y, k, 1 - 0.1 * i, wave, i)]));
+      things.push(catverse() ? [`alien cat ${i + 1}`, u, dz, (x, y) => spaceCatSvg(x, y, k * (3.4 - 0.3 * i), ALIEN_CAT_COATS[i % 4], i % 2 ? "walk" : "sit", i, true)]   // (ticket 800: the cat universe's aliens)
+        : [`grey alien ${i + 1}`, u, dz, (x, y) => greyAlienSvg(x, y, k, 1 - 0.1 * i, wave, i)]));
     if (animals) things.push(["rainbow squirrel on a rock", 0.42, 40, (x, y) => rainbowSquirrelSvg(x + 6 * k, y - 82 * k * 0.8, k)],
       ["rainbow snake, resting", 0.3, 50, (x, y) => rainbowSnakeSvg(x, y, k, "bg-alien-snake")],
       ["rainbow beetle", -0.4, -5, (x, y) => `<ellipse cx="${f1(x + 2 * k)}" cy="${f1(y - 100 * k)}" rx="${f1(9 * k)}" ry="${f1(6 * k)}" fill="#00d26a" stroke="#5a3cff" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x + 11 * k)}" cy="${f1(y - 100 * k)}" r="${f1(3.5 * k)}" fill="#ff1e56"/>`]);
@@ -464,6 +467,14 @@ function stationScene(c) {
     }
     return t;
   });
+  // (ticket 800) in the cat universe, cats live in every room of the station
+  if (catverse()) s += SEP + part(kind + "-cats", [c.F], () => catverseCats({
+    stationlab: [["a cat on the bench", W * 0.2, fl - 88 * k, k, 0, "sit"], ["a cat walking", -W * 0.12, g + 60 * k, k, 1, "walk"]],
+    stationgarden: [["a cat asleep on the top shelf", W * 0.3, fl - 200 * k, k * 0.9, 3, "sleep"], ["a cat by the crate", 70 * k, g + 40 * k, k, 2, "sit"]],
+    stationbunks: [["a cat asleep on the left bunk", -220 * k, g - 86 * k, k, 1, "sleep"], ["a cat asleep on the right top bunk", 190 * k, g - 196 * k, k, 0, "sleep"], ["a cat by the lockers", 0, g + 40 * k, k, 2, "sit"]],
+    stationkitchen: [["a cat on the counter", -W * 0.3, fl - 92 * k, k, 3, "sit"], ["a cat walking", W * 0.22, g + 50 * k, k, 0, "walk"]],
+    stationmess: MESS_STOOLS.map((x, i) => [`a cat on stool ${i + 1}`, x * k, g + 50 * k - 54 * k, k, i, "sit"]),
+  }[kind]));
   return s;
 }
 Object.assign(SCENES, Object.fromEntries(Object.keys(STATION_ROOMS).map(kd => [kd, c => stationScene({ ...c, kind: kd })])));
@@ -541,3 +552,69 @@ function rocketTo(to, home = false) {
 }
 // 🏡 home: where the trips began (the first trip's place), the stack cleared
 function rocketHome() { if (!trips.length) return; const h = trips[0]; rocketTo(h.kind, true); }
+
+// ===================== THE BLACK HOLE, AND THE CAT UNIVERSE =====================
+// (ticket 800, for N; Matthew: "N wants there to be a space background with a black hole. entering this black hole is safe,
+// but leads to a parallel space universe (another world) where: every human is a cat; all aliens are alien cats of some
+// kind; all creatures on the space station are cats. in the parallel cat space world, there's also a black hole leading back
+// to 'person universe' ... let's explore the idea of becoming certain animals by doing this first.") Which universe the
+// friend is in is the background's `universe`, "people" or "cats", saved with it. In 🐱 the cat universe the friend is a cat
+// (drawn in the cat's suit, drawNow, whatever they wear: their own clothes are kept), the alien planet's grey aliens are
+// alien cats, cats crew the bridge, and cats live in every room of the station. 🕳️ The black hole: tap it, and the friend
+// falls in, safely, and comes out of the other universe's black hole.
+const catverse = () => state.background.universe === "cats";
+// the cats of the cat universe's station, and its alien cats, as the castle's cat room draws its cats (shoulderCat sitting,
+// sleepingCat, walkingCat), at (x, y), s their size (a castle cat is 0.85 k)
+const CAT_COATS = [{ catFur: "#e8862a", catWhite: "#ffffff", catEyes: "#22c55e", catNose: "#f4a0b0" }, { catFur: "#1f1f22", catWhite: "#ffffff", catEyes: "#c6d43a", catNose: "#f4a0b0" },
+  { catFur: "#6f6f7d", catWhite: "off", catEyes: "#e0a800", catNose: "#f4a0b0" }, { catFur: "#f3efe6", catWhite: "off", catEyes: "#3b82f6", catNose: "#f4a0b0" }];
+const ALIEN_CAT_COATS = [{ catFur: "#5fd38d", catWhite: "#d8ffe0", catEyes: "#00e5ff", catNose: "#ff6fae" }, { catFur: "#a78bfa", catWhite: "#ede9fe", catEyes: "#fde047", catNose: "#f472b6" },
+  { catFur: "#38bdf8", catWhite: "#e0f2fe", catEyes: "#ff6fae", catNose: "#fb7185" }, { catFur: "#f472b6", catWhite: "#fce7f3", catEyes: "#7ef9ff", catNose: "#a855f7" }];
+function spaceCatSvg(x, y, s, WC, pose, i, antennae = false) {
+  const W = catWag({}, i), inner = pose === "sleep" ? sleepingCat(WC, W, i) : pose === "walk" ? walkingCat(WC, W, i) : shoulderCat(4, WC, W, false);
+  // (an alien cat's two antennae, glowing at their tips, over its ears)
+  const ant = antennae ? [-1, 1].map(sd => `<path d="M${f1(sd * 6 + (pose === "sit" ? -2 : 18))} -50 q${f1(sd * 6)} -14 ${f1(sd * 12)} -20" fill="none" stroke="${WC.catFur}" stroke-width="2.5" stroke-linecap="round"/>` +
+    `<circle cx="${f1(sd * 18 + (pose === "sit" ? -2 : 18))}" cy="-70" r="4" fill="${WC.catEyes}"><animate attributeName="opacity" values="1;0.4;1" dur="${(1.4 + 0.3 * i).toFixed(1)}s" repeatCount="indefinite"/></circle>`).join("") : "";
+  return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(20 * s)}" ry="${f1(4 * s)}" fill="#000000" opacity="0.15"/><g transform="translate(${f1(x)} ${f1(y + (pose === "sit" ? 7 * s : 0))}) scale(${s.toFixed(3)})">${ant}${inner}</g>`;
+}
+// the cats in a place of the cat universe: [name, x, y (the foot's depth), size, coat, pose], drawn among its things
+function catverseCats(list, alien = false) {
+  return list.map(([name, x, y, s, coat, pose], i) => obj(name, y, spaceCatSvg(x, y, s, (alien ? ALIEN_CAT_COATS : CAT_COATS)[coat % 4], pose, i, alien))).join("");
+}
+// 🕳️ the black hole: deep space round it, the stars, a glow; its disk of hot gas going round (back half, then the hole, the
+// light bent over its top, the front half); the hole itself, black, ringed with light. In the cat universe its gas is pink
+// and teal, and it has a cat's ears and whiskers. Tap it to fall in (blackHoleEnter).
+function blackholeScene(c) {
+  const { x0, y0, x1, y1, W, H, k, pad, R, all, o } = c, cats = catverse();
+  const cx = 0, cy = y0 + H * 0.36, rh = H * 0.13, disk = cats ? ["#ff6fae", "#7ef9ff", "#ffe0f0"] : ["#ff7a1a", "#ffd166", "#fff6e0"];
+  let s = SEP + part("blackhole-sky", [c.F, cats, o.spaceSeed, o.spaceStars, o.spaceNebula, o.starShape, o.starSize, o.starBright, o.starTwinkle, sceneLfoKey(o, "fast")], () =>
+    spaceViewSvg({ ...c, o: { ...o, spacePlanet: "none" } }, x0 - pad, y0 - pad, x1 + pad, y1 + pad, "bg-bh-view") +
+    `<defs><radialGradient id="bg-bh-glow"><stop offset="0.3" stop-color="${disk[0]}" stop-opacity="0.35"/><stop offset="1" stop-color="${disk[0]}" stop-opacity="0"/></radialGradient></defs>` +
+    `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rh * 3.6)}" fill="url(#bg-bh-glow)"/>`);
+  s += SEP + part("blackhole-hole", [c.F, cats], () => {
+    const ring = (rx, ry, col, w, dash, dur, half) => `<path d="M${f1(cx - rx)} ${f1(cy)} A${f1(rx)} ${f1(ry)} 0 0 ${half} ${f1(cx + rx)} ${f1(cy)}" fill="none" stroke="${col}" stroke-width="${f1(w)}" stroke-dasharray="${dash}" stroke-linecap="round">` +
+      `<animate attributeName="stroke-dashoffset" values="0;${f1(-rx * 3)}" dur="${dur}s" repeatCount="indefinite"/></path>`;
+    const diskHalf = half => [[2.6, 0.5, disk[0], 0.2, 7], [2.15, 0.42, disk[1], 0.16, 5], [1.75, 0.34, disk[2], 0.1, 4]].map(([f, g2, col, w, dur]) =>
+      ring(rh * f, rh * g2 * 1.0, col, rh * w, `${f1(rh * 0.9)} ${f1(rh * 0.25)}`, dur, half)).join("");
+    const ears = cats ? [-1, 1].map(sd => `<path d="M${f1(cx + sd * rh * 0.3)} ${f1(cy - rh * 0.92)} L${f1(cx + sd * rh * 0.85)} ${f1(cy - rh * 1.6)} L${f1(cx + sd * rh * 0.95)} ${f1(cy - rh * 0.45)} Z" fill="#000000"/>` +
+      `<path d="M${f1(cx + sd * rh * 0.48)} ${f1(cy - rh * 0.92)} L${f1(cx + sd * rh * 0.82)} ${f1(cy - rh * 1.38)} L${f1(cx + sd * rh * 0.86)} ${f1(cy - rh * 0.7)} Z" fill="#ff8fc8" opacity="0.8"/>`).join("") : "";
+    const whiskers = cats ? [-1, 1].map(sd => [-0.18, 0, 0.18].map(t => `<path d="M${f1(cx + sd * rh * 0.7)} ${f1(cy + rh * (0.15 + t))} q${f1(sd * rh * 0.9)} ${f1(-rh * 0.12 + t * rh * 0.6)} ${f1(sd * rh * 1.9)} ${f1(t * rh * 1.4)}" fill="none" stroke="#7ef9ff" stroke-width="${f1(rh * 0.03)}" stroke-linecap="round" opacity="0.85"/>`).join("")).join("") : "";
+    return diskHalf(1) +
+      // (the light from the disk's far side, bent up and over the hole)
+      `<ellipse cx="${f1(cx)}" cy="${f1(cy)}" rx="${f1(rh * 1.32)}" ry="${f1(rh * 1.32)}" fill="none" stroke="${disk[1]}" stroke-width="${f1(rh * 0.12)}" opacity="0.6"/>` +
+      ears + `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rh)}" fill="#000000"/>` +
+      `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rh * 1.04)}" fill="none" stroke="${disk[2]}" stroke-width="${f1(rh * 0.05)}"/>` +
+      diskHalf(0) + whiskers +
+      // (the way in: the hole and a little round it, to tap)
+      `<g class="portal" data-blackhole=""><circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(rh * 1.3)}" fill="#000000" opacity="0.001"/></g>`;
+  });
+  return s;
+}
+Object.assign(SCENES, { blackhole: blackholeScene });
+// falling in: the friend flies into the hole, spinning, and comes out of the other universe's black hole
+function blackHoleEnter(door) {
+  if (entering) return;
+  const B = state.background, body = state.body;
+  body.sit = false; B.seat = null;
+  const r = door.getBoundingClientRect();   // (its box on the screen: the way in is a group, not a picture's own <svg>)
+  flyInto({ x: r.x, y: r.y, width: r.width, height: r.height }, () => { B.universe = catverse() ? "people" : "cats"; const [figX, figY] = ARRIVE.blackhole || [0, 0]; Object.assign(B, { figX, figY }); arriveSettle = true; });
+}

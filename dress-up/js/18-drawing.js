@@ -23,7 +23,16 @@ function draw() {
 const ANIMS_RE = /<(animate|animateTransform|animateMotion|set)\b[^>]*?(\/>|>[\s\S]*?<\/\1>)/g;
 let stillMemo = { in: null, out: null };
 const stillScene = text => { if (text !== stillMemo.in) stillMemo = { in: text, out: text.replace(ANIMS_RE, "") }; return stillMemo.out; };
+// (ticket 800) in 🐱 the cat universe the friend is a cat: drawn in the cat's suit (ANIMALS.cat) whatever they wear, unless
+// they wear an animal already; their own costume is kept as it is, and comes back in the people universe
+let catDrawing = false;
 function drawNow() {
+  if (state.background.universe === "cats" && !catDrawing && !ANIMALS[state.costume.kind]) {
+    const keep = state.costume, A = ANIMALS.cat;
+    catDrawing = true; state.costume = { ...keep, kind: "cat", fur: A.fur, marks: A.marks, belly: A.belly, eyes: A.eyes, accent: A.accent, furPattern: A.furPattern };
+    try { drawNow(); } finally { state.costume = keep; catDrawing = false; }
+    return;
+  }
   if (typeof flight !== "undefined" && flight) { flightDraw(); return; }   // (ticket 691: flying, the world from above instead: js/25-flight.js)
   if (typeof meal !== "undefined" && meal) { mealDraw(); return; }   // (ticket 744: at the table, the place setting from above: js/25-meal.js)
   if (typeof salad !== "undefined" && salad) { saladDraw(); return; }   // (ticket 747: at the kitchen counter, the salad maker: js/25-salad.js)
@@ -1479,7 +1488,7 @@ function drawNow() {
   }
   // the feeling, and where, as each place takes it (PLACE_PHRASE)
   const BGK = state.background.kind, where = PLACE_PHRASE[BGK];
-  const place = typeof where === "function" ? where(state.background) : where || "";
+  const place = (typeof where === "function" ? where(state.background) : where || "") + (state.background.universe === "cats" ? (where ? ", " : "") + "in 🐱 the cat universe" : "");   // (ticket 800)
   document.getElementById("mood").textContent = "feeling " + mood(family(F.color), F.brow, F.smile) + (place ? " " + place : "") +
     (B.anim === "climbup" && (!scened || (climb && climb.none)) ? (climb && climb.far ? " (🧗 put them by a ladder to climb it)" : " (🧗 no ladder here to climb)") : "");
   fitPic();
@@ -2038,7 +2047,7 @@ function treadTick(t) {
 // Where the friend is, after their feeling ("feeling happy in the forest"):
 // each place with the word it takes, in, at, on, near or outside of; a
 // castle room by its own name and number; a castle by its owner.
-const PLACE_PHRASE = { starfield: "floating among the stars in ✨ space", bridge: "on 🛸 the starship's bridge", alienplanet: "on 👽 the alien planet, where no one hunts anyone", stationlab: "in 🧪 the space station's lab", stationgarden: "in 🌱 the space station's greenhouse", stationbunks: "in 🛏️ the space station's sleeping quarters", stationkitchen: "in 🍳 the space station's kitchen", stationmess: "in 🍽️ the space station's mess hall", sea: "swimming in 🌊 open water", deepsea: "swimming in the 🪸 deep sea", bubblespace: "in 🫧 bubble space", bubbleroom: "in 🫧 the bubble room", imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
+const PLACE_PHRASE = { starfield: "floating among the stars in ✨ space", blackhole: "floating by 🕳️ the black hole (tap it to fall in, safely)", bridge: "on 🛸 the starship's bridge", alienplanet: "on 👽 the alien planet, where no one hunts anyone", stationlab: "in 🧪 the space station's lab", stationgarden: "in 🌱 the space station's greenhouse", stationbunks: "in 🛏️ the space station's sleeping quarters", stationkitchen: "in 🍳 the space station's kitchen", stationmess: "in 🍽️ the space station's mess hall", sea: "swimming in 🌊 open water", deepsea: "swimming in the 🪸 deep sea", bubblespace: "in 🫧 bubble space", bubbleroom: "in 🫧 the bubble room", imagination: "in 💭 our imagination", emptyroom: "in the 🔲 empty room", forest: "in the 🌲 forest", underwater: "🐠 under the sea", beach: "at the 🏖️ beach", witch: "in the 🧙 witch's woods",
   cemetery: "in the 🌿 cemetery", lake: "at the 🦆 lake", house: "outside of the 🏠 house", treehouse: "near the 🌳 tree house",
   treeroom: "in the 🪜 tree house", livingroom: "in the 🛋️ living room", diningroom: "in the 🍽️ dining room", kitchen: "in the 🍳 kitchen", stairhall: "by the 🪜 stairs", bedroom: "in the 🛏️ bedroom", laundry: "in the 🧺 laundry room", furnace: "in the 🔥 furnace room", witchroom: "in the 🧙 witch's hut", clearing: "in the 🌲 forest clearing",
   hut: "outside the 🛖 grass hut", hutroom: "in the 🛖 grass hut's living room", hutbed: "in the 🛖 grass hut's bedroom", hutpotion: "in the 🛖 grass hut's potion room", hutcenter: "in the 🛖 grass hut's 🔥 center", treetop: "in the ⭕ round room at the top of the 🌳 tree",

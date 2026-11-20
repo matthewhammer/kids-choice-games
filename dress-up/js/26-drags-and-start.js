@@ -2336,7 +2336,7 @@ if (touchPad.want) padLoop = requestAnimationFrame(padPoll);
 // and not in the water, and to one side of a doorway at the far end (a
 // tent's door, the cave's mouth) rather than in front of it ([x, y] from
 // the middle of the stage's ground).
-const ARRIVE = { bridge: [150, 50], stationlab: [60, 60], stationgarden: [-120, 70], stationbunks: [0, 70], stationkitchen: [120, 60], stationmess: [0, 110], diningroom: [0, 70], kitchen: [0, 60], stairhall: [-60, 60], bedroom: [-210, 60], laundry: [-40, 60], furnace: [0, 70], hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], cavecross: [0, -20], dungeon: [0, -40], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40],
+const ARRIVE = { blackhole: [230, 60], bridge: [150, 50], stationlab: [60, 60], stationgarden: [-120, 70], stationbunks: [0, 70], stationkitchen: [120, 60], stationmess: [0, 110], diningroom: [0, 70], kitchen: [0, 60], stairhall: [-60, 60], bedroom: [-210, 60], laundry: [-40, 60], furnace: [0, 70], hut: [-120, 50], hutroom: [0, 40], hutbed: [130, 40], hutpotion: [-60, 50], hutcenter: [-260, 60], witchroom: [-170, 0], crossing: [0, -20], cavecross: [0, -20], dungeon: [0, -40], imagination: [0, 70], emptyroom: [0, 70], bubblespace: [0, 70], bubbleroom: [0, 40], healerroom: [60, 40], fairyforest: [50, 40], campsite: [110, -10], waterfall: [-130, 40], tent: [-95, 25], cave: [-150, 25], caveroom: [-120, 40], farmyard: [0, 30], desert: [-40, 30], castle: [-210, 30], castleroom: [0, 40],
   // (ticket 516: the round room at the top of the tree: at the front, on the side away from its hatch (the house below's side), under a window)
   get treetop() { return [-topSide(state.background) * 170, 50]; } };
 // Where each trip through a doorway began, the last on top: the back chip
@@ -2352,6 +2352,7 @@ function enterScene(door, here = false) {
   if (door.dataset.pick !== undefined) { foodPick(door); return; }   // (ticket 743: M's food on the counter, into the 🎒)
   if (door.dataset.climb !== undefined && houseStairsClimb(door)) return;   // (ticket 742: a house's stairs, climbed)
   if (door.dataset.descend !== undefined && houseStairsDownInto(door, door.dataset.to)) return;   // (and down them, into the room below)
+  if (door.dataset.blackhole !== undefined) { blackHoleEnter(door); return; }   // (ticket 800: into the black hole, to the other universe)
   if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)
   if (door.dataset.stairs) { stairsUp(door); return; }   // (ticket 625: a dungeon room's stairs, to the floor above)
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }
