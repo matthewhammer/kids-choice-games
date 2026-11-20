@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.512 (2026-11-20)
+
+Everything in 0.0.511, plus:
+
+- **🛸 The starship's bridge** (ticket 798, for N), the second place under 🚀 space. A room seen from its back: the back wall is mostly windshield, looking out on the starfield as ✨'s settings make it (its stars, nebula, planet and moons: change them, and the view changes); a monitor screen on each side of the windshield with buttons under it, and a console along the wall under it, its buttons blinking and its screens' traces running; light strips in the ceiling, and the deck's lines running toward the windshield. In front, facing the windshield: the captain's chair (red, with a gold star) and a console on each side with its own chair. The three chairs are seats (🪑): sitting in one, the friend turns to one side, as in a chair that swivels.
+
 ## 0.0.511 (2026-11-20)
 
 Everything in 0.0.510, plus:

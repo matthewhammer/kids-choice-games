@@ -23,7 +23,7 @@ const HOUSE_COLOR_DEFAULTS = {
 const SEATS = {};
 const SCENE_FIG = { forest: 0.45, underwater: 0.45, deepsea: 0.45, beach: 0.45, sea: 0.45, witch: 0.4, cemetery: 0.45, lake: 0.45, house: 0.35,
                     treehouse: 0.3, treeroom: 0.65, treetop: 0.6, livingroom: 0.7, diningroom: 0.7, kitchen: 0.7, stairhall: 0.55, bedroom: 0.55, laundry: 0.55, furnace: 0.55, /* (ticket 742: under 0.9 of their doors) */ witchroom: 0.6, healerroom: 0.6, hut: 0.42, hutroom: 0.7, hutbed: 0.62, hutpotion: 0.6, hutcenter: 0.6, fairyforest: 0.4, clearing: 0.45, mountains: 0.45,
-                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, garden: 0.45, spring: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, starfield: 0.35, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
+                    waterfall: 0.37, campsite: 0.3, tent: 0.5, cave: 0.4, caveroom: 0.4, cavecross: 0.45, dungeon: 0.34, farmyard: 0.4, desert: 0.45, woodpath: 0.45, pasture: 0.45, garden: 0.45, spring: 0.45, crossing: 0.45, castle: 0.35, castleroom: 0.55, bubblespace: 0.3, starfield: 0.35, bridge: 0.45, bubbleroom: 0.6, imagination: 0.3, emptyroom: 0.3 };
 const sceneFig = kind => SCENE_FIG[kind] ?? 0.45;
 // (ticket 457, Matthew: "Maybe we add a body param for 'default size in scene' scale --- otherwise the gnome has to be re-set
 // for each background as we play around with them") the friend's own size (body.size, a share), in every place, on top of
@@ -49,7 +49,7 @@ const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: 
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
                    "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard", "garden", "spring"];   // (desert: ticket 501; garden, spring: ticket 660)
-const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "laundry", "furnace", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom", "starfield"];
+const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "laundry", "furnace", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom", "starfield", "bridge"];
 const northDefault = kind => kind === "dungeon" ? 1 : NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
   if (B.kind === "castleroom") {
@@ -1560,7 +1560,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.511", released: "2026-11-20" };
+const VERSION = { number: "0.0.512", released: "2026-11-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
