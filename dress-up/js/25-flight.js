@@ -457,6 +457,13 @@ function flyQuiltSvg(W) {
 
 // ---- the friend, riding: drawn in the picture's own units, the ground under them at (0, 0) ----
 function flyRiderSvg() {
+  // (ticket 800) in 🐱 the cat universe the friend is a cat: seen from above, its back and tail, its head and ears, in its coat
+  if (state.background.universe === "cats") {
+    const C = CAT_COATS[Math.max(0, Math.min(3, Math.round(state.body.catCoat ?? 1)))], fur = C.catFur, chest = C.catWhite && C.catWhite !== "off" ? C.catWhite : fur;
+    return `<g transform="translate(0 -6)"><path d="M0 30 Q30 52 18 74 Q10 86 22 92" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>` +
+      `<ellipse cx="0" cy="6" rx="24" ry="34" fill="${fur}"/><ellipse cx="0" cy="-20" rx="13" ry="9" fill="${chest}"/>` +
+      `<circle cx="0" cy="-34" r="17" fill="${fur}"/>` + [-1, 1].map(sd => `<path d="M${sd * 6} -46 L${sd * 15} -60 L${sd * 17} -40 Z" fill="${fur}"/><path d="M${sd * 9} -46 L${sd * 14} -55 L${sd * 15} -43 Z" fill="${C.catNose}"/>`).join("") + `</g>`;
+  }
   const B = { ...state.body, facing: flight.facing, anim: "none", pose: "stand", sit: false };
   return `<g transform="translate(0 6) scale(0.62)">${topDownSvg(state, B, 0, 100)}</g>`;
 }

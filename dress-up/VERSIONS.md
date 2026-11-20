@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.518 (2026-11-20)
+
+Everything in 0.0.517, plus:
+
+- **Flying as a cat** (ticket 800). In 🐱 the cat universe, flying over the world in 🎈 the balloon, 🫧 the bubble or 🚀 the rocket, the friend is a cat there too, seen from above: its back and tail, its head and ears, in their coat.
+
 ## 0.0.517 (2026-11-20)
 
 Everything in 0.0.516, plus:
