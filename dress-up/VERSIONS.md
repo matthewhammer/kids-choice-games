@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.514 (2026-11-20)
+
+Everything in 0.0.513, plus:
+
+- **The space station's five rooms** (ticket 798, for N), under 🚀 space. Each has metal walls, a ceiling of lights and a round porthole looking out on the starfield (as ✨ sets it), and its own things: 🧪 **the lab**, a bench of glowing flasks, a microscope, a screen, and an alien plant in a tank; 🌱 **the greenhouse**, grow lights over hydroponic shelves of lettuces, tomatoes and herbs, a water pipe along each shelf, and a watering can on a crate; 🛏️ **the sleeping quarters**, two bunk beds with ladders, blankets and pillows, and lockers (🪑 sit on either bottom bunk); 🍳 **the kitchen**, a counter, a fridge, a food printer, and a tray of lentil soup, bread and an apple on the counter; 🍽️ **the mess hall**, a long table set with trays (the same vegetarian lunch) and four stools to sit on (🪑).
+
 ## 0.0.513 (2026-11-20)
 
 Everything in 0.0.512, plus:

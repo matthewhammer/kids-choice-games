@@ -352,3 +352,118 @@ function alienplanetScene(c) {
   return s;
 }
 Object.assign(SCENES, { alienplanet: alienplanetScene });
+
+// ===================== THE SPACE STATION =====================
+// (ticket 798, for N; Matthew: "space station, with various kinds of rooms: labs; greenhouse in space (lights, hydroponic
+// planter shelves, etc); sleeping quarters, with bunk beds; kitchen; mess hall (for eating)") Five rooms, each seen from its
+// back as the bridge is, in one shell: metal panels, a ceiling of lights, a round porthole looking out on the starfield (✨'s
+// view, as the bridge's windshield), and a deck; each room its own things. Food stands on counters and tables, never the
+// floor, and all of it is vegetarian (Matthew's rules for the game's food).
+const STATION_ROOMS = { stationlab: "🧪 the space station's lab", stationgarden: "🌱 the space station's greenhouse", stationbunks: "🛏️ the space station's sleeping quarters",
+                        stationkitchen: "🍳 the space station's kitchen", stationmess: "🍽️ the space station's mess hall" };
+const stationFloor = c => c.g - 110 * c.k;
+// the shell: walls, ceiling and its lights, a porthole at (px, py) of radius pr (none when pr is 0), the deck; tint, the
+// walls' colour
+function stationShellSvg(c, tint, px, py, pr, idp) {
+  const { x0, y0, x1, y1, W, H, k, pad, all } = c, fl = stationFloor(c), ceil = y0 + H * 0.08;
+  let t = `<defs><linearGradient id="${idp}-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(tint, "#ffffff", 0.18)}"/><stop offset="1" stop-color="${tint}"/></linearGradient>` +
+    (pr ? `<clipPath id="${idp}-port"><circle cx="${f1(px)}" cy="${f1(py)}" r="${f1(pr)}"/></clipPath>` : "") + `</defs>` + all(`url(#${idp}-wall)`);
+  for (let x = x0 - pad; x < x1 + pad; x += 90 * k) t += `<rect x="${f1(x + 4 * k)}" y="${f1(ceil + 8 * k)}" width="${f1(82 * k)}" height="${f1(fl - ceil - 16 * k)}" rx="${f1(6 * k)}" fill="none" stroke="${mix(tint, "#000000", 0.18)}" stroke-width="${f1(1.5 * k)}"/>` +
+    `<circle cx="${f1(x + 10 * k)}" cy="${f1(ceil + 14 * k)}" r="${f1(1.8 * k)}" fill="${mix(tint, "#000000", 0.3)}"/>`;
+  t += `<rect x="${f1(x0 - pad)}" y="${f1(y0 - pad)}" width="${f1(W + 2 * pad)}" height="${f1(ceil - y0 + pad)}" fill="${mix(tint, "#000000", 0.45)}"/>` +
+    [-0.3, 0, 0.3].map(u => `<rect x="${f1(u * W - 70 * k)}" y="${f1(ceil - 11 * k)}" width="${f1(140 * k)}" height="${f1(6 * k)}" rx="${f1(3 * k)}" fill="#fffbe6" opacity="0.9"/>`).join("");
+  if (pr) t += `<g clip-path="url(#${idp}-port)">${spaceViewSvg(c, px - pr, py - pr, px + pr, py + pr, `${idp}-view`)}</g>` +
+    `<circle cx="${f1(px)}" cy="${f1(py)}" r="${f1(pr)}" fill="none" stroke="#7b869e" stroke-width="${f1(12 * k)}"/>` +
+    [...Array(8)].map((_, i) => { const a = i * Math.PI / 4; return `<circle cx="${f1(px + Math.cos(a) * pr)}" cy="${f1(py + Math.sin(a) * pr)}" r="${f1(3 * k)}" fill="#3b465f"/>`; }).join("");
+  t += `<rect x="${f1(x0 - pad)}" y="${f1(fl)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - fl + pad)}" fill="${mix(tint, "#000000", 0.5)}"/>` +
+    [...Array(9)].map((_, i) => { const u = (i - 4) / 4; return `<line x1="${f1(u * W * 0.45)}" y1="${f1(fl)}" x2="${f1(u * W * 1.2)}" y2="${f1(y1 + pad)}" stroke="${mix(tint, "#000000", 0.62)}" stroke-width="${f1(1.5 * k)}"/>`; }).join("") +
+    `<rect x="${f1(x0 - pad)}" y="${f1(fl - 4 * k)}" width="${f1(W + 2 * pad)}" height="${f1(8 * k)}" fill="#3b465f"/>`;
+  return t;
+}
+// a counter or bench along the wall from xa to xb, its top at height h above y
+const stationCounterSvg = (xa, xb, y, h, k, top = "#cfd6e4", body = "#5b6782") => `<rect x="${f1(xa)}" y="${f1(y - h)}" width="${f1(xb - xa)}" height="${f1(h)}" fill="${body}"/>` +
+  `<rect x="${f1(xa - 6 * k)}" y="${f1(y - h - 8 * k)}" width="${f1(xb - xa + 12 * k)}" height="${f1(10 * k)}" rx="${f1(3 * k)}" fill="${top}"/>` +
+  [...Array(Math.max(1, Math.floor((xb - xa) / (60 * k))))].map((_, i, a) => `<rect x="${f1(xa + 6 * k + i * (xb - xa) / a.length)}" y="${f1(y - h + 10 * k)}" width="${f1((xb - xa) / a.length - 12 * k)}" height="${f1(h - 18 * k)}" rx="${f1(3 * k)}" fill="none" stroke="${mix(body, "#000000", 0.25)}" stroke-width="${f1(1.5 * k)}"/>`).join("");
+// a flask of glowing liquid at (x, y), its colour col
+const stationFlaskSvg = (x, y, k, col, i) => `<path d="M${f1(x - 4 * k)} ${f1(y - 34 * k)} L${f1(x - 4 * k)} ${f1(y - 22 * k)} L${f1(x - 14 * k)} ${f1(y)} L${f1(x + 14 * k)} ${f1(y)} L${f1(x + 4 * k)} ${f1(y - 22 * k)} L${f1(x + 4 * k)} ${f1(y - 34 * k)} Z" fill="#e8f4ff" opacity="0.55" stroke="#9fb3c8" stroke-width="${f1(1.2 * k)}"/>` +
+  `<path d="M${f1(x - 9 * k)} ${f1(y - 10 * k)} L${f1(x - 13 * k)} ${f1(y - 1 * k)} L${f1(x + 13 * k)} ${f1(y - 1 * k)} L${f1(x + 9 * k)} ${f1(y - 10 * k)} Z" fill="${col}"><animate attributeName="opacity" values="1;0.6;1" dur="${(2 + (i % 3) * 0.6).toFixed(1)}s" repeatCount="indefinite"/></path>`;
+// a lettuce, a tomato plant, herbs: a small plant growing from a tray at (x, y), by kind
+function stationPlantSvg(x, y, k, kind) {
+  if (kind === 0) return [0, 1, 2, 3, 4].map(i => `<ellipse cx="${f1(x + (i - 2) * 5 * k)}" cy="${f1(y - 10 * k - (i % 2) * 4 * k)}" rx="${f1(9 * k)}" ry="${f1(7 * k)}" fill="${["#7ccf5a", "#5fb847", "#9ade6e"][i % 3]}"/>`).join("");
+  if (kind === 1) return `<path d="M${f1(x)} ${f1(y)} L${f1(x)} ${f1(y - 30 * k)} M${f1(x)} ${f1(y - 14 * k)} L${f1(x - 10 * k)} ${f1(y - 22 * k)} M${f1(x)} ${f1(y - 20 * k)} L${f1(x + 10 * k)} ${f1(y - 28 * k)}" stroke="#3f8f3a" stroke-width="${f1(2.5 * k)}" fill="none"/>` +
+    [[-10, -22], [10, -28], [2, -32]].map(([dx, dy]) => `<circle cx="${f1(x + dx * k)}" cy="${f1(y + dy * k + 5 * k)}" r="${f1(5 * k)}" fill="#e63b2e"/>`).join("");
+  return [-6, 0, 6].map(dx => `<path d="M${f1(x + dx * k)} ${f1(y)} q${f1(dx * 0.4 * k)} ${f1(-14 * k)} ${f1(dx * 0.6 * k)} ${f1(-24 * k)}" stroke="#4caf50" stroke-width="${f1(2 * k)}" fill="none"/><ellipse cx="${f1(x + dx * 1.6 * k)}" cy="${f1(y - 22 * k)}" rx="${f1(4 * k)}" ry="${f1(2.5 * k)}" fill="#66bb6a"/>`).join("");
+}
+// a bunk bed: two beds, one over the other, a ladder, blankets and pillows, at x, its foot at y
+function stationBunkSvg(x, y, k, i) {
+  const w = 190 * k, frame = "#7b869e", blanket = [["#3b82f6", "#f59e0b"], ["#ec4899", "#10b981"]][i % 2];
+  return [0, 1].map(lvl => { const by = y - 40 * k - lvl * 110 * k;
+    return `<rect x="${f1(x - w / 2)}" y="${f1(by - 10 * k)}" width="${f1(w)}" height="${f1(16 * k)}" fill="${frame}"/>` +
+      `<rect x="${f1(x - w / 2 + 6 * k)}" y="${f1(by - 26 * k)}" width="${f1(w - 12 * k)}" height="${f1(18 * k)}" rx="${f1(6 * k)}" fill="${blanket[lvl]}"/>` +
+      `<rect x="${f1(x - w / 2 + 10 * k)}" y="${f1(by - 34 * k)}" width="${f1(40 * k)}" height="${f1(14 * k)}" rx="${f1(6 * k)}" fill="#f8fafc"/>`; }).join("") +
+    [-1, 1].map(sd => `<rect x="${f1(x + sd * w / 2 - (sd > 0 ? 8 : 0) * k)}" y="${f1(y - 190 * k)}" width="${f1(8 * k)}" height="${f1(190 * k)}" fill="${frame}"/>`).join("") +
+    `<g stroke="#a7b1c6" stroke-width="${f1(3 * k)}"><line x1="${f1(x + w / 2 - 34 * k)}" y1="${f1(y)}" x2="${f1(x + w / 2 - 34 * k)}" y2="${f1(y - 160 * k)}"/><line x1="${f1(x + w / 2 - 14 * k)}" y1="${f1(y)}" x2="${f1(x + w / 2 - 14 * k)}" y2="${f1(y - 160 * k)}"/>` +
+    [...Array(6)].map((_, j) => `<line x1="${f1(x + w / 2 - 34 * k)}" y1="${f1(y - 20 * k - j * 26 * k)}" x2="${f1(x + w / 2 - 14 * k)}" y2="${f1(y - 20 * k - j * 26 * k)}"/>`).join("") + `</g>`;
+}
+// a stool at x, its foot at y (the mess hall's, to sit on)
+const stationStoolSvg = (x, y, k) => `<rect x="${f1(x - 4 * k)}" y="${f1(y - 52 * k)}" width="${f1(8 * k)}" height="${f1(50 * k)}" fill="#5b6782"/><ellipse cx="${f1(x)}" cy="${f1(y - 2 * k)}" rx="${f1(18 * k)}" ry="${f1(4 * k)}" fill="#5b6782"/>` +
+  `<ellipse cx="${f1(x)}" cy="${f1(y - 54 * k)}" rx="${f1(24 * k)}" ry="${f1(8 * k)}" fill="#f97316"/>`;
+// a tray of food: a bowl of lentil soup, a slice of bread, an apple (all vegetarian), at (x, y)
+const stationTraySvg = (x, y, k) => `<rect x="${f1(x - 30 * k)}" y="${f1(y - 6 * k)}" width="${f1(60 * k)}" height="${f1(6 * k)}" rx="${f1(2 * k)}" fill="#94a3b8"/>` +
+  `<path d="M${f1(x - 22 * k)} ${f1(y - 6 * k)} Q${f1(x - 12 * k)} ${f1(y - 20 * k)} ${f1(x - 2 * k)} ${f1(y - 6 * k)} Z" fill="#c2802f"/><ellipse cx="${f1(x - 12 * k)}" cy="${f1(y - 12 * k)}" rx="${f1(9 * k)}" ry="${f1(2.5 * k)}" fill="#e0a64a"/>` +
+  `<rect x="${f1(x + 2 * k)}" y="${f1(y - 14 * k)}" width="${f1(12 * k)}" height="${f1(8 * k)}" rx="${f1(3 * k)}" fill="#e7c27d"/><circle cx="${f1(x + 22 * k)}" cy="${f1(y - 12 * k)}" r="${f1(6 * k)}" fill="#e53935"/>`;
+const MESS_STOOLS = [-210, -110, 110, 210];
+SEATS.stationmess = c => { const { g, k } = c;
+  return MESS_STOOLS.map((x, i) => ({ name: `stool ${i + 1}`, x0: (x - 22) * k, x1: (x + 22) * k, y: g + 50 * k - 56 * k, z: g + 50 * k + 1, facing: ["front", "left", "right"] })); };
+SEATS.stationbunks = c => { const { g, k } = c;
+  return [-200, 200].map((x, i) => ({ name: `bottom bunk ${i ? "on the right" : "on the left"}`, x0: (x - 80) * k, x1: (x + 40) * k, y: g - 20 * k - 58 * k, z: g - 20 * k + 1, facing: ["front", "left", "right"] })); };
+function stationScene(c) {
+  const { x0, y0, W, H, g, k, o } = c, kind = c.kind, fl = stationFloor(c);
+  const view = [o.spaceSeed, o.spaceStars, o.spaceNebula, o.spacePlanet, o.spacePlanetSize, o.spacePlanetX, o.spaceMoons, o.starShape, o.starSize, o.starBright, o.starTwinkle, sceneLfoKey(o, "fast")];
+  const tint = { stationlab: "#d7dee9", stationgarden: "#cfe3d4", stationbunks: "#d9d2e6", stationkitchen: "#e6ddd0", stationmess: "#d3dde6" }[kind];
+  const port = { stationlab: [-0.33, 0.28, 80], stationgarden: [0, 0.24, 72], stationbunks: [0, 0.26, 78], stationkitchen: [0.33, 0.26, 74], stationmess: [0, 0.25, 90] }[kind];
+  let s = SEP + part(kind + "-shell", [c.F, ...view], () => wallObj("the station's wall", stationShellSvg(c, tint, port[0] * W, y0 + H * port[1], port[2] * k, "bg-" + kind)));
+  s += SEP + part(kind + "-things", [c.F], () => {
+    let t = "";
+    if (kind === "stationlab") {
+      // benches with flasks, a microscope, a screen with a helix, a tank with an alien plant in it
+      t += wallObj("the lab's bench", stationCounterSvg(-W * 0.15, W * 0.45, fl, 80 * k, k) +
+        [0, 1, 2, 3].map(i => stationFlaskSvg(-W * 0.1 + i * 44 * k, fl - 88 * k, k, ["#7ef9ff", "#b6ff7a", "#ff9bf0", "#ffe600"][i], i)).join("") +
+        `<g transform="translate(${f1(W * 0.33)} ${f1(fl - 88 * k)})"><rect x="${f1(-16 * k)}" y="${f1(-6 * k)}" width="${f1(32 * k)}" height="${f1(6 * k)}" fill="#334155"/><path d="M0 ${f1(-6 * k)} L${f1(-6 * k)} ${f1(-40 * k)} L${f1(4 * k)} ${f1(-46 * k)}" stroke="#334155" stroke-width="${f1(6 * k)}" fill="none" stroke-linecap="round"/><rect x="${f1(-2 * k)}" y="${f1(-62 * k)}" width="${f1(10 * k)}" height="${f1(20 * k)}" fill="#475569" transform="rotate(-20)"/></g>` +
+        bridgeScreenSvg(W * 0.02, y0 + H * 0.16, 130 * k, 80 * k, k, 2, 1, o));
+      t += obj("the tank with an alien plant", g - 20 * k, `<rect x="${f1(-W * 0.36)}" y="${f1(g - 20 * k - 150 * k)}" width="${f1(70 * k)}" height="${f1(150 * k)}" rx="${f1(8 * k)}" fill="#7ef9ff" opacity="0.25" stroke="#9fb3c8" stroke-width="${f1(3 * k)}"/>` + alienPlantSvg(-W * 0.36 + 35 * k, g - 26 * k, k * 0.8, 0, 0));
+    } else if (kind === "stationgarden") {
+      // grow lights over hydroponic shelves of plants, a water pipe running along them
+      t += wallObj("the hydroponic shelves", [-1, 1].map(sd => { const xa = sd < 0 ? -W * 0.46 : W * 0.12, xb = sd < 0 ? -W * 0.12 : W * 0.46;
+        return [0, 1, 2].map(lvl => { const y = fl - 20 * k - lvl * 90 * k;
+          return `<rect x="${f1(xa)}" y="${f1(y - 70 * k)}" width="${f1(xb - xa)}" height="${f1(6 * k)}" rx="${f1(3 * k)}" fill="#e879f9" opacity="0.9"><animate attributeName="opacity" values="0.9;0.7;0.9" dur="3s" repeatCount="indefinite"/></rect>` +
+            `<rect x="${f1(xa)}" y="${f1(y - 64 * k)}" width="${f1(xb - xa)}" height="${f1(64 * k)}" fill="#f0abfc" opacity="0.12"/>` +
+            `<rect x="${f1(xa)}" y="${f1(y)}" width="${f1(xb - xa)}" height="${f1(10 * k)}" fill="#94a3b8"/><rect x="${f1(xa)}" y="${f1(y + 10 * k)}" width="${f1(xb - xa)}" height="${f1(4 * k)}" fill="#38bdf8"/>` +
+            [...Array(Math.floor((xb - xa) / (34 * k)))].map((_, j) => stationPlantSvg(xa + 17 * k + j * 34 * k, y, k, (j + lvl) % 3)).join(""); }).join("") +
+          [xa, xb].map(x => `<rect x="${f1(x - 4 * k)}" y="${f1(fl - 220 * k)}" width="${f1(8 * k)}" height="${f1(220 * k)}" fill="#64748b"/>`).join(""); }).join(""));
+      t += obj("a watering can on a crate", g + 30 * k, `<rect x="${f1(-30 * k)}" y="${f1(g + 30 * k - 40 * k)}" width="${f1(60 * k)}" height="${f1(40 * k)}" fill="#a16207"/><path d="M${f1(-14 * k)} ${f1(g - 10 * k)} h${f1(28 * k)} v${f1(-24 * k)} h${f1(-28 * k)} Z M${f1(14 * k)} ${f1(g - 28 * k)} l${f1(18 * k)} ${f1(-12 * k)}" fill="#22c55e" stroke="#22c55e" stroke-width="${f1(4 * k)}"/>`);
+    } else if (kind === "stationbunks") {
+      // two bunk beds, lockers between them
+      t += obj("bunk bed, left", g - 20 * k, stationBunkSvg(-200 * k, g - 20 * k, k, 0)) + obj("bunk bed, right", g - 20 * k, stationBunkSvg(200 * k, g - 20 * k, k, 1));
+      t += wallObj("lockers", [0, 1].map(i => `<rect x="${f1((-50 + i * 52) * k)}" y="${f1(fl - 200 * k)}" width="${f1(48 * k)}" height="${f1(200 * k)}" rx="${f1(3 * k)}" fill="#94a3b8" stroke="#64748b" stroke-width="${f1(2 * k)}"/>` +
+        [0, 1, 2].map(j => `<rect x="${f1((-42 + i * 52) * k)}" y="${f1(fl - 186 * k + j * 8 * k)}" width="${f1(30 * k)}" height="${f1(3 * k)}" fill="#64748b"/>`).join("") + `<circle cx="${f1((-10 + i * 52) * k)}" cy="${f1(fl - 100 * k)}" r="${f1(3 * k)}" fill="#334155"/>`).join(""));
+    } else if (kind === "stationkitchen") {
+      // counters, an oven and a food printer, a fridge, pots, and food on the counter
+      t += wallObj("the kitchen's counter", stationCounterSvg(-W * 0.46, W * 0.15, fl, 84 * k, k, "#e5e7eb", "#64748b") +
+        `<rect x="${f1(-W * 0.44)}" y="${f1(fl - 230 * k)}" width="${f1(80 * k)}" height="${f1(146 * k)}" rx="${f1(6 * k)}" fill="#cbd5e1" stroke="#94a3b8" stroke-width="${f1(2 * k)}"/><rect x="${f1(-W * 0.44 + 66 * k)}" y="${f1(fl - 200 * k)}" width="${f1(5 * k)}" height="${f1(40 * k)}" fill="#64748b"/>` +
+        `<rect x="${f1(-W * 0.2)}" y="${f1(fl - 160 * k)}" width="${f1(90 * k)}" height="${f1(70 * k)}" rx="${f1(8 * k)}" fill="#334155"/><rect x="${f1(-W * 0.2 + 10 * k)}" y="${f1(fl - 150 * k)}" width="${f1(70 * k)}" height="${f1(36 * k)}" rx="${f1(4 * k)}" fill="#0ea5e9" opacity="0.6"/>` +
+        `<text x="${f1(-W * 0.2 + 45 * k)}" y="${f1(fl - 102 * k)}" font-size="${f1(9 * k)}" text-anchor="middle" fill="#e2e8f0" font-family="system-ui,sans-serif">FOOD PRINTER</text>` +
+        stationTraySvg(-W * 0.02, fl - 90 * k, k) + `<path d="M${f1(W * 0.06)} ${f1(fl - 92 * k)} h${f1(40 * k)} l${f1(-4 * k)} ${f1(-22 * k)} h${f1(-32 * k)} Z" fill="#475569"/><rect x="${f1(W * 0.06 - 8 * k)}" y="${f1(fl - 112 * k)}" width="${f1(8 * k)}" height="${f1(4 * k)}" fill="#475569"/>`);
+    } else {
+      // the mess hall: a long table, trays of food on it, stools round it
+      t += obj("the long table", g + 20 * k, `<rect x="${f1(-W * 0.36)}" y="${f1(g + 20 * k - 70 * k)}" width="${f1(W * 0.72)}" height="${f1(12 * k)}" rx="${f1(4 * k)}" fill="#cbd5e1"/>` +
+        [-1, 1].map(sd => `<rect x="${f1(sd * W * 0.3 - 6 * k)}" y="${f1(g + 20 * k - 58 * k)}" width="${f1(12 * k)}" height="${f1(58 * k)}" fill="#64748b"/>`).join("") +
+        [-0.22, -0.07, 0.07, 0.22].map(u => stationTraySvg(u * W, g + 20 * k - 70 * k, k)).join(""));
+      t += MESS_STOOLS.map((x, i) => obj(`stool ${i + 1}`, g + 50 * k, stationStoolSvg(x * k, g + 50 * k, k))).join("");
+      t += wallObj("the menu screen", bridgeScreenSvg(W * 0.28, y0 + H * 0.16, 110 * k, 70 * k, k, 1, 3, o));
+    }
+    return t;
+  });
+  return s;
+}
+Object.assign(SCENES, Object.fromEntries(Object.keys(STATION_ROOMS).map(kd => [kd, c => stationScene({ ...c, kind: kd })])));

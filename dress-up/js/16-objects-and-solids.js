@@ -157,6 +157,8 @@ for (const [kind, up] of [["livingroom", 120], ["diningroom", 112], ["kitchen", 
   SCENE_BACK[kind] = () => SCENE.ground - up * (SCENE.bottom - SCENE.top) / 700 + 3;
 // (ticket 798) the starship's bridge: the console under its windshield is the back wall's foot (bridgeFloor)
 SCENE_BACK.bridge = () => SCENE.ground - 120 * (SCENE.bottom - SCENE.top) / 700 + 3;
+// (ticket 798) the space station's rooms: their wall's foot (stationFloor)
+for (const kind of ["stationlab", "stationgarden", "stationbunks", "stationkitchen", "stationmess"]) SCENE_BACK[kind] = () => SCENE.ground - 110 * (SCENE.bottom - SCENE.top) / 700 + 3;
 // (ticket 214, Matthew: "the horz blue line in each scene is wrong, and always too high -- it doesn't correspond with
 // where we'd walk or run -- we'd need to fly") Each outdoor place's back limit at the far edge of its own ground, as
 // drawn (in the frame's units, k = its height / 700, as the scenes draw): the meadow's edge, the shore, a lake's far

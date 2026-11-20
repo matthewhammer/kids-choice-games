@@ -273,6 +273,8 @@ const FLY_LOOKS = {
     (PLANET_LOOKS[o.spacePlanet] ? flyC(FT * 0.7, FT * 0.3, 60, PLANET_LOOKS[o.spacePlanet].base) : ""),
 };
 FLY_LOOKS.bubbleroom = FLY_LOOKS.bubblespace;
+// (ticket 798) the space station's rooms from above: a metal deck, its panel lines, a round porthole
+for (const kind of ["stationlab", "stationgarden", "stationbunks", "stationkitchen", "stationmess"]) FLY_LOOKS[kind] = (k, o) => flyRect(0, 0, FT, FT, "#8a95ab") + [1, 2, 3].map(i => flyRect(i * FT / 4 - 3, 0, 6, FT, "#6b7690")).join("") + flyC(FT / 2, FT * 0.2, 60, "#0b1026");
 // (ticket 691, Matthew: "let's add more detail to the top-down views for each square -- the tree house tree? the castle doesn't
 // show a moat, or nearby trees/bushes, etc.") A square's finer things, seen only low down (.fly-near, left out high up as its
 // things are): its look's own small pieces. The look reads the place's own settings (o: the background's, which every square
