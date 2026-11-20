@@ -48,7 +48,7 @@ const SCENE_VANISH = { dungeon: -6000, treeroom: -60, treetop: -60, livingroom: 
 // of it shrinks as one. Outdoors 40 (the mountain trail's far edge about 0.4 of the size, the clearing's about 0.2);
 // the rooms 16 and anywhere else 23, as their vanishing heights had it (-60, 60). A castle room keeps its own.
 const NORTH_OUT = ["forest", "underwater", "deepsea", "witch", "cemetery", "house", "treehouse", "clearing", "fairyforest", "mountains",
-                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard", "garden", "spring"];   // (desert: ticket 501; garden, spring: ticket 660)
+                   "waterfall", "campsite", "cave", "castle", "woodpath", "pasture", "crossing", "cavecross", "beach", "sea", "lake", "desert", "farmyard", "garden", "spring", "alienplanet"];   // (desert: ticket 501; garden, spring: ticket 660)
 const NORTH_ROOMS = ["treeroom", "treetop", "livingroom", "diningroom", "kitchen", "stairhall", "bedroom", "laundry", "furnace", "witchroom", "healerroom", "hutroom", "hutbed", "hutpotion", "hutcenter", "tent", "imagination", "emptyroom", "bubblespace", "bubbleroom", "caveroom", "starfield", "bridge"];
 const northDefault = kind => kind === "dungeon" ? 1 : NORTH_OUT.includes(kind) ? 40 : NORTH_ROOMS.includes(kind) ? 16 : 23;
 function sceneVanish(B) {
@@ -765,6 +765,7 @@ const DEFAULTS = {
                 seeHouse: true, seeTree: true, seeWitch: true, seeCastle: true, seeHealer: true,
                 peakHeight: 100, mtClouds: 5, birds: 3, farLake: true,
                 pastureHorses: 3, pastureFlowers: 10,   // (ticket 503: the pasture's horses grazing and its patches of wildflowers)
+                alienSky: "dusk", alienPeople: 2, alienAnimals: true,   // (ticket 798: the alien planet)
                 spaceSeed: 1, spaceStars: 700, spaceNebula: "violet", spacePlanet: "ringed", spacePlanetSize: 34, spacePlanetX: 72, spaceMoons: 2,   // (ticket 798: the starfield)
                 gardenBeds: 4, springFrogs: 2, springBubbles: 5,   // (ticket 660: the garden's beds of soil, the spring's frogs and how much it bubbles)
                 fallWidth: 100, vines: 8, mist: 60, parrots: 2, fallRate: 100, fallTime: "day",
@@ -1560,7 +1561,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.512", released: "2026-11-20" };
+const VERSION = { number: "0.0.513", released: "2026-11-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

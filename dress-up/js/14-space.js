@@ -224,3 +224,131 @@ function bridgeScene(c) {
   return s;
 }
 Object.assign(SCENES, { bridge: bridgeScene });
+
+// ===================== THE ALIEN PLANET =====================
+// (ticket 798, for N; Matthew: "alien planet, with alien rocks, plants, and people. Use grey aliens, and ideas about Bashar's
+// planet with no predation among the plants and animals"; then "the alien planet can have animals too, like insects, birds,
+// snakes, squirrels, etc but let's use intense, rainbow colors for them") A peaceful world: under its sky (👽 its sky:
+// violet dusk, teal day or golden), two suns and a great ringed planet low over the hills; far spires; its ground, glowing
+// here and there; crystal rocks and stone mushrooms; alien plants (curling ferns, glowing bulbs on stalks, tall tubes); grey
+// aliens, as many as 👽 says, one waving; and its animals, all in rainbow colours, living side by side, none hunting
+// another: a squirrel on a rock by a coiled snake, a beetle, butterflies bobbing (the quick LFO), birds gliding (the slow one).
+const RAINBOW = ["#ff1e56", "#ff8c00", "#ffe600", "#00d26a", "#00b4ff", "#5a3cff", "#d23cff"];
+const ALIEN_SKIES = [["dusk", "🟣 violet dusk"], ["teal", "🩵 teal day"], ["gold", "🟡 golden"]];
+const ALIEN_SKY = { dusk: ["#2a1650", "#c04ac9", "#ffb0d8"], teal: ["#0b4a6e", "#29b3b0", "#c9fff2"], gold: ["#5a2a0c", "#e0861f", "#ffe7a3"] };
+const ALIEN_GROUND = { dusk: ["#5b3f8f", "#3d2a6b", "#2a1d4d"], teal: ["#2f7f6f", "#22615a", "#174641"], gold: ["#a8662c", "#7d4a20", "#5a3416"] };
+// a grey alien, feet at (x, y), s its size: thin legs and arms, a slim body, a great head, big dark eyes; waving, if wave
+function greyAlienSvg(x, y, k, s, wave, i) {
+  const u = k * s, skin = "#b9c2cc", dark = "#8c96a3";
+  const arm = (sd, up) => up ? `<path d="M${f1(x + sd * 14 * u)} ${f1(y - 118 * u)} L${f1(x + sd * 30 * u)} ${f1(y - 150 * u)} L${f1(x + sd * 36 * u)} ${f1(y - 178 * u)}" fill="none" stroke="${skin}" stroke-width="${f1(6 * u)}" stroke-linecap="round" stroke-linejoin="round">` +
+      `<animateTransform attributeName="transform" type="rotate" values="-12 ${f1(x + sd * 14 * u)} ${f1(y - 118 * u)};14 ${f1(x + sd * 14 * u)} ${f1(y - 118 * u)};-12 ${f1(x + sd * 14 * u)} ${f1(y - 118 * u)}" dur="${(1.2 + 0.2 * i).toFixed(1)}s" repeatCount="indefinite"/></path>`
+    : `<path d="M${f1(x + sd * 14 * u)} ${f1(y - 118 * u)} Q${f1(x + sd * 24 * u)} ${f1(y - 90 * u)} ${f1(x + sd * 20 * u)} ${f1(y - 62 * u)}" fill="none" stroke="${skin}" stroke-width="${f1(6 * u)}" stroke-linecap="round"/>`;
+  return `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(26 * u)}" ry="${f1(5 * u)}" fill="#000" opacity="0.15"/>` +
+    [-1, 1].map(sd => `<path d="M${f1(x + sd * 7 * u)} ${f1(y - 66 * u)} L${f1(x + sd * 9 * u)} ${f1(y)}" stroke="${skin}" stroke-width="${f1(7 * u)}" stroke-linecap="round"/>`).join("") +
+    arm(-1, false) + arm(1, wave) +
+    `<path d="M${f1(x - 16 * u)} ${f1(y - 122 * u)} Q${f1(x)} ${f1(y - 134 * u)} ${f1(x + 16 * u)} ${f1(y - 122 * u)} L${f1(x + 11 * u)} ${f1(y - 62 * u)} Q${f1(x)} ${f1(y - 56 * u)} ${f1(x - 11 * u)} ${f1(y - 62 * u)} Z" fill="${skin}" stroke="${dark}" stroke-width="${f1(1.2 * u)}"/>` +
+    `<path d="M${f1(x)} ${f1(y - 128 * u)} C${f1(x - 44 * u)} ${f1(y - 132 * u)} ${f1(x - 48 * u)} ${f1(y - 214 * u)} ${f1(x)} ${f1(y - 214 * u)} C${f1(x + 48 * u)} ${f1(y - 214 * u)} ${f1(x + 44 * u)} ${f1(y - 132 * u)} ${f1(x)} ${f1(y - 128 * u)} Z" fill="${skin}" stroke="${dark}" stroke-width="${f1(1.5 * u)}"/>` +
+    [-1, 1].map(sd => `<path d="M${f1(x + sd * 6 * u)} ${f1(y - 168 * u)} Q${f1(x + sd * 30 * u)} ${f1(y - 186 * u)} ${f1(x + sd * 28 * u)} ${f1(y - 164 * u)} Q${f1(x + sd * 22 * u)} ${f1(y - 150 * u)} ${f1(x + sd * 6 * u)} ${f1(y - 168 * u)} Z" fill="#101014"/>` +
+      `<ellipse cx="${f1(x + sd * 20 * u)}" cy="${f1(y - 172 * u)}" rx="${f1(3 * u)}" ry="${f1(2 * u)}" fill="#ffffff" opacity="0.7"/>`).join("") +
+    `<path d="M${f1(x - 5 * u)} ${f1(y - 142 * u)} Q${f1(x)} ${f1(y - 139 * u)} ${f1(x + 5 * u)} ${f1(y - 142 * u)}" fill="none" stroke="${dark}" stroke-width="${f1(1.5 * u)}" stroke-linecap="round"/>`;
+}
+// a rainbow squirrel sitting, its bushy tail striped, at (x, y), facing right
+function rainbowSquirrelSvg(x, y, k) {
+  const u = k * 0.9;
+  return [...RAINBOW].reverse().map((col, i) => `<path d="M${f1(x - 8 * u)} ${f1(y - 6 * u)} C${f1(x - 44 * u + i * 3 * u)} ${f1(y - 14 * u)} ${f1(x - 46 * u + i * 3 * u)} ${f1(y - 62 * u + i * 3 * u)} ${f1(x - 20 * u + i * 2 * u)} ${f1(y - 70 * u + i * 4 * u)}" fill="none" stroke="${col}" stroke-width="${f1(16 * u - i * 1.4 * u)}" stroke-linecap="round"/>`).join("") +
+    `<ellipse cx="${f1(x)}" cy="${f1(y - 16 * u)}" rx="${f1(12 * u)}" ry="${f1(17 * u)}" fill="#ff8c00"/><circle cx="${f1(x + 6 * u)}" cy="${f1(y - 36 * u)}" r="${f1(10 * u)}" fill="#ff8c00"/>` +
+    `<path d="M${f1(x + 2 * u)} ${f1(y - 44 * u)} l${f1(-2 * u)} ${f1(-9 * u)} l${f1(6 * u)} ${f1(6 * u)} Z" fill="#d23cff"/><circle cx="${f1(x + 10 * u)}" cy="${f1(y - 38 * u)}" r="${f1(2.2 * u)}" fill="#111"/>` +
+    `<ellipse cx="${f1(x + 3 * u)}" cy="${f1(y - 12 * u)}" rx="${f1(6 * u)}" ry="${f1(10 * u)}" fill="#ffe600"/><circle cx="${f1(x + 14 * u)}" cy="${f1(y - 22 * u)}" r="${f1(4 * u)}" fill="#00b4ff"/>`;
+}
+// a rainbow snake, coiled and resting, its head up, at (x, y)
+function rainbowSnakeSvg(x, y, k, id) {
+  const u = k, d = `M${f1(x - 46 * u)} ${f1(y - 4 * u)} C${f1(x - 30 * u)} ${f1(y + 8 * u)} ${f1(x + 30 * u)} ${f1(y + 8 * u)} ${f1(x + 40 * u)} ${f1(y - 4 * u)} C${f1(x + 48 * u)} ${f1(y - 14 * u)} ${f1(x - 30 * u)} ${f1(y - 22 * u)} ${f1(x - 24 * u)} ${f1(y - 10 * u)} C${f1(x - 18 * u)} ${f1(y)} ${f1(x + 18 * u)} ${f1(y - 2 * u)} ${f1(x + 16 * u)} ${f1(y - 14 * u)} L${f1(x + 22 * u)} ${f1(y - 34 * u)}`;
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0">${RAINBOW.map((c, i) => `<stop offset="${(i / 6).toFixed(2)}" stop-color="${c}"/>`).join("")}</linearGradient></defs>` +
+    `<path d="${d}" fill="none" stroke="url(#${id})" stroke-width="${f1(11 * u)}" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="${f1(2 * u)}" stroke-dasharray="${f1(3 * u)} ${f1(9 * u)}" opacity="0.6"/>` +
+    `<ellipse cx="${f1(x + 24 * u)}" cy="${f1(y - 38 * u)}" rx="${f1(9 * u)}" ry="${f1(6.5 * u)}" fill="#d23cff"/><circle cx="${f1(x + 28 * u)}" cy="${f1(y - 40 * u)}" r="${f1(1.8 * u)}" fill="#111"/>` +
+    `<path d="M${f1(x + 33 * u)} ${f1(y - 37 * u)} l${f1(7 * u)} ${f1(1 * u)} m${f1(-2 * u)} 0 l${f1(3 * u)} ${f1(-3 * u)} m${f1(-3 * u)} ${f1(3 * u)} l${f1(3 * u)} ${f1(2 * u)}" stroke="#ff1e56" stroke-width="${f1(1.4 * u)}" fill="none"/>`;
+}
+// a butterfly, rainbow-winged, at (x, y), bobbing and flapping
+function rainbowButterflySvg(x, y, k, i, o) {
+  const u = k * 0.8, c1 = RAINBOW[i % 7], c2 = RAINBOW[(i + 3) % 7];
+  const wings = `<path d="M0 0 C${f1(-18 * u)} ${f1(-20 * u)} ${f1(-24 * u)} ${f1(2 * u)} 0 0 C${f1(-20 * u)} ${f1(6 * u)} ${f1(-12 * u)} ${f1(18 * u)} 0 0" fill="${c1}"/><path d="M0 0 C${f1(18 * u)} ${f1(-20 * u)} ${f1(24 * u)} ${f1(2 * u)} 0 0 C${f1(20 * u)} ${f1(6 * u)} ${f1(12 * u)} ${f1(18 * u)} 0 0" fill="${c2}"/>`;
+  return `<g transform="translate(${f1(x)} ${f1(y)})"><g>${sceneLfo(o, "fast", (i * 0.31) % 1, "transform", (v, amp) => `0 ${f1((4 + 10 * amp) * v * u)}`,
+      `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-8 * u)};0 0" dur="${(1.4 + 0.3 * i).toFixed(1)}s" repeatCount="indefinite"/>`, "translate")}` +
+    `<g>${wings}<animateTransform attributeName="transform" type="scale" values="1 1;0.3 1;1 1" dur="0.35s" repeatCount="indefinite"/></g>` +
+    `<rect x="${f1(-1.5 * u)}" y="${f1(-8 * u)}" width="${f1(3 * u)}" height="${f1(14 * u)}" rx="${f1(1.5 * u)}" fill="#222"/></g></g>`;
+}
+// a rainbow bird gliding across the sky, on a long slow loop (the slow LFO's pace, as the desert's hawk)
+function rainbowBirdSvg(x, y, k, i, W) {
+  const u = k, c = RAINBOW[(i * 2) % 7], c2 = RAINBOW[(i * 2 + 3) % 7];
+  return `<g><path d="M${f1(-22 * u)} 0 Q${f1(-10 * u)} ${f1(-14 * u)} 0 0 Q${f1(10 * u)} ${f1(-14 * u)} ${f1(22 * u)} 0" fill="none" stroke="${c}" stroke-width="${f1(5 * u)}" stroke-linecap="round">` +
+    `<animate attributeName="d" values="M${f1(-22 * u)} 0 Q${f1(-10 * u)} ${f1(-14 * u)} 0 0 Q${f1(10 * u)} ${f1(-14 * u)} ${f1(22 * u)} 0;M${f1(-22 * u)} ${f1(-6 * u)} Q${f1(-10 * u)} ${f1(6 * u)} 0 0 Q${f1(10 * u)} ${f1(6 * u)} ${f1(22 * u)} ${f1(-6 * u)};M${f1(-22 * u)} 0 Q${f1(-10 * u)} ${f1(-14 * u)} 0 0 Q${f1(10 * u)} ${f1(-14 * u)} ${f1(22 * u)} 0" dur="${(0.8 + 0.15 * i).toFixed(2)}s" repeatCount="indefinite"/></path>` +
+    `<ellipse cx="0" cy="${f1(1 * u)}" rx="${f1(7 * u)}" ry="${f1(4 * u)}" fill="${c2}"/>` +
+    `<animateMotion path="M${f1(x - W * 0.7)} ${f1(y)} Q${f1(x)} ${f1(y - 40 * u)} ${f1(x + W * 0.7)} ${f1(y + 10 * u)}" dur="${(16 + 5 * i).toFixed(0)}s" repeatCount="indefinite"/></g>`;
+}
+// a cluster of crystals, at (x, y), s its size
+function alienCrystalsSvg(x, y, k, s, i) {
+  const cols = [["#7ef9ff", "#2bb8d6"], ["#ff9bf0", "#d24ac0"], ["#b6ff7a", "#5fc93a"]][i % 3];
+  return [[-14, 60, -10], [0, 92, 2], [16, 70, 12], [28, 40, 22]].map(([dx, h, lean]) => {
+    const bx = x + dx * k * s, hh = h * k * s, w = 12 * k * s;
+    return `<path d="M${f1(bx - w)} ${f1(y)} L${f1(bx - w * 0.8 + lean * 0.3 * k)} ${f1(y - hh * 0.8)} L${f1(bx + lean * 0.4 * k)} ${f1(y - hh)} L${f1(bx + w * 0.8 + lean * 0.3 * k)} ${f1(y - hh * 0.8)} L${f1(bx + w)} ${f1(y)} Z" fill="${cols[0]}" stroke="${cols[1]}" stroke-width="${f1(1.5 * k)}"/>` +
+      `<path d="M${f1(bx - w * 0.3)} ${f1(y - 4 * k)} L${f1(bx - w * 0.2 + lean * 0.35 * k)} ${f1(y - hh * 0.85)}" stroke="#ffffff" stroke-width="${f1(2 * k)}" opacity="0.6"/>`; }).join("");
+}
+// a stone mushroom: a wide cap on a narrow stem, at (x, y)
+const alienMushroomRockSvg = (x, y, k, s, col) => `<path d="M${f1(x - 10 * k * s)} ${f1(y)} Q${f1(x - 6 * k * s)} ${f1(y - 50 * k * s)} ${f1(x - 8 * k * s)} ${f1(y - 70 * k * s)} L${f1(x + 8 * k * s)} ${f1(y - 70 * k * s)} Q${f1(x + 6 * k * s)} ${f1(y - 50 * k * s)} ${f1(x + 10 * k * s)} ${f1(y)} Z" fill="${mix(col, "#000000", 0.25)}"/>` +
+  `<ellipse cx="${f1(x)}" cy="${f1(y - 74 * k * s)}" rx="${f1(46 * k * s)}" ry="${f1(16 * k * s)}" fill="${col}"/><ellipse cx="${f1(x - 10 * k * s)}" cy="${f1(y - 79 * k * s)}" rx="${f1(20 * k * s)}" ry="${f1(5 * k * s)}" fill="#ffffff" opacity="0.25"/>`;
+// alien plants: a curling fern, glowing bulbs on stalks, tall tubes, by kind, at (x, y)
+function alienPlantSvg(x, y, k, kind, i) {
+  if (kind === 0) return [-1, 0, 1].map(j => { const a = j * 0.5, ex = x + Math.sin(a) * 70 * k, ey = y - Math.cos(a) * 90 * k;
+    return `<path d="M${f1(x)} ${f1(y)} Q${f1(x + j * 20 * k)} ${f1(y - 60 * k)} ${f1(ex)} ${f1(ey)} q${f1(14 * k)} ${f1(-6 * k)} ${f1(10 * k)} ${f1(8 * k)} q${f1(-4 * k)} ${f1(8 * k)} ${f1(-10 * k)} ${f1(2 * k)}" fill="none" stroke="#2fe0a0" stroke-width="${f1(5 * k)}" stroke-linecap="round"/>`; }).join("");
+  if (kind === 1) return [[-18, 110], [0, 140], [20, 96]].map(([dx, h], j) => `<path d="M${f1(x)} ${f1(y)} Q${f1(x + dx * k * 0.5)} ${f1(y - h * k * 0.5)} ${f1(x + dx * k)} ${f1(y - h * k)}" fill="none" stroke="#6b3fa0" stroke-width="${f1(4 * k)}"/>` +
+    `<circle cx="${f1(x + dx * k)}" cy="${f1(y - h * k)}" r="${f1(11 * k)}" fill="${["#ffe600", "#7ef9ff", "#ff9bf0"][(i + j) % 3]}"><animate attributeName="opacity" values="1;0.55;1" dur="${(2 + j * 0.7).toFixed(1)}s" repeatCount="indefinite"/></circle>`).join("");
+  return [[-14, 120, "#ff6fae"], [0, 160, "#c084fc"], [14, 100, "#38bdf8"]].map(([dx, h, col]) => `<rect x="${f1(x + dx * k - 7 * k)}" y="${f1(y - h * k)}" width="${f1(14 * k)}" height="${f1(h * k)}" rx="${f1(7 * k)}" fill="${col}"/>` +
+    `<ellipse cx="${f1(x + dx * k)}" cy="${f1(y - h * k + 3 * k)}" rx="${f1(5 * k)}" ry="${f1(3 * k)}" fill="${mix(col, "#000000", 0.4)}"/>`).join("");
+}
+function alienplanetScene(c) {
+  const { x0, y0, x1, y1, g, W, H, k, pad, R, all, o } = c;
+  const sky = ALIEN_SKY[o.alienSky] ? o.alienSky : "dusk", [gr0, gr1, gr2] = ALIEN_GROUND[sky], hz = g - 150 * k;
+  const aliens = Math.max(0, Math.min(4, Math.round(o.alienPeople ?? 2))), animals = o.alienAnimals !== false;
+  // the sky, its two suns, the great ringed planet low over the hills, faint stars
+  let s = SEP + part("alien-sky", [c.F, sky], () => {
+    const [a, b2, c3] = ALIEN_SKY[sky];
+    return `<defs><linearGradient id="bg-alien-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="0.65" stop-color="${b2}"/><stop offset="1" stop-color="${c3}"/></linearGradient>` +
+      `<radialGradient id="bg-alien-sun"><stop offset="0" stop-color="#ffffff"/><stop offset="0.35" stop-color="#fff2c4"/><stop offset="1" stop-color="#fff2c4" stop-opacity="0"/></radialGradient></defs>` +
+      all("url(#bg-alien-sky)") + starsSvg({ starShape: "dot", starSize: 70, starBright: 50, starTwinkle: 0 }, 40, x0, x1, y0, y0 + (hz - y0) * 0.45, k, R, 8801) +
+      `<circle cx="${f1(x0 + W * 0.2)}" cy="${f1(y0 + H * 0.12)}" r="${f1(44 * k)}" fill="url(#bg-alien-sun)"/><circle cx="${f1(x0 + W * 0.3)}" cy="${f1(y0 + H * 0.2)}" r="${f1(24 * k)}" fill="url(#bg-alien-sun)" opacity="0.8"/>` +
+      alienPlanetSvg("ringed", x0 + W * 0.7, hz - 40 * k, 120 * k, R, "bg-alien-giant");
+  });
+  // far off: tall spires and rolling hills, hazier the farther
+  s += SEP + part("alien-far", [c.F, sky], () => {
+    const haze = ALIEN_SKY[sky][2];
+    let t = "";
+    for (let i = 0; i < 9; i++) { const x = x0 - pad + (W + 2 * pad) * (i + 0.3 * R(i, 8811)) / 9, h = (90 + 140 * R(i, 8812)) * k, w = (20 + 26 * R(i, 8813)) * k;
+      t += `<path d="M${f1(x - w)} ${f1(hz)} Q${f1(x - w * 0.3)} ${f1(hz - h * 0.6)} ${f1(x)} ${f1(hz - h)} Q${f1(x + w * 0.3)} ${f1(hz - h * 0.6)} ${f1(x + w)} ${f1(hz)} Z" fill="${mix(gr0, haze, 0.55)}"/>`; }
+    t += `<path d="M${f1(x0 - pad)} ${f1(hz)} ${[...Array(7)].map((_, i) => `Q${f1(x0 + W * (i + 0.5) / 6)} ${f1(hz - (30 + 40 * R(i, 8814)) * k)} ${f1(x0 + W * (i + 1) / 6)} ${f1(hz)}`).join(" ")} L${f1(x1 + pad)} ${f1(y1 + pad)} L${f1(x0 - pad)} ${f1(y1 + pad)} Z" fill="${mix(gr0, haze, 0.3)}"/>`;
+    return wallObj("the far hills and spires", t);
+  });
+  // the ground: its colours in bands, and glowing pools here and there
+  s += SEP + part("alien-ground", [c.F, sky], () => wallObj("the ground", `<rect x="${f1(x0 - pad)}" y="${f1(hz + 10 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="${gr0}"/>` +
+    `<rect x="${f1(x0 - pad)}" y="${f1(g - 40 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + 40 * k + pad)}" fill="${gr1}"/>` +
+    `<rect x="${f1(x0 - pad)}" y="${f1(g + 90 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + pad)}" fill="${gr2}"/>` +
+    [0, 1, 2, 3].map(i => `<ellipse cx="${f1(x0 + W * (0.1 + 0.8 * R(i, 8821)))}" cy="${f1(hz + (40 + 160 * R(i, 8822)) * k)}" rx="${f1((30 + 40 * R(i, 8823)) * k)}" ry="${f1(8 * k)}" fill="#7ef9ff" opacity="0.35"><animate attributeName="opacity" values="0.35;0.15;0.35" dur="${3 + i}s" repeatCount="indefinite"/></ellipse>`).join("")));
+  // what stands on it, each at its depth: crystals and stone mushrooms, plants, the aliens, the animals
+  s += SEP + part("alien-things", [c.F, sky, aliens, animals, sceneLfoKey(o, "fast")], () => {
+    const things = [
+      ["crystals, left", -0.38, -10, (x, y) => alienCrystalsSvg(x, y, k, 1.2, 0)], ["crystals, far right", 0.36, -70, (x, y) => alienCrystalsSvg(x, y, k, 0.8, 1)],
+      ["stone mushroom", -0.18, -60, (x, y) => alienMushroomRockSvg(x, y, k, 1, "#9b6bd6")], ["stone mushroom, right", 0.44, 40, (x, y) => alienMushroomRockSvg(x, y, k, 0.8, "#4fb3a8")],
+      ["curling fern", -0.45, 60, (x, y) => alienPlantSvg(x, y, k, 0, 0)], ["bulb plant", 0.22, -30, (x, y) => alienPlantSvg(x, y, k, 1, 1)],
+      ["tube plant", 0.08, -115, (x, y) => alienPlantSvg(x, y, k, 2, 2)], ["bulb plant, left", -0.14, 100, (x, y) => alienPlantSvg(x, y, k, 1, 3)]];
+    [[-0.3, 30, true], [0.3, -40, false], [0.12, 80, false], [-0.12, -80, false]].slice(0, aliens).forEach(([u, dz, wave], i) =>
+      things.push([`grey alien ${i + 1}`, u, dz, (x, y) => greyAlienSvg(x, y, k, 1 - 0.1 * i, wave, i)]));
+    if (animals) things.push(["rainbow squirrel on a rock", 0.42, 40, (x, y) => rainbowSquirrelSvg(x + 6 * k, y - 82 * k * 0.8, k)],
+      ["rainbow snake, resting", 0.3, 50, (x, y) => rainbowSnakeSvg(x, y, k, "bg-alien-snake")],
+      ["rainbow beetle", -0.4, -5, (x, y) => `<ellipse cx="${f1(x + 2 * k)}" cy="${f1(y - 100 * k)}" rx="${f1(9 * k)}" ry="${f1(6 * k)}" fill="#00d26a" stroke="#5a3cff" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x + 11 * k)}" cy="${f1(y - 100 * k)}" r="${f1(3.5 * k)}" fill="#ff1e56"/>`]);
+    return things.map(([name, u, dz, f]) => { const x = u * W, y = g + dz * k; return obj(name, y, f(x, y)); }).join("") +
+      (animals ? obj("rainbow butterflies", Infinity, [0, 1, 2].map(i => rainbowButterflySvg(x0 + W * [0.1, 0.6, 0.9][i], g - [110, 210, 160][i] * k, k, i, o)).join("")) : "");
+  });
+  if (animals) s += SEP + part("alien-birds", [c.F], () => [0, 1].map(i => rainbowBirdSvg(0, y0 + H * (0.18 + 0.1 * i), k, i, W)).join(""));
+  return s;
+}
+Object.assign(SCENES, { alienplanet: alienplanetScene });

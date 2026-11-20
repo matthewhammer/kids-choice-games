@@ -267,6 +267,8 @@ const FLY_LOOKS = {
   // (ticket 798: the starfield from above: deep space, its stars, and its planet's color as a glow)
   // (the bridge from above: its dark deck, the console along the windshield, three chairs)
   bridge: (k, o) => flyRect(0, 0, FT, FT, "#1c2232") + flyRect(40, 30, FT - 80, 70, "#283048") + [[0.5, 0.62], [0.22, 0.5], [0.78, 0.5]].map(([u, v], i) => flyC(u * FT, v * FT, i ? 34 : 44, i ? "#3a5a90" : "#9a2a38")).join(""),
+  // (the alien planet from above: its violet ground, glowing pools, crystals)
+  alienplanet: (k, o) => flyRect(0, 0, FT, FT, "#5b3f8f") + [0, 1, 2].map(i => flyC(120 + 260 * i, 200 + 140 * flyR(k, i), 40, "#7ef9ff80")).join("") + [0, 1, 2, 3].map(i => flyC(80 + 200 * i, 560 - 90 * flyR(k, 10 + i), 22, "#ff9bf0")).join(""),
   starfield: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
     (PLANET_LOOKS[o.spacePlanet] ? flyC(FT * 0.7, FT * 0.3, 60, PLANET_LOOKS[o.spacePlanet].base) : ""),
 };

@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.513 (2026-11-20)
+
+Everything in 0.0.512, plus:
+
+- **👽 The alien planet** (ticket 798, for N), the third place under 🚀 space: a peaceful world, where no one hunts anyone. Under its sky (🌅: violet dusk, teal day or golden) two suns shine, and a great ringed planet rises low over the hills; tall spires stand far off; its ground glows in pools here and there. Crystal rocks, stone mushrooms and alien plants (curling ferns, glowing bulbs on stalks, tall tubes) stand about, and grey aliens (👽, up to four), one of them waving. Its animals are rainbow-coloured and live side by side: a squirrel on a stone mushroom, a snake resting coiled beside it, a beetle on the crystals, butterflies bobbing (with the quick LFO) and birds gliding over (🦋 turns them off and on).
+
 ## 0.0.512 (2026-11-20)
 
 Everything in 0.0.511, plus:
