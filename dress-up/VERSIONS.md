@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.519 (2026-11-20)
+
+Everything in 0.0.518, plus:
+
+- **🚀 Blast off to outer space, from above** (ticket 801). Flying over the world in 🚀 the rocket, an arrow over its nose (drawn like the ⬇️ dive arrow in open water) says "🚀 blast off, ✨ outer space". Tapped, the rocket comes down on the square under it and blasts off from there up to ✨ the starfield; ↩️ back brings them home to that square.
+
 ## 0.0.518 (2026-11-20)
 
 Everything in 0.0.517, plus:

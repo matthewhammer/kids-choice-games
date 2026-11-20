@@ -1369,6 +1369,10 @@ body.items-open .items-btn { top: 8px; right: 8px; }
 .fly-level { position: absolute; left: 0; right: 0; bottom: 0; background: #7cc4ff; }
 .fly-hud.fly-saying .fly-side { display: none; }   /* (a word while on the ground, "take off from outside": only the words) */
 body.flying .ways-layer, body.flying #back { display: none !important; }
+/* (ticket 801) the 🚀 arrow over the rocket's nose, flying: a way arrow (as the ⬇️ dive's), always shown, up to outer space */
+.fly-hud .way-arrow.fly-space { pointer-events: auto; opacity: 1; }
+.fly-hud .way-arrow.fly-space[hidden] { display: none; }
+.fly-hud .fly-space .way-tri::before { background: #fde68a; }
 .items-fly { margin-top: 4px; font-size: 1em; padding: 1px 12px; white-space: nowrap; }
 #fly.fly-high .fly-things, #fly.fly-high .fly-near { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
 /* (the craft bobbing as it floats: a CSS animation of its own group, nothing done a frame for it) */

@@ -532,6 +532,7 @@ function flyPlace() {
     for (const n of flyBuilt.tiles) { const [c, r] = n.dataset.tile.split(",").map(Number), on = c >= c0 && c <= c1 && r >= r0 && r <= r1; if ((n.style.display === "none") === on) n.style.display = on ? "" : "none"; } }
   root.classList.toggle("fly-high", S > 3.2);
   flyHudShow();
+  flySpacePlace(cx, cy - 100 * (1 - 0.35 * flight.h));   // (ticket 801: the 🚀 arrow just over the rocket's nose, once the HUD is shown)
 }
 
 // ---- taking off, flying, landing ----
@@ -614,6 +615,39 @@ function flyHudShow() {
   if (w.textContent !== where && !(flySayT > performance.now())) w.textContent = where;
   flyHudEl.querySelector(".fly-level").style.height = `${Math.round(100 * flight.h)}%`;
 }
+// (ticket 801, Matthew: "to get from the overview quilt of the start world into outer space, let's provide a special nav arrow
+// above the rocket (sort of similar to the dive down nav arrow when in open water tiles, which takes diver to a new world)")
+// Flying the 🚀 rocket, an arrow over its nose, drawn as the ⬇️ dive's over a swimmer (worldWaysHud) and following it: tapped,
+// the rocket comes down on the square under it (over the wild, the one it took off from) and blasts off from there, up out of
+// the picture to ✨ the starfield, as the rocket's trips do (rocketTo); ↩️ back, or 🏡, brings them home again.
+const flySpaceEl = document.getElementById("fly-space");
+function flySpacePlace(x, y) {
+  if (!flySpaceEl || !flyHudEl) return;
+  const on = !!flight && flight.craft === "rocketride" && !flight.landing && !!SCENES.starfield;
+  if (flySpaceEl.hidden === on) flySpaceEl.hidden = !on;
+  if (!on) return;
+  const M = document.getElementById("pic").getScreenCTM(), box = flyHudEl.getBoundingClientRect();
+  if (!M || !box.width) return;
+  const p = new DOMPoint(x, y).matrixTransform(M), sc = ((state.access || DEFAULTS.access).arrowSize ?? 100) / 100;
+  const l = Math.max(22, Math.min(box.width - 22, p.x - box.left)).toFixed(0) + "px", t = Math.max(22, p.y - box.top - 30 * sc).toFixed(0) + "px";
+  if (flySpaceEl.style.left !== l) flySpaceEl.style.left = l;
+  if (flySpaceEl.style.top !== t) flySpaceEl.style.top = t;
+  if (flySpaceEl.style.getPropertyValue("--arrow-scale") !== String(sc)) flySpaceEl.style.setProperty("--arrow-scale", String(sc));
+}
+function flySpace() {
+  if (!flight || flight.craft !== "rocketride" || entering || !SCENES.starfield) return;
+  const W = state.world, key = `${Math.floor(flight.x)},${Math.floor(flight.y)}`;
+  flight = null; flyBuilt = null;
+  document.body.classList.remove("flying");
+  const root = document.getElementById("pic").querySelector(":scope > #fly");
+  if (root) root.remove();
+  if (W.cells[key] && key !== W.at) worldEnter(key, null, false);
+  state.body.rocket = "ride";   // (they were in it, up there: in it still, blasting off)
+  flyHudShow();
+  changed();
+  rocketTo("starfield");
+}
+if (flySpaceEl) flySpaceEl.addEventListener("click", () => flySpace());
 function flySay(text) {
   if (!flyHudEl) return;
   if (!flight) { flyHudEl.hidden = false; flyHudEl.classList.add("fly-saying"); }
