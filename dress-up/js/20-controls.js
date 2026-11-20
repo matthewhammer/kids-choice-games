@@ -156,6 +156,13 @@ const TABS = [
     // (ticket 438) the friend's horse, with them whatever they wear: led by its rein; its coat, mane and face marking (the
     // stable's horses' own), its halter and rein, white socks
     ["choice", "horse", "🐴 with the friend", [["none", "no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+    // (ticket 799, for N) 🚀 the friend's rocket, 1.5 times their height: hovering beside them, or with them inside it; one of
+    // twelve styles, after the signs of the zodiac (not with the horse: the horse comes first)
+    ["choice", "rocket", "🚀 a rocket", [["none", "no rocket"], ["hover", "🛸 hovering beside the friend"], ["ride", "🧑‍🚀 the friend inside it"]]],
+    ["choice", "rocketStyle", "✨ the rocket's style, after a sign of the zodiac", ROCKET_STYLES],
+    // (ticket 799) 🚀 a trip in the rocket: up out of the picture, and down at the place chosen; 🏡 straight back
+    ...ROCKET_TRIPS.map(([kd, name]) => ["action", "rocketTo_" + kd, `🚀 fly to ${name}`, () => rocketTo(kd)]),
+    ["action", "rocketHome", "🏡 fly home, where the trips began", () => rocketHome()],
     // (ticket 496) which side of it they walk on, leading it: one side, whichever way they go
     ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
     // (ticket 498: "just release and let the kids decide") its armour: none, or one of six sets; the cloth and the plume in the
@@ -1221,6 +1228,9 @@ const SHOWN_WHEN = {
   "costume.wreath": c => c.kind === "fairy",
   // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
+  "body.rocketStyle": b => (b.rocket || "none") !== "none",   // (ticket 799)
+  ...Object.fromEntries(ROCKET_TRIPS.map(([kd]) => ["body.rocketTo_" + kd, b => (b.rocket || "none") !== "none" && state.background.kind !== kd])),
+  "body.rocketHome": b => (b.rocket || "none") !== "none" && trips.length > 0,
   "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
   "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
   // (ticket 498: the parade armour's cloth is its saddle blanket, led too)

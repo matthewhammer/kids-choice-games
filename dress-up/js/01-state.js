@@ -667,7 +667,8 @@ const DEFAULTS = {
            witchDir: "right", witchLen: 100, mouthSize: 100,
            ears: "free", earSize: 100 },   // (ticket 125, M's: ears, their shape and size)
   hair:  { style: "long", color: "#2b2b2b", length: 100, bangs: 100, beard: "none", beardShade: "auto", moustache: true, beardLength: 100, braidWidth: 100 },
-  body:  { horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
+  body:  { rocket: "none", rocketStyle: "aries",   // (ticket 799: the friend's rocket)
+          horse: "none", horseCoat: "#7b4a2a", horseMane: "#1f1f22", horseMark: "star", horseTack: "#7a3a1a", horseSocks: false, horseSize: 100,   // (ticket 492: the horse, in 🧍 Body)
            horseShoes: "off", horseMarkColor: "#f7f4ee", horseSaddle: "#6b3f1f", horseBlanket: "auto",   // (ticket 495, for M: more colours)
            horseLead: "left",   // (ticket 496: which side of it they lead it from)
            horseManeStyle: "loose", horseBows: "#ec4899",   // (ticket 497, for M: how its mane is done, and its bows' colour)
@@ -1561,7 +1562,7 @@ function lineArtUnuse(root) {
   }
 }
 lineArtSet(lineArtNow());
-const VERSION = { number: "0.0.514", released: "2026-11-20" };
+const VERSION = { number: "0.0.515", released: "2026-11-20" };
 const newerVersion = (a, b) => {
   const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);

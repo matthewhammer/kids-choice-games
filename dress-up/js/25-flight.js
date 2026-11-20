@@ -24,7 +24,7 @@
 // (60 fps first) The quilt is built once for the world as it is (flyBuilt: rebuilt only when the world changes), and flying
 // only moves and scales it: one transform, its squares out of view hidden, its things left out once high up (.fly-high).
 const FLY_T = 800;   // a square's side, in the quilt's units: the scene's own width, so a thing's x is where it stands across
-const FLY_CRAFTS = { balloon: { name: "the hot-air balloon" }, bubbleride: { name: "a big bubble" } };
+const FLY_CRAFTS = { balloon: { name: "the hot-air balloon" }, bubbleride: { name: "a big bubble" }, rocketride: { name: "the rocket" } };   // (rocketride: ticket 799)
 let flight = null, flyBuilt = null, flyLoop = 0, flySayT = 0;
 const flyKeys = new Set(), flyHud = { up: false, down: false };
 
@@ -460,6 +460,9 @@ function flyRiderSvg() {
 }
 function flyCraftSvg() {
   const rider = flyRiderSvg();
+  // (ticket 799) the rocket, in the friend's style, the friend inside it seen through its window
+  if (flight.craft === "rocketride")
+    return `<g class="fly-bob">${rider}<g transform="translate(0 150)">${rocketSvg(state.body.rocketStyle, 240, -168, 44, true, "fly-rk")}</g></g>`;
   if (flight.craft === "bubbleride")
     return `<g class="fly-bob">${flyC(0, -34, 78, "#d8f0ff38", ` stroke="#bfe6ff" stroke-width="3"`)}${rider}${flyE(-34, -82, 22, 11, "#ffffffaa", ` transform="rotate(-30 -34 -82)"`)}` +
       `${flyC(66, -96, 16, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}${flyC(-70, -6, 11, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}</g>`;

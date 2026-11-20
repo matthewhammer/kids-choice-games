@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.515 (2026-11-20)
+
+Everything in 0.0.514, plus:
+
+- **🚀 A rocket** (ticket 799, for N), in 🧍 Body beside the horse: 1.5 times the friend's height, and big enough to hold them. It hovers beside the friend (🛸), bobbing gently with its flame lit, or the friend climbs inside it (🧑‍🚀) and hovers in it as they move, their face at its round window. **Twelve styles, one for each sign of the zodiac** (✨), each its colours, its glyph and a motif: ♈ Aries a ram's curling horns, ♉ Taurus a bull's horns, ♊ Gemini twin boosters, ♋ Cancer a crab's claws, ♌ Leo a lion's mane round its window, ♍ Virgo ears of wheat, ♎ Libra the scales' beam and pans, ♏ Scorpio a scorpion's curled stinger, ♐ Sagittarius an arrowhead nose and fletching, ♑ Capricorn a goat's horns and a fish's tail, ♒ Aquarius waves, ♓ Pisces two fish's fins. Not with the horse (the horse comes first), nor while sitting, lying, swimming or climbing.
+- **🚀 Trips in the rocket.** With a rocket chosen, 🧍 Body lists 🚀 fly to each place in space: ✨ the starfield, 🛸 the starship's bridge, 👽 the alien planet, and the station's lab, greenhouse, quarters, kitchen and mess hall. The friend climbs into their rocket, flies up out of the picture and lands there; ↩️ back takes them back the way they came, one trip at a time, and 🏡 fly home takes them straight back to where their trips began: from a world's square, out to space and back.
+- **🚀 The rocket as a craft**, in 🎒 your items beside 🎈 the balloon and 🫧 the bubble: 🛫 fly it to see the world from above, the friend inside it seen through its window, in the rocket's own style.
+
 ## 0.0.514 (2026-11-20)
 
 Everything in 0.0.513, plus:

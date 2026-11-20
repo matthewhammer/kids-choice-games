@@ -20,7 +20,7 @@ const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", 
                ["net", "🥅", "the bug net", "tool"], ["sword", "🗡️", "the sword", "tool"], ["can", "💧", "the watering can", "tool"],
                // (ticket 691: the crafts, which anyone has, as the abilities: used, the friend takes off, and flies over the world seen
                // from above; used again, lands: js/25-flight.js)
-               ["balloon", "🎈", "the hot-air balloon", "craft"], ["bubbleride", "🫧", "a big bubble to ride", "craft"],
+               ["balloon", "🎈", "the hot-air balloon", "craft"], ["bubbleride", "🫧", "a big bubble to ride", "craft"], ["rocketride", "🚀", "the rocket", "craft"],
                // (Matthew: "costume props [to] appear in the backpack when we add the costume": itemsDressed) a costume's own things, held
                // in the hand (drawn as HOLDABLES draws them), nothing done by their button: shown on the screen once had
                ["broom", "🧹", "a broom", "prop"], ["staff", "🪄", "a staff", "prop"], ["scepter", "👑", "a scepter", "prop"],
@@ -140,6 +140,8 @@ function itemHeldSvg(id, H, view, o) {
     // (ticket 691) the crafts, held: the balloon a little one on its string, up from the fist; the bubble one big bubble on the palm
     case "balloon": return at(hx, hy, `<path d="M0 0 Q${f1(s * 10)} -30 ${f1(s * 4)} -58" fill="none" stroke="#5e3d22" stroke-width="2"/><ellipse cx="${f1(s * 4)}" cy="-76" rx="15" ry="18" fill="#e84a3a" stroke="#a8322a" stroke-width="2"/>`);
     case "bubbleride": return at(hx, hy - 22, `<circle r="20" fill="#e0f2fe" fill-opacity="0.35" stroke="#60a5fa" stroke-width="2"/>`);
+    // (ticket 799) the rocket, a little one in the fist, in the friend's own style
+    case "rocketride": return at(hx, hy + 6, rocketSvg(state.body.rocketStyle, 46, -28, 5, false, "held-rk"));
     case "bubbles": {
       // the wand, one path: a stick up and out of the fist and its ring, a soap film; and off the ring, two bubbles half a cycle
       // apart (the held items' budget: at most 5 shapes for 🫧 and 🔥 together, ticket 687's check)

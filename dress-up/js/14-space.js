@@ -467,3 +467,77 @@ function stationScene(c) {
   return s;
 }
 Object.assign(SCENES, Object.fromEntries(Object.keys(STATION_ROOMS).map(kd => [kd, c => stationScene({ ...c, kind: kd })])));
+
+// ===================== THE ROCKET =====================
+// (ticket 799, for N; Matthew: "let's create a rocket, about the scale of the horse, that the friend can climb inside of. like
+// the horse, we are either having it hover next to us (it hovers instead of walks), or we are hoving within it (like the
+// horse's walking when we ride) ... please create 12 styles of spaceships, themed after different astrological signs,
+// somehow. They are all the same size (about 1.5x the height of the friend, and big enough to plausibly contain them)")
+// Twelve rockets, one for each sign of the zodiac, each the same shape underneath (a capsule body, a nose, two fins, a nozzle
+// and its flame, a round window) and each its sign's own: its colours, its glyph, and a motif from its creature or emblem.
+const ROCKET_STYLES = [["aries", "♈ Aries, the ram"], ["taurus", "♉ Taurus, the bull"], ["gemini", "♊ Gemini, the twins"], ["cancer", "♋ Cancer, the crab"],
+  ["leo", "♌ Leo, the lion"], ["virgo", "♍ Virgo, the maiden of the harvest"], ["libra", "♎ Libra, the scales"], ["scorpio", "♏ Scorpio, the scorpion"],
+  ["sagittarius", "♐ Sagittarius, the archer"], ["capricorn", "♑ Capricorn, the sea-goat"], ["aquarius", "♒ Aquarius, the water-bearer"], ["pisces", "♓ Pisces, the fishes"]];
+const ROCKET_LOOKS = {
+  aries: { body: "#e23b3b", trim: "#ffd166", fin: "#9b1c1c", glyph: "♈" }, taurus: { body: "#3f8f4f", trim: "#e9d8a6", fin: "#1f5130", glyph: "♉" },
+  gemini: { body: "#ffd23f", trim: "#5b8def", fin: "#c99a00", glyph: "♊" }, cancer: { body: "#d9dee8", trim: "#7fc8f8", fin: "#e07a5f", glyph: "♋" },
+  leo: { body: "#f59e0b", trim: "#fff1b8", fin: "#b45309", glyph: "♌" }, virgo: { body: "#a3c585", trim: "#f2e8cf", fin: "#6a8f4e", glyph: "♍" },
+  libra: { body: "#f9a8d4", trim: "#5eead4", fin: "#be4b8f", glyph: "♎" }, scorpio: { body: "#7f1d3b", trim: "#111827", fin: "#4c0519", glyph: "♏" },
+  sagittarius: { body: "#7c3aed", trim: "#fcd34d", fin: "#4c1d95", glyph: "♐" }, capricorn: { body: "#78716c", trim: "#a7f3d0", fin: "#44403c", glyph: "♑" },
+  aquarius: { body: "#2f7fd9", trim: "#bae6fd", fin: "#1e40af", glyph: "♒" }, pisces: { body: "#14b8a6", trim: "#c4b5fd", fin: "#0f766e", glyph: "♓" },
+};
+// a rocket h tall, its nozzle's foot at (0, 0), its window's middle at (0, wy) of radius wr; open: the window a hole (the friend
+// inside seen through it), else glass; the flame lit
+function rocketSvg(style, h, wy, wr, open, id) {
+  const L = ROCKET_LOOKS[style] || ROCKET_LOOKS.aries, r = h * 0.2, bodyTop = -h * 0.78, bodyBot = -h * 0.1, u = h / 100;
+  const shell = `M${f1(-r)} ${f1(bodyBot)} L${f1(-r)} ${f1(bodyTop + r * 0.6)} Q${f1(-r)} ${f1(bodyTop - r * 0.3)} 0 ${f1(-h)} Q${f1(r)} ${f1(bodyTop - r * 0.3)} ${f1(r)} ${f1(bodyTop + r * 0.6)} L${f1(r)} ${f1(bodyBot)} Z`;
+  const hole = `M${f1(-wr)} ${f1(wy)} a${f1(wr)} ${f1(wr)} 0 1 0 ${f1(2 * wr)} 0 a${f1(wr)} ${f1(wr)} 0 1 0 ${f1(-2 * wr)} 0 Z`;
+  const fins = [-1, 1].map(sd => `<path d="M${f1(sd * r)} ${f1(bodyBot - h * 0.22)} Q${f1(sd * (r + h * 0.16))} ${f1(bodyBot - h * 0.06)} ${f1(sd * (r + h * 0.14))} ${f1(bodyBot + h * 0.06)} L${f1(sd * r)} ${f1(bodyBot)} Z" fill="${L.fin}"/>`).join("");
+  // (each sign's own: a motif drawn on or about the body)
+  const motif = {
+    aries: [-1, 1].map(sd => `<path d="M${f1(sd * r * 0.3)} ${f1(-h * 0.86)} q${f1(sd * r * 1.4)} ${f1(-h * 0.06)} ${f1(sd * r * 0.9)} ${f1(h * 0.1)} q${f1(-sd * r * 0.4)} ${f1(h * 0.06)} ${f1(-sd * r * 0.5)} ${f1(-h * 0.03)}" fill="none" stroke="${L.trim}" stroke-width="${f1(3 * u)}" stroke-linecap="round"/>`).join(""),
+    taurus: [-1, 1].map(sd => `<path d="M${f1(sd * r * 0.6)} ${f1(-h * 0.8)} q${f1(sd * r * 0.9)} ${f1(-h * 0.02)} ${f1(sd * r * 1.1)} ${f1(-h * 0.14)}" fill="none" stroke="${L.trim}" stroke-width="${f1(3.5 * u)}" stroke-linecap="round"/>`).join(""),
+    gemini: [-1, 1].map(sd => `<rect x="${f1(sd * (r + 3 * u) - (sd < 0 ? 7 * u : 0))}" y="${f1(-h * 0.62)}" width="${f1(7 * u)}" height="${f1(h * 0.42)}" rx="${f1(3.5 * u)}" fill="${L.trim}"/>`).join(""),
+    cancer: [-1, 1].map(sd => `<path d="M${f1(sd * r)} ${f1(-h * 0.5)} q${f1(sd * r * 0.9)} ${f1(-h * 0.06)} ${f1(sd * r * 0.8)} ${f1(-h * 0.16)} q${f1(-sd * r * 0.3)} ${f1(h * 0.02)} ${f1(-sd * r * 0.25)} ${f1(h * 0.08)}" fill="${L.fin}"/>`).join(""),
+    leo: [...Array(14)].map((_, i) => { const a = i / 14 * 2 * Math.PI; return `<path d="M${f1(Math.cos(a) * wr * 1.15)} ${f1(wy + Math.sin(a) * wr * 1.15)} L${f1(Math.cos(a) * wr * 1.5)} ${f1(wy + Math.sin(a) * wr * 1.5)}" stroke="${L.trim}" stroke-width="${f1(3 * u)}" stroke-linecap="round"/>`; }).join(""),
+    virgo: [-1, 1].map(sd => [0, 1, 2].map(j => `<ellipse cx="${f1(sd * (r + 4 * u))}" cy="${f1(-h * (0.4 + 0.07 * j))}" rx="${f1(2.5 * u)}" ry="${f1(5 * u)}" transform="rotate(${sd * 25} ${f1(sd * (r + 4 * u))} ${f1(-h * (0.4 + 0.07 * j))})" fill="#e9c46a"/>`).join("")).join(""),
+    libra: `<line x1="${f1(-r * 1.3)}" y1="${f1(-h * 0.5)}" x2="${f1(r * 1.3)}" y2="${f1(-h * 0.5)}" stroke="${L.trim}" stroke-width="${f1(3 * u)}"/>` + [-1, 1].map(sd => `<path d="M${f1(sd * r * 1.3 - 6 * u)} ${f1(-h * 0.44)} q${f1(6 * u)} ${f1(6 * u)} ${f1(12 * u)} 0 Z" fill="${L.trim}"/>`).join(""),
+    scorpio: `<path d="M${f1(r * 0.2)} ${f1(-h * 0.97)} q${f1(r * 1.4)} ${f1(-h * 0.02)} ${f1(r * 1.2)} ${f1(-h * 0.18)} q${f1(-r * 0.1)} ${f1(-h * 0.06)} ${f1(-r * 0.45)} ${f1(-h * 0.04)}" fill="none" stroke="${L.fin}" stroke-width="${f1(5 * u)}" stroke-linecap="round"/><path d="M${f1(r * 0.75)} ${f1(-h * 1.2)} l${f1(-6 * u)} ${f1(-5 * u)} l${f1(1 * u)} ${f1(8 * u)} Z" fill="${L.trim}"/>`,
+    sagittarius: `<path d="M0 ${f1(-h * 1.06)} l${f1(-7 * u)} ${f1(10 * u)} h${f1(14 * u)} Z" fill="${L.trim}"/>` + [-1, 1].map(sd => `<path d="M${f1(sd * r)} ${f1(-h * 0.2)} l${f1(sd * 10 * u)} ${f1(-12 * u)} m${f1(-sd * 4 * u)} ${f1(14 * u)} l${f1(sd * 10 * u)} ${f1(-12 * u)}" stroke="${L.trim}" stroke-width="${f1(2.5 * u)}" fill="none"/>`).join(""),
+    capricorn: [-1, 1].map(sd => `<path d="M${f1(sd * r * 0.4)} ${f1(-h * 0.88)} q${f1(sd * r * 0.2)} ${f1(-h * 0.14)} ${f1(sd * r * 1.0)} ${f1(-h * 0.18)}" fill="none" stroke="${L.trim}" stroke-width="${f1(3 * u)}" stroke-linecap="round"/>`).join("") +
+      `<path d="M${f1(-r * 0.6)} ${f1(-h * 0.04)} q${f1(r * 0.6)} ${f1(h * 0.08)} ${f1(r * 1.2)} 0" fill="none" stroke="${L.trim}" stroke-width="${f1(3 * u)}"/>`,
+    aquarius: [0, 1, 2].map(j => `<path d="M${f1(-r)} ${f1(-h * (0.3 + 0.06 * j))} q${f1(r * 0.25)} ${f1(-4 * u)} ${f1(r * 0.5)} 0 t${f1(r * 0.5)} 0 t${f1(r * 0.5)} 0 t${f1(r * 0.5)} 0" fill="none" stroke="${L.trim}" stroke-width="${f1(2.5 * u)}"/>`).join(""),
+    pisces: [-1, 1].map(sd => `<path d="M${f1(sd * r)} ${f1(-h * 0.36)} l${f1(sd * 12 * u)} ${f1(-8 * u)} l0 ${f1(16 * u)} Z" fill="${L.trim}"/>`).join(""),
+  }[style] || "";
+  const flame = `<path d="M${f1(-r * 0.45)} ${f1(-h * 0.04)} Q0 ${f1(h * 0.26)} ${f1(r * 0.45)} ${f1(-h * 0.04)} Z" fill="#ff8a1f"><animate attributeName="d" values="M${f1(-r * 0.45)} ${f1(-h * 0.04)} Q0 ${f1(h * 0.26)} ${f1(r * 0.45)} ${f1(-h * 0.04)} Z;M${f1(-r * 0.4)} ${f1(-h * 0.04)} Q0 ${f1(h * 0.18)} ${f1(r * 0.4)} ${f1(-h * 0.04)} Z;M${f1(-r * 0.45)} ${f1(-h * 0.04)} Q0 ${f1(h * 0.26)} ${f1(r * 0.45)} ${f1(-h * 0.04)} Z" dur="0.25s" repeatCount="indefinite"/></path>` +
+    `<path d="M${f1(-r * 0.22)} ${f1(-h * 0.04)} Q0 ${f1(h * 0.14)} ${f1(r * 0.22)} ${f1(-h * 0.04)} Z" fill="#fff3b0"/>`;
+  return `<defs><linearGradient id="${id}-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.25"/><stop offset="0.35" stop-color="#fff" stop-opacity="0.25"/><stop offset="0.6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.3"/></linearGradient></defs>` +
+    flame + `<path d="M${f1(-r * 0.55)} ${f1(bodyBot)} L${f1(-r * 0.45)} ${f1(-h * 0.04)} L${f1(r * 0.45)} ${f1(-h * 0.04)} L${f1(r * 0.55)} ${f1(bodyBot)} Z" fill="#4b5563"/>` + fins +
+    `<path d="${shell} ${open ? hole : ""}" fill="${L.body}" fill-rule="evenodd"/><path d="${shell} ${open ? hole : ""}" fill="url(#${id}-sh)" fill-rule="evenodd"/>` +
+    `<path d="M${f1(-r)} ${f1(bodyBot - 6 * u)} h${f1(2 * r)}" stroke="${L.trim}" stroke-width="${f1(4 * u)}"/>` + motif +
+    `<circle cx="0" cy="${f1(wy)}" r="${f1(wr)}" fill="${open ? "#bfe9ff" : "#9fd8f5"}" opacity="${open ? 0.25 : 0.95}" stroke="${L.trim}" stroke-width="${f1(5 * u)}"/>` +
+    `<text x="0" y="${f1(-h * 0.24)}" font-size="${f1(16 * u)}" text-anchor="middle" fill="${L.trim}" font-family="system-ui,'Segoe UI Symbol',sans-serif">${L.glyph}</text>`;
+}
+
+// (ticket 799: "using the rocket, we can traverse between start world and outer space, and within outer space, and onto the
+// alien planet") a rocket trip: the friend, in their rocket, flies up out of the top of the picture and lands at `to`; ↩️ the
+// back chip takes them back, as after a doorway's trip, and 🏡 takes them straight back to where their trips began
+const ROCKET_TRIPS = [["starfield", "✨ the starfield"], ["bridge", "🛸 the starship's bridge"], ["alienplanet", "👽 the alien planet"], ["stationlab", "🧪 the station's lab"],
+  ["stationgarden", "🌱 the station's greenhouse"], ["stationbunks", "🛏️ the station's quarters"], ["stationkitchen", "🍳 the station's kitchen"], ["stationmess", "🍽️ the station's mess hall"]];
+function rocketTo(to, home = false) {
+  const B = state.background, body = state.body;
+  if (!SCENES[to] || B.kind === to || entering) return;
+  if ((body.rocket || "none") === "none") body.rocket = "ride";   // (a trip is made inside it)
+  if (body.horse && body.horse !== "none") body.horse = "none";
+  body.sit = false; B.seat = null;
+  const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
+  changed();
+  const r = document.getElementById("pic").getBoundingClientRect();
+  flyInto({ x: r.left + r.width / 2 - 30, y: r.top - 60, width: 60, height: 60 }, () => {
+    if (home) trips.length = 0; else trips.push(from);
+    const [figX, figY] = ARRIVE[to] || [0, 0];
+    Object.assign(B, { kind: to, figX, figY }); arriveSettle = true;
+  });
+}
+// 🏡 home: where the trips began (the first trip's place), the stack cleared
+function rocketHome() { if (!trips.length) return; const h = trips[0]; rocketTo(h.kind, true); }

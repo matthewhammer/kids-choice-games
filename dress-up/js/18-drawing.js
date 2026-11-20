@@ -384,6 +384,12 @@ function drawNow() {
   // (ticket 498: an armour's plume, or the dragon helm's horns, over its head)
   const plumed = (B.horseArmour || "none") !== "none" ? (horseView === "side" ? 80 : 50) : 0;
   if (horseView) { left = Math.min(left, -(Math.abs(horseX) + (horseView === "side" ? 310 : 100) * horseHs + 20)); top = Math.min(top + rideLift - 12, ground - ((horseView === "side" ? 520 : 570) + plumed) * horseHs); bottom = Math.max(bottom, ground + 16 * horseHs + 10); }   // (its shadow's reach)
+  // (ticket 799, for N) the friend's rocket, 1.5 times their height: hovering beside them (behind them, at their back's side),
+  // or with them inside it, their face at its window; not with the horse, nor while they sit, lie, swim, climb or crawl.
+  // The frame grows to hold it.
+  const rocketMode = !horseView && (B.rocket || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot)) ? B.rocket : null;
+  const rocketFh = ground - friendFrame.top, rocketH = 1.5 * rocketFh, rocketX = rocketMode === "hover" ? ((dir || 1) > 0 ? -1 : 1) * rocketFh * 0.62 : 0;
+  if (rocketMode) { left = Math.min(left, -(Math.abs(rocketX) + rocketH * 0.4 + 20)); top = Math.min(top, ground - rocketH - rocketFh * 0.3); }
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so
@@ -560,6 +566,15 @@ function drawNow() {
     horseNow = { view: horseView, ride: !!ride, far: leadFar, X: horseX, k, hs, hooves: h.hooves || [], barrel: h.barrel, seat: -h.seat[1] };   // (ticket 492; far: ticket 496)
     if (ride) { lift = rideLift + h.bob * hs; horseBits = h.bits.map(b => { const [x, y] = T(b); return [x, y - lift]; });
       if (h.over) horseOver = `<g class="horse-over" transform="${at}">${h.over}</g>`; }
+  }
+  // (ticket 799) the rocket: hovering beside them, before the friend, bobbing; or around them, its window at their face, drawn
+  // over them and bobbing with them (rocketShell, below), the two lifted off the ground together
+  let rocketShell = "", rocketBob = "";
+  if (rocketMode) {
+    const hov = rocketFh * 0.12;
+    rocketBob = `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-rocketFh * 0.04)};0 0" dur="2.4s" repeatCount="indefinite"/>`;
+    if (rocketMode === "hover") svg += `<g class="rocket" data-rocket="hover ${B.rocketStyle}" transform="translate(${f1(rocketX)} ${f1(ground - hov)})"><g>${rocketBob}${rocketSvg(B.rocketStyle, rocketH, -rocketH * 0.62, rocketFh * 0.14, false, "rk")}</g></g>`;
+    else { lift = -hov; rocketShell = `<g class="rocket" data-rocket="ride ${B.rocketStyle}" transform="translate(0 ${f1(ground + rocketFh * 0.1)})">${rocketSvg(B.rocketStyle, rocketH, -rocketFh * 0.94, rocketFh * 0.17, true, "rk")}</g>`; }
   }
   poseJoints.lift = lift;   // (ticket 499: riding, how far they are lifted onto the saddle, for where their mouth and hands are now)
   const figAt = svg.length;
@@ -1337,7 +1352,8 @@ function drawNow() {
     }
   }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
-  if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
+  if (rocketShell) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})"><g>${rocketBob}${svg.slice(figAt)}${rocketShell}</g></g>`;   // (ticket 799: inside the rocket)
+  else if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
   svg += horseFront;   // (ticket 496: led from its far side, the horse in front of the friend)
   svg += `</g>`;   // the figure
   // (ticket 136: the far leg first, see-through with the pants and the feet,
