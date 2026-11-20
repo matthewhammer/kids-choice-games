@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.517 (2026-11-20)
+
+Everything in 0.0.516, plus:
+
+- **In 🐱 the cat universe, the friend IS a cat** (ticket 800; Matthew: "you're using the cat costume -- but in the cat world, we become an actual cat"). Not a suit any more: a cat, drawn in the friend's place, the same cats the castle's cat room has. It walks as the friend walks, sits when the friend stands still or sits (on a seat, on its top), curls up asleep when the friend lies down, and faces their way. 🧍 Body's 🐱 your coat, as a cat, chooses it: orange with a white chest, black with a white chest (the usual), grey, or white. The friend's own clothes and looks are kept for the people universe.
+
 ## 0.0.516 (2026-11-20)
 
 Everything in 0.0.515, plus:

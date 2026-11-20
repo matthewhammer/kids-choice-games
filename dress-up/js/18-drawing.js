@@ -23,16 +23,7 @@ function draw() {
 const ANIMS_RE = /<(animate|animateTransform|animateMotion|set)\b[^>]*?(\/>|>[\s\S]*?<\/\1>)/g;
 let stillMemo = { in: null, out: null };
 const stillScene = text => { if (text !== stillMemo.in) stillMemo = { in: text, out: text.replace(ANIMS_RE, "") }; return stillMemo.out; };
-// (ticket 800) in 🐱 the cat universe the friend is a cat: drawn in the cat's suit (ANIMALS.cat) whatever they wear, unless
-// they wear an animal already; their own costume is kept as it is, and comes back in the people universe
-let catDrawing = false;
 function drawNow() {
-  if (state.background.universe === "cats" && !catDrawing && !ANIMALS[state.costume.kind]) {
-    const keep = state.costume, A = ANIMALS.cat;
-    catDrawing = true; state.costume = { ...keep, kind: "cat", fur: A.fur, marks: A.marks, belly: A.belly, eyes: A.eyes, accent: A.accent, furPattern: A.furPattern };
-    try { drawNow(); } finally { state.costume = keep; catDrawing = false; }
-    return;
-  }
   if (typeof flight !== "undefined" && flight) { flightDraw(); return; }   // (ticket 691: flying, the world from above instead: js/25-flight.js)
   if (typeof meal !== "undefined" && meal) { mealDraw(); return; }   // (ticket 744: at the table, the place setting from above: js/25-meal.js)
   if (typeof salad !== "undefined" && salad) { saladDraw(); return; }   // (ticket 747: at the kitchen counter, the salad maker: js/25-salad.js)
@@ -1360,6 +1351,18 @@ function drawNow() {
       svg += `<ellipse cx="${f1(x)}" cy="${f1(wl)}" rx="${f1(r * (0.8 + 0.8 * p))}" ry="${f1(r * 0.16 * (0.8 + 0.8 * p))}" fill="none" stroke="#ffffff" stroke-width="5" opacity="${(0.9 * (1 - p)).toFixed(2)}"/>`;
     }
   }
+  // (ticket 800, Matthew: "in the cat world, we become an actual cat") in 🐱 the cat universe the friend IS a cat, drawn in
+  // their place (their clothes and all kept for the people universe): walking as they move, sitting as they stand or sit (on
+  // a seat at its top), curled up asleep as they lie; facing their way; its coat 🐱's (CAT_COATS). The castle's cats' own
+  // drawings, at 0.45 of the friend's height
+  if (state.background.universe === "cats") {
+    const fh = ground - friendFrame.top, cs = 0.45 * fh / 50, WC = CAT_COATS[Math.max(0, Math.min(3, Math.round(B.catCoat ?? 1)))];
+    const moving = B.anim === "walk" || B.anim === "run" || (move && !move.held && !move.grounded), pose = B.pose === "lie" ? "sleep" : moving && !sitting ? "walk" : "sit";
+    const W = catWag({}, 0), inner = pose === "sleep" ? sleepingCat(WC, W, 0) : pose === "walk" ? walkingCat(WC, W, 0) : shoulderCat(4, WC, W, false);
+    const y = sitting ? L + 12 : ground;
+    svg = svg.slice(0, figAt) + (sitting ? "" : `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(24 * cs)}" ry="${f1(5 * cs)}" fill="#000000" opacity="0.15"/>`) +
+      `<g class="friend-cat" data-cat="${pose}" transform="translate(0 ${f1(y + (pose === "sit" ? 7 * cs : 0))}) scale(${(dir < 0 ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`;
+  }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
   if (rocketShell) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})"><g>${rocketBob}${svg.slice(figAt)}${rocketShell}</g></g>`;   // (ticket 799: inside the rocket)
   else if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
@@ -1368,7 +1371,7 @@ function drawNow() {
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)
   const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
-  if (farDeep || farLegSvg) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
+  if ((farDeep || farLegSvg) && state.background.universe !== "cats") svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {

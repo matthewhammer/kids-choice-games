@@ -160,6 +160,8 @@ const TABS = [
     // twelve styles, after the signs of the zodiac (not with the horse: the horse comes first)
     ["choice", "rocket", "🚀 a rocket", [["none", "no rocket"], ["hover", "🛸 hovering beside the friend"], ["ride", "🧑‍🚀 the friend inside it"]]],
     ["choice", "rocketStyle", "✨ the rocket's style, after a sign of the zodiac", ROCKET_STYLES],
+    // (ticket 800) the friend as a cat, in 🐱 the cat universe: their coat
+    ["choice", "catCoat", "🐱 your coat, as a cat (in the cat universe)", [[0, "🟧 orange, white chest"], [1, "⬛ black, white chest"], [2, "🩶 grey"], [3, "⬜ white"]]],
     // (ticket 799) 🚀 a trip in the rocket: up out of the picture, and down at the place chosen; 🏡 straight back
     ...ROCKET_TRIPS.map(([kd, name]) => ["action", "rocketTo_" + kd, `🚀 fly to ${name}`, () => rocketTo(kd)]),
     ["action", "rocketHome", "🏡 fly home, where the trips began", () => rocketHome()],
@@ -1231,6 +1233,7 @@ const SHOWN_WHEN = {
   // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
   "body.rocketStyle": b => (b.rocket || "none") !== "none",   // (ticket 799)
+  "body.catCoat": b => state.background.universe === "cats",   // (ticket 800)
   ...Object.fromEntries(ROCKET_TRIPS.map(([kd]) => ["body.rocketTo_" + kd, b => (b.rocket || "none") !== "none" && state.background.kind !== kd])),
   "body.rocketHome": b => (b.rocket || "none") !== "none" && trips.length > 0,
   "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
