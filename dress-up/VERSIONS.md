@@ -4,6 +4,10 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.520 (2026-11-20)
+
+Everything in 0.0.519, plus:
+
 - **🎱 pin ball, a new kind of music** (ticket 804, Matthew: "please update dress-up with a new music category: \"pin ball\", with the same tracks"). The three tunes of the Pinball in Hazel (matthewhammer.org/hazeljs-examples/pinball/), note for note: 🏎️ overdrive (172 beats a minute, E minor), 💥 bumper storm (184, D minor) and 🪐 orbit (140, A minor). They play on that game's little chip, six new instruments on the mixing board: 🕹️ a lead on a pulse wave (its knob, the vibrato), 🕹️ a thinner pulse for the arpeggios, 🕹️ a triangle bass, and drums of noise (🥁 kick, 🥁 snare, 🎩 hats). A script wrote them from the Pinball's own notes and checked that they play the same notes at the same steps; their level is set to sit with the other chase tunes.
 
 ## 0.0.519 (2026-11-20)
