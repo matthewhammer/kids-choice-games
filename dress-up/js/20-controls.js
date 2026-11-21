@@ -1942,7 +1942,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       };
       // the groups: the friend team (first, while it has anyone), then each place with people staying in it (here first), then
       // those in no place; each a chip with how many, and the one chosen (groupOpen; at first the team, or here) shows its cards
-      const whereKey = p => !p.place ? "~" : here && p.place.world === here.world && p.place.key === here.key ? "" : personWhere(p);
+      const whereKey = p => !p.place ? "~" : here && p.place.world === here.world && p.place.key === here.key && (!p.place.kind || p.place.kind === here.kind) ? "" : personWhere(p);
       const places = [...new Set(staying.map(whereKey))].sort();
       const groups = [...(team.length ? [["team", "🤝 friend team", team]] : []),
                       ...places.map(k => [k, k === "" ? "📍 here" : k === "~" ? "🫥 in no place" : k, staying.filter(p => whereKey(p) === k)])];

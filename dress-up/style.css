@@ -1414,3 +1414,10 @@ body.items-open .team-bar { display: none; }
 .people .person-where:empty { display: none; }
 .people .person-name-row input { flex: 1 1 8em; min-width: 6em; }
 @media (max-width: 520px) { .people-line { grid-template-columns: 1fr; row-gap: 3px; } }
+/* (Matthew 2026-11-21; ticket 812) the rocket's actions beside the friend: a nav arrow's look, a round badge with the action's sign
+   (data-sym: ⇧ blast off, ⇩ land, ⌂ home, ⏏ step out, ⤒ board) in place of the triangle */
+.way-arrow.rocket-act { pointer-events: auto; opacity: 1; }
+.way-arrow .way-tri.way-sym { transform: none; }
+.way-arrow .way-tri.way-sym::before { clip-path: circle(44% at 50% 50%); background: #fde68a; }
+.way-arrow .way-tri.way-sym::after { content: attr(data-sym); position: absolute; inset: 0; display: grid; place-items: center; font-size: 21px; line-height: 1; color: #6b4a24; font-weight: 800; }
+.way-arrow.rocket-act:hover .way-tri::before, .way-arrow.rocket-act:focus-visible .way-tri::before { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f); }

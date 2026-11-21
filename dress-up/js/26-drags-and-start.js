@@ -2356,6 +2356,8 @@ function enterScene(door, here = false) {
   if (door.dataset.climb !== undefined && houseStairsClimb(door)) return;   // (ticket 742: a house's stairs, climbed)
   if (door.dataset.descend !== undefined && houseStairsDownInto(door, door.dataset.to)) return;   // (and down them, into the room below)
   if (door.dataset.blackhole !== undefined) { blackHoleEnter(door); return; }   // (ticket 800: into the black hole, to the other universe)
+  if (door.dataset.rocketto) { rocketTo(door.dataset.rocketto); return; }   // (ticket 802's follow-up: the starfield's planet, flown to)
+  if (door.dataset.land) { if (door.dataset.land === "home") spaceHome(); else landOn(door.dataset.land); return; }   // (ticket 812: down to space's planets, or home)
   if (door.dataset.hole) { holeFall(door); return; }   // (ticket 622: a dungeon room's hole, to the floor below)
   if (door.dataset.stairs) { stairsUp(door); return; }   // (ticket 625: a dungeon room's stairs, to the floor above)
   if (door.dataset.way && !door.dataset.to) { worldWalk(door, here); return; }

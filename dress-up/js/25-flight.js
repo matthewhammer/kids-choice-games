@@ -446,14 +446,28 @@ const flyWildSvg = (key, c, r) => `<g data-tile="${key}" data-wild="" transform=
 // the world's text, for whether the quilt must be built again
 const flyWorldKey = W => { const { figX, figY, things, ...B } = state.background; return JSON.stringify([W.id, W.cols, W.rows, W.cells, B]); };   // (and the places' own settings: the castle's, the tree's)
 function flyQuiltSvg(W) {
-  let s = flyRect(-12 * FT, -12 * FT, (W.cols + 24) * FT, (W.rows + 24) * FT, "#88a660");   // (the land going on, as far as can be seen)
-  for (let r = -1; r <= W.rows; r++) for (let c = -1; c <= W.cols; c++) { const key = `${c},${r}`; s += W.cells[key] ? flyTileSvg(W, key) : flyWildSvg(key, c, r); }
+  let s = flyRect(-12 * FT, -12 * FT, (W.cols + 24) * FT, (W.rows + 24) * FT, W.land || "#88a660");   // (the land going on, as far as can be seen)
+  for (let r = -1; r <= W.rows; r++) for (let c = -1; c <= W.cols; c++) { const key = `${c},${r}`; s += W.cells[key] ? flyTileSvg(W, key) : W.land ? "" : flyWildSvg(key, c, r); }
   // the seams between the squares, stitched (a line the same thinness at every height)
   let d = "";
   for (let r = 0; r <= W.rows; r++) d += `M0 ${r * FT} H${W.cols * FT} `;
   for (let c = 0; c <= W.cols; c++) d += `M${c * FT} 0 V${W.rows * FT} `;
   return s + `<path d="${d}" fill="none" stroke="#fff8e0" stroke-opacity="0.7" stroke-width="2.5" stroke-dasharray="9 7" vector-effect="non-scaling-stroke"/>`;
 }
+
+// (Matthew 2026-11-21: "I go to the alien planet, but when I blast off again, I'm somehow back on the start world, looking at that
+// quilt, and not the one for the alien planet") A place reached by a rocket trip is no square of the game's world: taking off there,
+// the quilt is the place's own (FLY_AWAY), a world of its squares the flight keeps (flight.world, flyWorld), its land going on
+// round it in its colour; coming down, they are back in its scene, where they landed. Its squares' looks are FLY_LOOKS' own.
+const FLY_AWAY = { alienplanet: { cols: 5, rows: 4, land: "#4a3278" } };
+const flyAwayWorlds = {};
+function flyAwayWorld(kind) {
+  const A = FLY_AWAY[kind];
+  if (!flyAwayWorlds[kind]) { const cells = {}; for (let r = 0; r < A.rows; r++) for (let c = 0; c < A.cols; c++) cells[`${c},${r}`] = { kind };
+    flyAwayWorlds[kind] = { id: "away-" + kind, cols: A.cols, rows: A.rows, cells, land: A.land, at: `${A.cols >> 1},${A.rows >> 1}` }; }
+  return flyAwayWorlds[kind];
+}
+const flyWorld = () => (flight && flight.world) || state.world;
 
 // ---- the friend, riding: drawn in the picture's own units, the ground under them at (0, 0) ----
 function flyRiderSvg() {
@@ -502,13 +516,13 @@ function flyCraftSvg() {
 }
 
 // ---- the view: how much of the world is seen at a height; where the camera is ----
-function flySpan(h = flight.h, W = state.world, vb = document.getElementById("pic").viewBox.baseVal) {
+function flySpan(h = flight.h, W = flyWorld(), vb = document.getElementById("pic").viewBox.baseVal) {
   const most = Math.max(W.cols, W.rows * vb.width / Math.max(1, vb.height)) + 1;
   return 0.95 * Math.pow(Math.max(1.1, most / 0.95), h);   // (squares across the picture)
 }
 // built: the quilt (once per world), the shadow, the clouds, the friend riding; then placed (flyPlace)
 function flightDraw() {
-  const pic = document.getElementById("pic"), W = state.world, key = flyWorldKey(W);
+  const pic = document.getElementById("pic"), W = flyWorld(), key = flyWorldKey(W);
   let root = pic.querySelector(":scope > #fly");
   if (!root || !flyBuilt || flyBuilt.key !== key) {
     // (the friend's own patterns, the defs drawNow left, kept for the rider; the rest of the picture taken away while flying)
@@ -527,7 +541,7 @@ function flightDraw() {
 function flyPlace() {
   const pic = document.getElementById("pic"), root = pic.querySelector(":scope > #fly");
   if (!root || !flight) return;
-  const vb = pic.viewBox.baseVal, W = state.world, S = flySpan(flight.h, W, vb), g = vb.width / (S * FT);
+  const vb = pic.viewBox.baseVal, W = flyWorld(), S = flySpan(flight.h, W, vb), g = vb.width / (S * FT);
   const cx = vb.x + vb.width / 2, cy = vb.y + vb.height * 0.62;   // (where the craft is, its ground below it: a little below the middle, the envelope above)
   const gx = flight.x * FT, gy = flight.y * FT;
   root.querySelector("#fly-ground").setAttribute("transform", `translate(${f1(cx - gx * g)} ${f1(cy - gy * g)}) scale(${+g.toFixed(5)})`);
@@ -555,13 +569,13 @@ function flyPlace() {
 // ---- taking off, flying, landing ----
 // (taken off from the square of the world they are in; inside, or somewhere off the grid, they cannot)
 function flightStart(craft) {
-  const W = state.world, key = W && W.at;
+  const B = state.background, away = FLY_AWAY[B.kind] ? flyAwayWorld(B.kind) : null, W = away || state.world, key = W && W.at;
   if (!key || !W.cells[key]) { flySay("🎈 Take off from outside: from a square of the world."); return false; }
-  const [c, r] = key.split(",").map(Number), B = state.background;
+  const [c, r] = key.split(",").map(Number);
   if (itemsOpen) itemsShow(false);
   itemLetGo();
   flight = { craft: FLY_CRAFTS[craft] ? craft : "balloon", x: c + 0.5 + clamp((Number(B.figX) || 0) / FT, -0.4, 0.4), y: r + 0.68, h: 0, want: 0.28,
-             facing: "front", goal: null, landing: false, last: 0, pad: [0, 0], padUp: false, padDown: false };
+             facing: "front", goal: null, landing: false, last: 0, pad: [0, 0], padUp: false, padDown: false, world: away };
   document.body.classList.add("flying");
   flyBuilt = null;
   changed();
@@ -571,13 +585,15 @@ function flightStart(craft) {
 function flightLand(now = false) {
   if (!flight) return;
   if (!now) { flight.landing = true; flight.want = null; flight.goal = null; flyGo(); return; }
-  const W = state.world, c = Math.floor(flight.x), r = Math.floor(flight.y), key = `${c},${r}`;
+  const W = flyWorld(), c = Math.floor(flight.x), r = Math.floor(flight.y), key = `${c},${r}`;
   if (!W.cells[key]) { flight.landing = false; flight.want = 0.12; flySay("🌫️ Nowhere to land here: fly over a place first."); flyGo(); return; }
+  const away = flight.world, fx = flight.x - c;
   flight = null; flyBuilt = null;
   document.body.classList.remove("flying");
   const pic = document.getElementById("pic"), root = pic.querySelector(":scope > #fly");
   if (root) root.remove();
-  if (key !== W.at) worldEnter(key, null, false);
+  if (away) { away.at = key; state.background.figX = Math.round(clamp((fx - 0.5) * FT, -300, 300)); }   // (the alien planet: its scene, where they came down)
+  else if (key !== W.at) worldEnter(key, null, false);
   flyHudShow();
   changed();
 }
@@ -589,7 +605,7 @@ function flyTick(t) {
   if (!flight || itemsOpen) return;
   const dt = flight.last ? Math.min(0.1, (t - flight.last) / 1000) : 1 / 60;
   flight.last = t;
-  const W = state.world, S = flySpan();
+  const W = flyWorld(), S = flySpan();
   // the way: the arrows held (the keyboard's, the controller's), else toward a spot tapped
   let vx = (flyKeys.has("ArrowRight") ? 1 : 0) - (flyKeys.has("ArrowLeft") ? 1 : 0) + flight.pad[0], vy = (flyKeys.has("ArrowDown") ? 1 : 0) - (flyKeys.has("ArrowUp") ? 1 : 0) + flight.pad[1];
   if (vx || vy) flight.goal = null;
@@ -626,7 +642,7 @@ function flyHudShow() {
   if (!flyHudEl) return;
   flyHudEl.hidden = !flight;
   if (!flight) return;
-  const W = state.world, key = `${Math.floor(flight.x)},${Math.floor(flight.y)}`, cell = W.cells[key];
+  const W = flyWorld(), key = `${Math.floor(flight.x)},${Math.floor(flight.y)}`, cell = W.cells[key];
   const where = cell ? `${placeName(cell.kind)} · ${squareName(key)}` : "🌾 over the wild";
   const w = flyHudEl.querySelector(".fly-where");
   if (w.textContent !== where && !(flySayT > performance.now())) w.textContent = where;
@@ -640,7 +656,7 @@ function flyHudShow() {
 const flySpaceEl = document.getElementById("fly-space");
 function flySpacePlace(x, y) {
   if (!flySpaceEl || !flyHudEl) return;
-  const on = !!flight && flight.craft === "rocketride" && !flight.landing && !!SCENES.starfield;
+  const on = !!flight && flight.craft === "rocketride" && !flight.landing && !!SCENES.starfield && !flyWorld().space;   // (ticket 812: not over space itself)
   if (flySpaceEl.hidden === on) flySpaceEl.hidden = !on;
   if (!on) return;
   const M = document.getElementById("pic").getScreenCTM(), box = flyHudEl.getBoundingClientRect();
@@ -653,16 +669,16 @@ function flySpacePlace(x, y) {
 }
 function flySpace() {
   if (!flight || flight.craft !== "rocketride" || entering || !SCENES.starfield) return;
-  const W = state.world, key = `${Math.floor(flight.x)},${Math.floor(flight.y)}`;
+  const W = flyWorld(), away = flight.world, key = `${Math.floor(flight.x)},${Math.floor(flight.y)}`;
   flight = null; flyBuilt = null;
   document.body.classList.remove("flying");
   const root = document.getElementById("pic").querySelector(":scope > #fly");
   if (root) root.remove();
-  if (W.cells[key] && key !== W.at) worldEnter(key, null, false);
+  if (!away && W.cells[key] && key !== W.at) worldEnter(key, null, false);
   state.body.rocket = "ride";   // (they were in it, up there: in it still, blasting off)
   flyHudShow();
   changed();
-  rocketTo("starfield");
+  if (away) rocketTo("starfield"); else blastToSpace();   // (ticket 812: into outer space's grid)
 }
 if (flySpaceEl) flySpaceEl.addEventListener("click", () => flySpace());
 function flySay(text) {

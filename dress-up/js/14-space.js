@@ -106,9 +106,16 @@ function starfieldScene(c) {
   if (look !== "none") {
     const size = Math.max(5, Math.min(100, o.spacePlanetSize ?? 34)) / 100, at = Math.max(0, Math.min(100, o.spacePlanetX ?? 72)) / 100;
     const moons = Math.max(0, Math.min(4, Math.round(o.spaceMoons ?? 2)));
-    s += SEP + part("starfield-planet", [c.F, look, size, at, moons, seed], () => {
+    const W = state.world, cell = W && W.space && W.at ? W.cells[W.at] : null, land = cell && cell.planet ? cell.planet : null;   // (ticket 812: in outer space's grid)
+    s += SEP + part("starfield-planet", [c.F, look, size, at, moons, seed, land], () => {
       const r = H * 0.3 * size, cx = x0 + W * (0.12 + 0.76 * at), cy = y0 + H * 0.3;
-      return spaceMoonsSvg(moons, cx, cy, r, Rs, "bg-space-moon") + alienPlanetSvg(look, cx, cy, r, Rs, "bg-space-planet");
+      // (Matthew 2026-11-21: "on the outer space background with an alien planet, we should provide a hover-over glow or some other
+      // way to nav there") the planet a way there: it glows under the pointer, as a doorway does, and a tap flies the rocket to 👽
+      // the alien planet (enterScene: data-rocketto)
+      const name = land === "home" ? "🏡 home" : land ? "🪐 " + ((spacePlanetOf(land) || {}).name || "the planet") : "👽 the alien planet";
+      const way = land || SCENES.alienplanet ? [`<g class="portal" ${land ? `data-land="${land}"` : `data-rocketto="alienplanet"`}><title>🚀 fly to ${name}</title>`,
+                                               `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${f1(r * 1.05)}" fill="#000000" opacity="0.001"/></g>`] : ["", ""];
+      return spaceMoonsSvg(moons, cx, cy, r, Rs, "bg-space-moon") + way[0] + alienPlanetSvg(look, cx, cy, r, Rs, "bg-space-planet") + way[1];
     });
   }
   return s;
@@ -536,6 +543,7 @@ function rocketSvg(style, h, wy, wr, open, id) {
 const ROCKET_TRIPS = [["starfield", "✨ the starfield"], ["bridge", "🛸 the starship's bridge"], ["alienplanet", "👽 the alien planet"], ["stationlab", "🧪 the station's lab"],
   ["stationgarden", "🌱 the station's greenhouse"], ["stationbunks", "🛏️ the station's quarters"], ["stationkitchen", "🍳 the station's kitchen"], ["stationmess", "🍽️ the station's mess hall"]];
 function rocketTo(to, home = false) {
+  if (to === "starfield" && !home && typeof blastToSpace === "function" && !state.world.space) { blastToSpace(); return; }   // (ticket 812: space is a world now)
   const B = state.background, body = state.body;
   if (!SCENES[to] || B.kind === to || entering) return;
   if ((body.rocket || "none") === "none") body.rocket = "ride";   // (a trip is made inside it)
@@ -543,12 +551,86 @@ function rocketTo(to, home = false) {
   body.sit = false; B.seat = null;
   const from = { kind: B.kind, inside: B.inside, tent: B.tent, castleRoom: B.castleRoom, figX: B.figX ?? 0, figY: B.figY ?? 0, to };
   changed();
-  const r = document.getElementById("pic").getBoundingClientRect();
-  flyInto({ x: r.left + r.width / 2 - 30, y: r.top - 60, width: 60, height: 60 }, () => {
+  // (Matthew 2026-11-21: "when we blast into outer space, the animation is wrong": a rocket goes straight up, not spinning into a
+  // box as through a doorway) lift-off, and the landing from above (rocketFly)
+  rocketFly(() => {
     if (home) trips.length = 0; else trips.push(from);
     const [figX, figY] = ARRIVE[to] || [0, 0];
     Object.assign(B, { kind: to, figX, figY }); arriveSettle = true;
   });
+}
+// (the rocket's turn as it goes: 90 its nose to the right, -90 to the left, 0 upright; eased toward where it should be, each drawing;
+// a few drawings more when it stops, to come upright: cy, its middle's height in the figure's units)
+let rocketTurnA = 0, rocketTurnT = 0, rocketTurnLoop = 0;
+function rocketTurnNow(B, cy) {
+  // (walking to a nav arrow's way out counts: it is a trip, figAway, that does not)
+  const goes = (B.anim === "walk" || B.anim === "run") && !figAway ? facingOf(B) : 0, want = goes * 90, now = performance.now();
+  const dt = rocketTurnT ? Math.min(0.1, (now - rocketTurnT) / 1000) : 1; rocketTurnT = now;
+  const step = 450 * dt; rocketTurnA = Math.abs(want - rocketTurnA) <= step ? want : rocketTurnA + Math.sign(want - rocketTurnA) * step;
+  if (rocketTurnA !== want && !rocketTurnLoop) rocketTurnLoop = requestAnimationFrame(() => { rocketTurnLoop = 0; moved(true); });
+  return rocketTurnA ? ` rotate(${rocketTurnA.toFixed(1)} 0 ${f1(cy)})` : "";
+}
+// the rocket's trip: a shudder on its flame, then up, faster and faster, out of the top of the picture; the new place drawn; then
+// down onto it from above, slowing, and still. A copy of the friend (the rocket, and the team in its portholes) flies, as flyInto's
+// does; the phases are a doorway trip's, so a script waiting on the trip goes on when they have landed (ticket 597)
+// (ticket 812, Matthew 2026-11-21: "when the rocket \"dives into\" a planet, it changes orientation and size, like when we walk into a
+// deep background and we scale down dramatically") opts.into: the thing in this picture it flies into (a planet), the rocket turned
+// toward it, flying to it and shrinking to a speck, in place of the lift-off; opts.outOf: the thing in the new picture it comes out
+// of, growing from a speck there and turning upright as it comes to rest, in place of the coming down from above
+function rocketFly(arrive, opts = {}) {
+  const pic = document.getElementById("pic");
+  if (!document.getElementById("figure")) { arrive(); changed(); return; }
+  arrive = scriptHeld(arrive, "fly");
+  entering = true;
+  const up = pic.viewBox.baseVal.height * 1.25, wrap = figCopy();
+  figHide(true);
+  if (typeof rocketOutSync === "function") rocketOutSync();   // (ticket 812: the rocket's actions away while it flies)
+  const at = (y, x = 0, a = 0, k = 1) => ({ transform: `translate(${f1(x)}px, ${f1(y)}px) rotate(${f1(a)}deg) scale(${k.toFixed(3)})` });
+  // (where a thing in the picture is, from the copy's middle, in the picture's units; and the way to it, as a turn from upright)
+  const toward = (el, copy) => { const inv = pic.getScreenCTM().inverse(), mid = r => new DOMPoint(r.left + r.width / 2, r.top + r.height / 2).matrixTransform(inv);
+    const er = el.getBoundingClientRect(), a = mid(er), b = mid(copy.getBoundingClientRect()), dx = a.x - b.x, dy = a.y - b.y;
+    const o = new DOMPoint(er.left, er.top).matrixTransform(inv), pr = Math.abs(a.x - o.x);
+    return { dx, dy, pr, turn: Math.atan2(dx, -dy) * 180 / Math.PI }; };
+  // (Matthew 2026-11-21: "it would be nicer to have an arc that loops around into the planet") the way into a planet: swinging out
+  // to an orbit a little wider than the planet, most of the way round it, smaller as it goes (far off, as a thing deep in a picture
+  // is), then in, spiralling down to a speck at its middle; its nose along the way it goes. Out of one, the same way backward, the
+  // nose turned along it, and upright at rest. t: the planet's place and size from the copy (toward)
+  const spiral = (t, out = false) => {
+    const r0 = Math.hypot(t.dx, t.dy), a0 = Math.atan2(-t.dy, -t.dx), orbit = Math.max(t.pr * 1.35, 24), up = Math.cos(a0) < 0 ? 1 : -1, sweep = up * Math.PI * 1.7, N = 16;
+    const pt = u => { const r = u < 0.55 ? r0 + (orbit - r0) * Math.sin(u / 0.55 * Math.PI / 2) : orbit * (1 - (u - 0.55) / 0.45) ** 1.3, a = a0 + sweep * u ** 0.9;
+      return [t.dx + r * Math.cos(a), t.dy + r * Math.sin(a), u < 0.55 ? 1 - 0.55 * u / 0.55 : 0.45 * (1 - (u - 0.55) / 0.45) + 0.04]; };
+    const ps = Array.from({ length: N + 1 }, (_, i) => pt(i / N));
+    const fr = ps.map((p, i) => { const q = ps[Math.min(N, i + 1)], b = ps[Math.max(0, i - 1)], dir = Math.atan2(q[0] - b[0], -(q[1] - b[1])) * 180 / Math.PI;
+      return { p, dir }; });
+    // (the nose's turn kept continuous, never a jump of a full turn between frames)
+    for (let i = 1; i < fr.length; i++) while (Math.abs(fr[i].dir - fr[i - 1].dir) > 180) fr[i].dir -= 360 * Math.sign(fr[i].dir - fr[i - 1].dir);
+    if (!out) return fr.map(({ p, dir }, i) => ({ ...at(p[1], p[0], i ? dir : 0, p[2]), offset: i / N }));
+    const back = fr.slice().reverse();
+    return back.map(({ p, dir }, i) => ({ ...at(p[1], p[0], i === N ? 0 : dir + 180, p[2]), offset: i / N }));
+  };
+  const into = typeof opts.into === "function" ? opts.into() : null;
+  let lift;
+  if (into) {
+    wrap.style.transformBox = "fill-box"; wrap.style.transformOrigin = "center";
+    lift = wrap.animate(spiral(toward(into, wrap)), { duration: 2600, easing: "ease-in-out", fill: "forwards" });
+  } else
+    lift = wrap.animate([at(0), { ...at(0, -3), offset: 0.06 }, { ...at(0, 3), offset: 0.12 }, { ...at(0, -2), offset: 0.18 }, { ...at(-up * 0.06), offset: 0.3 },
+                         { ...at(-up * 0.3), offset: 0.65 }, at(-up)], { duration: 1700, easing: "ease-in", fill: "forwards" });
+  lift.onfinish = () => {
+    wrap.remove();
+    tripPhase = "arriving";
+    state.body.anim = "none"; rocketTurnA = 0;   // (arrived standing still, the rocket upright)
+    arrive();
+    entering = false; tripNext("spinning out");
+    changed();   // (drawn in the new place, still hidden)
+    const land = figCopy(), outOf = typeof opts.outOf === "function" ? opts.outOf() : null;
+    const done = () => { land.remove(); figHide(false); if (tripPhase === "spinning out") tripPhase = "arrived"; if (typeof rocketOutSync === "function") rocketOutSync(); };
+    if (outOf) {
+      land.style.transformBox = "fill-box"; land.style.transformOrigin = "center";
+      land.animate(spiral(toward(outOf, land), true), { duration: 2600, easing: "ease-in-out" }).onfinish = done;
+    } else
+      land.animate([at(-up), { ...at(-up * 0.25), offset: 0.55 }, { ...at(-8), offset: 0.88 }, at(0)], { duration: 1500, easing: "ease-out" }).onfinish = done;
+  };
 }
 // 🏡 home: where the trips began (the first trip's place), the stack cleared
 function rocketHome() { if (!trips.length) return; const h = trips[0]; rocketTo(h.kind, true); }

@@ -31,7 +31,9 @@ function drawNow() {
   // (ticket 123) treading water: the strokes for now, on top of any pose
   // (ticket 132: any animation from the Body tab, the same way; `tread` is only treading in water)
   // (ticket 438: riding the horse, the rider's own limbs, rideMove, in place of the animation's)
-  const move = riding(B) ? rideMove(B) : moveNow(), tread = move && move.water ? move : null, ride = !!(move && move.riding);
+  // (ticket 812: in the rocket no one walks or swims: they stand in its cabin, and the rocket goes, turned the way it goes)
+  const inRocket = (B.rocket || "none") === "ride" && B.pose !== "lie" && !B.sit && !poseHeld;
+  const move = riding(B) ? rideMove(B) : inRocket ? null : moveNow(), tread = move && move.water ? move : null, ride = !!(move && move.riding);
   const poseT = (what, side) => poseOf(B, what, side) + (move ? move[what + (side > 0 ? "L" : "R")] || 0 : 0);
   // (ticket 124) which way they face (0 toward us; -1, 1 in profile to our
   // left or right), and whether they sit. In profile the friend is narrower,
@@ -574,7 +576,8 @@ function drawNow() {
     const hov = rocketFh * 0.12;
     rocketBob = `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${f1(-rocketFh * 0.04)};0 0" dur="2.4s" repeatCount="indefinite"/>`;
     if (rocketMode === "hover") svg += `<g class="rocket" data-rocket="hover ${B.rocketStyle}" transform="translate(${f1(rocketX)} ${f1(ground - hov)})"><g>${rocketBob}${rocketSvg(B.rocketStyle, rocketH, -rocketH * 0.62, rocketFh * 0.14, false, "rk")}</g></g>`;
-    else { lift = -hov; rocketShell = `<g class="rocket" data-rocket="ride ${B.rocketStyle}" transform="translate(0 ${f1(ground + rocketFh * 0.1)})">${rocketSvg(B.rocketStyle, rocketH, -rocketFh * 0.94, rocketFh * 0.17, true, "rk")}</g>`; }
+    else { lift = -hov; rocketShell = `<g class="rocket" data-rocket="ride ${B.rocketStyle}" transform="translate(0 ${f1(ground + rocketFh * 0.1)})">${rocketSvg(B.rocketStyle, rocketH, -rocketFh * 0.94, rocketFh * 0.17, true, "rk")}` +
+             `${typeof teamPortholesSvg === "function" ? teamPortholesSvg(rocketH, B.rocketStyle) : ""}</g>`; }   // (ticket 802: the team aboard, in its portholes)
   }
   poseJoints.lift = lift;   // (ticket 499: riding, how far they are lifted onto the saddle, for where their mouth and hands are now)
   const figAt = svg.length;
@@ -1364,7 +1367,11 @@ function drawNow() {
       `<g class="friend-cat" data-cat="${pose}" transform="translate(0 ${f1(y + (pose === "sit" ? 7 * cs : 0))}) scale(${(dir < 0 ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`;
   }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
-  if (rocketShell) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})"><g>${rocketBob}${svg.slice(figAt)}${rocketShell}</g></g>`;   // (ticket 799: inside the rocket)
+  // (Matthew 2026-11-21: "when rocket is moving side to side (laterally), it's sideways, not upright") riding, going left or right,
+  // the rocket and all in it turned to lie along the way, its nose first, about its middle; turned back upright when they stop or
+  // go toward us or away (rocketTurnNow: eased, a quarter turn in about a fifth of a second)
+  const rocketTurn = rocketShell ? rocketTurnNow(B, rocketFh * 0.1 - rocketH * 0.5 + ground) : "";
+  if (rocketShell) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})${rocketTurn}"><g>${rocketBob}${svg.slice(figAt)}${rocketShell}</g></g>`;   // (ticket 799: inside the rocket)
   else if (lift) svg = svg.slice(0, figAt) + `<g class="rider" transform="translate(0 ${f1(lift)})">${svg.slice(figAt)}</g>` + horseOver;
   svg += horseFront;   // (ticket 496: led from its far side, the horse in front of the friend)
   svg += `</g>`;   // the figure

@@ -228,7 +228,9 @@ const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW
 // (ticket 524) and an inside an outside has several of: which one it is (INSIDE_WHICH)
 // (ticket 656: and the plants cut in it; ticket 659: when each was cut, and the plants put in it that were cut, to grow back)
 const CUT_KEYS = ["cut", "cutWhen", "cutThings"];
-const cellKeys = kind => isCross(kind) ? ["things", ...CUT_KEYS, ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", ...CUT_KEYS, INSIDE_WHICH[kind]] : ["things", ...CUT_KEYS];
+// (ticket 812: a square of ✨ the starfield keeps its own planet and stars, one of 👽 the alien planet its own sky and who is there)
+const PLACE_OWN_KEYS = { starfield: ["spacePlanet", "spacePlanetX", "spacePlanetSize", "spaceMoons", "spaceSeed"], alienplanet: ["alienSky", "alienPeople", "alienAnimals"] };
+const cellKeys = kind => [...(isCross(kind) ? ["things", ...CUT_KEYS, ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", ...CUT_KEYS, INSIDE_WHICH[kind]] : ["things", ...CUT_KEYS]), ...(PLACE_OWN_KEYS[kind] || [])];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
 // figX and figY: across, and nearer or farther than the ground line)
@@ -2053,13 +2055,14 @@ const personLookWhole = look => Object.fromEntries(PERSON_PARTS.map(k => [k, { .
 function personHere() {
   worldsInit();
   const BG = state.background, W = state.world;
-  return BG.kind === "none" || !W.at || !W.cells[W.at] ? null : { world: W.id, key: W.at, x: BG.figX ?? 0, y: BG.figY ?? 0 };
+  // (kind: the background there, as a rocket trip or a door can change it on the same square: one put by the lake is not in space)
+  return BG.kind === "none" || !W.at || !W.cells[W.at] ? null : { world: W.id, key: W.at, x: BG.figX ?? 0, y: BG.figY ?? 0, kind: BG.kind };
 }
 // (a spot beside one, free: the nearest of a step, two, three... to either side (toward the middle first) where no one else
 // put in that square stands within most of a step, inside the scene; `skip`, a person not to count)
 function personAside(at, skip = null) {
   if (!at) return null;
-  const others = Object.values(state.peopleAway).filter(P => P.id !== skip && P.place && P.place.world === at.world && P.place.key === at.key);
+  const others = Object.values(state.peopleAway).filter(P => P.id !== skip && P.place && P.place.world === at.world && P.place.key === at.key && (!P.place.kind || !at.kind || P.place.kind === at.kind));
   const free = x => Math.abs(x) < SCENE.left * -0.88 && Math.abs(x - at.x) >= 0.7 * PERSON_ASIDE && others.every(P => Math.abs(P.place.x - x) >= 0.7 * PERSON_ASIDE || Math.abs(P.place.y - at.y) > 40);
   const first = at.x > 0 ? -1 : 1;
   for (let i = 1; i <= 5; i++) for (const sd of [first, -first]) { const x = at.x + sd * i * PERSON_ASIDE; if (free(x)) return { ...at, x }; }
@@ -2067,7 +2070,7 @@ function personAside(at, skip = null) {
 }
 // the person whose look and place a template or a list row means: the one dressed now, as they are, or one away
 const personRec = id => id === state.person.id ? { ...state.person, look: personLookNow(), place: null } : state.peopleAway[id] || null;
-function personSwitch(id) {
+function personSwitch(id, keepTeam = false) {
   peopleInit();
   const from = state.person, to = state.peopleAway[id];
   if (!to || from.id === id) return false;
@@ -2075,15 +2078,20 @@ function personSwitch(id) {
   // (the one left stays where they stood; when the other has no place of their own, the other comes here, and the one left
   // steps aside)
   // (ticket 802: the other on the team, the one left joins it, at the end of the line, and the line forms again behind the other)
-  const joins = to.team ? 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0)) : 0;
+  // (Matthew 2026-11-21, a bug: a gnome made from a costume in the rocket left the friend at the blast-off square: a new person made
+  // while there is a team, or in the air or the rocket (keepTeam), leaves the one played till then on the team, not behind)
+  const joins = to.team || keepTeam ? 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0)) : 0;
+  // (the team's vehicle is the team's: the rocket they ride or the one beside them, the new one in it too; their own look's put by)
+  const vehicle = (state.body.rocket || "none") !== "none" ? { rocket: state.body.rocket, rocketStyle: state.body.rocketStyle } : null;
   state.peopleAway[from.id] = { id: from.id, name: from.name || "", template: !!from.template, from: from.from || null, look: personLookNow(),
                                 place: to.place || !here ? here : personAside(here, to.id), ...(joins ? { team: joins } : {}), ...(from.animal ? { animal: from.animal } : {}) };
   delete state.peopleAway[id];
   if (joins) teamTrail = null;
   const look = personLookWhole(to.look);
   for (const k of PERSON_PARTS) state[k] = look[k];
+  if (vehicle && (joins || flight)) Object.assign(state.body, vehicle);
   state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null, ...(to.animal ? { animal: to.animal } : {}) };
-  const P = to.place;
+  const P = to.team ? null : to.place;   // (ticket 812: one on the team is where the friend is: the new one played stays right here)
   if (P && worldById(P.world) && worldById(P.world).cells[P.key]) {
     if (P.world !== state.world.id) worldSwitch(P.world, P.key, null, false); else if (P.key !== state.world.at) worldEnter(P.key, null, false);
     state.background.figX = P.x; state.background.figY = P.y;
@@ -2100,7 +2108,7 @@ function personNew(tplId) {
   let k = 1; while (names.has(`${base} ${k}`)) k++;
   const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: T.id, look: clone(T.look), place: null, ...(T.animal ? { animal: T.animal } : {}) };
   state.peopleAway[P.id] = P;
-  personSwitch(P.id);
+  personSwitch(P.id, teamKeeps());
   return P.id;
 }
 // (ticket 802, Matthew 2026-11-21: "let's be sure that the cat animal is another possible member of the team for the friend.
@@ -2109,6 +2117,8 @@ function personNew(tplId) {
 // the friend and on the team. In the people's universe a cat is drawn as a cat (walkingCat, shoulderCat sitting), the
 // friend's own cat drawing (ticket 800); in 🐱 the cat universe it is a person, as the people there are cats: its look
 // then, a person's, its hair and shirt in its coat's colour. Played (⇄), the friend is the cat, the same way round.
+// (a new person made now keeps the one played on the team: there is a team, or they are in the air or the rocket)
+const teamKeeps = () => teamOf().length > 0 || !!flight || state.body.rocket === "ride";
 const personIsCat = P => !!P && (P.animal === "cat") !== (state.background.universe === "cats");
 const friendIsCat = () => !personBusy && personIsCat(state.person);   // (a person drawn off the page, a person: personBusy)
 function personNewCat() {
@@ -2144,7 +2154,7 @@ function personNewCostume(kind, label) {
   let k = 1; while (names.has(`${base} ${k}`)) k++;
   const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: null, look: personLookWhole(null), place: null };
   state.peopleAway[P.id] = P;
-  personSwitch(P.id);
+  personSwitch(P.id, teamKeeps());
   set("costume", "kind", kind);
   return P.id;
 }
@@ -2239,6 +2249,7 @@ function peopleDrawMissing() {
       const look = personLookWhole(P.look);
       for (const k of PERSON_PARTS) state[k] = look[k];
       state.body.anim = "none"; state.background = { ...keepBG, kind: "none" };
+      state.body.rocket = "none"; if (!v.startsWith("ride:")) state.body.horse = "none";   // (ticket 812: the team's vehicle is the friend's)
       personVariant(v);
       drawNow();
       const fig = tmp.querySelector("#figure"), far = tmp.querySelector("#figure-far"), defs = tmp.querySelector("defs");
@@ -2330,11 +2341,13 @@ function personShowVariant(P, kept, v) {
 }
 const personPlaceTransform = (x, z, k) => `translate(${f1(x)} ${f1(z)}) scale(${k.toFixed(4)})`;
 function peopleShow(pic, scenery, feetZ) {
+  rocketOutSync();   // (⏏ out of the rocket, beside the friend as drawn now)
   for (const n of pic.querySelectorAll("g.person-placed")) n.remove();
   if (personBusy || !scenery) { peoplePathsSync([]); return; }
   const BG = state.background, W = state.world;
   teamSync();   // (ticket 802: the team, put where the friend is)
-  const here = Object.values(state.peopleAway).filter(P => P.place && P.place.world === W.id && P.place.key === W.at);
+  const aboard = teamAboard();   // (in the friend's rocket: their faces in its portholes, not here)
+  const here = Object.values(state.peopleAway).filter(P => P.place && P.place.world === W.id && P.place.key === W.at && (!P.place.kind || P.place.kind === BG.kind) && !(aboard && P.team));
   peoplePathsSync(here.filter(P => !P.team));
   if (!here.length) return;
   const items = [];
@@ -2511,6 +2524,8 @@ function teamSync() {
   if (!team.length) { teamTrail = null; teamWhere = ""; return; }
   const here = flight ? null : personHere();
   if (!here) return;
+  // (aboard the rocket: where the friend is, in it; out of it, the line forms again where they land)
+  if (teamAboard()) { teamTrail = null; teamWhere = ""; for (const P of team) P.place = { world: here.world, key: here.key, x: here.x, y: here.y, kind: here.kind }; return; }
   const where = [here.world, here.key, state.background.kind].join("|"), moved = where !== teamWhere;
   if (moved || !teamTrail) teamTrail = teamSeed(here.x, here.y); else teamStep(here.x, here.y);
   teamWhere = where;
@@ -2522,7 +2537,7 @@ function teamSync() {
       R = { x: mine ? P.place.x : tx, y: mine ? P.place.y : ty, dir: "right", stride: 0, still: 1, v: "", bob: 0 }; teamRun.set(P.id, R); }
     else if (moved) Object.assign(R, { x: tx, y: ty, still: 1, bob: 0 });
     if (!R.v || moved) R.v = "face:" + (here.x >= R.x ? "right" : "left");
-    P.place = { world: here.world, key: here.key, x: R.x, y: R.y };
+    P.place = { world: here.world, key: here.key, x: R.x, y: R.y, kind: here.kind };
   });
   if (!teamRaf) teamRaf = requestAnimationFrame(teamTick);
 }
@@ -2584,6 +2599,166 @@ document.addEventListener("keydown", e => {
   if ((e.key !== "q" && e.key !== "Q") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
   if (teamNext()) e.preventDefault();
 });
+// (Matthew 2026-11-21: "when we blast into outer space, the animation is wrong, and we are no longer in the space ship together!")
+// 🚀 The team aboard the friend's rocket: while the friend rides in it on the ground (body.rocket "ride"), the team is in it too,
+// not standing about: each one's face in a porthole on its body under its window (teamPortholesSvg, drawn with the rocket), two to
+// a row, smaller the more there are. Out of the rocket, the line forms again where they are.
+const teamAboard = () => state.body.rocket === "ride" && !flight && teamOf().length > 0;
+const personHeads = new Map();   // (a look's head, where its figure is cropped for a porthole: measured once)
+function personHead(P) {
+  if (personIsCat(P)) { const cs = 0.45 * TEAM_CAT_FH / 50; return { cx: -3 * cs, cy: -44 * cs, r: 19 * cs, cat: true }; }
+  const k = personKey(P), f = personDrawn.get(k); if (!f) return null;
+  let h = personHeads.get(k);
+  if (!h) {
+    const pic = document.getElementById("pic"); if (!pic) return null;
+    const tmp = document.createElementNS("http://www.w3.org/2000/svg", "g"); tmp.innerHTML = personOwnIds(f.svg, "hd-"); pic.append(tmp);
+    let b = null; try { b = tmp.getBBox(); } catch (e) { b = null; } tmp.remove();
+    if (!b || !b.height) return null;
+    h = { cx: b.x + b.width / 2, cy: b.y + 0.15 * b.height, r: 0.16 * b.height }; personHeads.set(k, h);
+  }
+  return h;
+}
+// the portholes, in the rocket's own units (h its height, its base at 0, the window at -0.627 h): below the window, over its sign
+function teamPortholesSvg(h, style) {
+  if (personBusy || !teamAboard()) return "";
+  const team = teamOf(), n = team.length, rows = Math.ceil(n / 2), top = -0.5 * h, room = 0.3 * h;
+  const pr = Math.min(0.088 * h, room / rows / 2.15), trim = (ROCKET_LOOKS[style] || ROCKET_LOOKS.aries).trim;
+  return team.map((P, i) => {
+    const row = Math.floor(i / 2), two = !(n % 2 === 1 && i === n - 1), x = two ? (i % 2 ? 1 : -1) * (pr + 0.012 * h) : 0, y = top + (row + 0.5) * (room / rows);
+    const hd = personHead(P), pre = "tp" + P.id + "-";
+    let face = "";
+    if (hd && hd.cat) face = `<g transform="scale(${(pr / hd.r).toFixed(4)}) translate(${f1(-hd.cx)} ${f1(-hd.cy)})">${personOwnIds(personCatFig(P, "").svg, pre)}</g>`;
+    else if (hd) face = `<g transform="scale(${(pr / hd.r).toFixed(4)}) translate(${f1(-hd.cx)} ${f1(-hd.cy)})">${personOwnIds(personDrawn.get(personKey(P)).svg, pre)}</g>`;
+    else if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); }
+    return `<g class="porthole" data-person="${P.id}" transform="translate(${f1(x)} ${f1(y)})"><clipPath id="${pre}cut"><circle r="${f1(pr)}"/></clipPath>` +
+      `<circle r="${f1(pr)}" fill="#bfe9ff"/><g clip-path="url(#${pre}cut)">${face}</g><circle r="${f1(pr)}" fill="#bfe9ff" opacity="0.18"/>` +
+      `<circle r="${f1(pr)}" fill="none" stroke="${trim}" stroke-width="${f1(h * 0.018)}"/></g>`;
+  }).join("");
+}
+// (Matthew 2026-11-21: "let's provide an action that looks like a nav arrow except not a triangle --- some other symbol, for getting
+// out of the spacecraft once in a scene, to avoid the backpack step") ⏏ out of the rocket: while the friend rides in it in a place
+// (not flying), a nav arrow's look beside them, a round badge with ⏏ where the triangle would be; tapped, they step out (the team
+// with them: the line forms again where they are). In a layer of its own (#ways-own), placed at every drawing, as the dive's is
+// (placed at every drawing, as the dive's arrow is: beside the friend, one above the other, in a layer of their own, #ways-own)
+let rocketActsShown = "";
+let rocketActsLater = 0;
+function rocketOutSync() {
+  const layer = document.getElementById("ways-own"); if (!layer) return;
+  // (held back while a trip or a walk through a way is under way: looked at again soon, so they come back when it is over, drawn or not)
+  if ((entering || figAway) && (state.body.rocket || "none") !== "none" && !rocketActsLater) rocketActsLater = setTimeout(() => { rocketActsLater = 0; rocketOutSync(); }, 150);
+  const acts = rocketActions(), sig = acts.map(a => a.slice(0, 4).join("|")).join("~");
+  if (sig !== rocketActsShown) {
+    rocketActsShown = sig;
+    layer.replaceChildren(...acts.map(([id, sym, word, more, go]) => el("button", { type: "button", class: "way-arrow near rocket-act" + (id === "out" ? " rocket-out" : ""), "data-act": id, "data-side": "right",
+      "aria-label": `${word.replace(/^\S+\s/, "")} ${more}`, onclick: e => { e.currentTarget.blur(); if (!entering) go(); } },
+      [el("span", { class: "way-tri way-sym", "data-sym": sym }), el("span", { class: "way-words" }, [word, el("br"), more])])));
+  }
+  if (!acts.length) return;
+  const fig = document.getElementById("figure"), box = layer.getBoundingClientRect(), r = fig && fig.getBoundingClientRect();
+  if (!r || !r.width || !box.width) return;
+  const sc = ((state.access || DEFAULTS.access).arrowSize ?? 100) / 100, edge = 22 * sc, room = r.right + 30 * sc + 100 * sc < box.right, gap = 54 * sc;
+  [...layer.children].forEach((b, i) => {
+    if (b.dataset.side !== (room ? "right" : "left")) b.dataset.side = room ? "right" : "left";
+    const left = Math.max(edge, Math.min(box.width - edge, (room ? r.right + 26 * sc : r.left - 26 * sc) - box.left));
+    const top = Math.max(edge, Math.min(box.height - edge, r.top + r.height * 0.5 - box.top + (i - (layer.children.length - 1) / 2) * gap));
+    const l = left.toFixed(0) + "px", t = top.toFixed(0) + "px";
+    if (b.style.left !== l) b.style.left = l; if (b.style.top !== t) b.style.top = t;
+  });
+  if (layer.style.getPropertyValue("--arrow-scale") !== String(sc)) layer.style.setProperty("--arrow-scale", String(sc));
+}
+// (ticket 812, Matthew 2026-11-21: "let's be sure that the following course is possible: blast off from start world (choose a view
+// starting squares); blast into outer space; go through outer space grid until we get to different planets; nav to each planet;
+// once there (near surface), exit space craft; nav around planet a bit as a team; re-enter spacecraft; blast off into outer space;
+// go to next planet or, go back to start world", "let's add this to our CI speedrun logic", "keep working until this works, and the
+// transitions look correct")
+// 🌌 Outer space: a world of its own, made once (spaceEnsure), SPACE_COLS by SPACE_ROWS squares of ✨ the starfield, each its own
+// stars (spaceSeed) and some a planet (SPACE_WORLD_PLANETS, each its own look), with 🌍 home among them: the start world seen from space.
+// Each planet a world of its own too, its surface's squares (👽 the alien planet, in the planet's own sky). Riding the rocket the
+// friend and the team go: 🚀 blast off from any square of a world (to space, at home; from a planet, at its square), across space
+// square to square by the nav arrows, 🪐 land on the planet of the square they are in (or tap it), ⏏️ step out (the rocket hovers
+// beside them) and walk about as a team, 🚀 board again, blast off, on to the next planet, or 🏡 home to the square they left.
+// Each a rocket's trip (rocketFly): lift-off, and the landing from above.
+const SPACE_COLS = 5, SPACE_ROWS = 4, SPACE_HOME = "0,2", SPACE_ARRIVE = { figX: -170, figY: 40 };   // (come down in space left of the middle: its planet on the right)
+const SPACE_WORLD_PLANETS = [
+  { id: "zib", name: "👾 Zib", look: "ringed", sky: "dusk", at: "2,0", people: 2, cols: 3, rows: 2 },
+  { id: "pyra", name: "🌋 Pyra", look: "lava", sky: "gold", at: "4,1", people: 1, cols: 3, rows: 2 },
+  { id: "frost", name: "🧊 Frostia", look: "ice", sky: "teal", at: "2,3", people: 3, cols: 2, rows: 2 }];
+const spaceJoin = W => { for (const key of Object.keys(W.cells)) W.cells[key].ways = ["N", "E", "S", "W"].filter(d => { const nb = worldNeighbour(W, key, d); return !nb.off && W.cells[nb.key]; }); };
+function spaceWorlds() { worldsInit(); return [state.world, ...Object.values(state.worldsAway)]; }
+function spaceEnsure() {
+  const all = spaceWorlds(), had = all.find(w => w.space);
+  if (had) return had;
+  let n = Math.max(0, ...all.map(worldNum));
+  const S = { id: "w" + (++n), name: "🌌 outer space", space: true, cols: SPACE_COLS, rows: SPACE_ROWS, cells: {}, start: SPACE_HOME, at: SPACE_HOME, planets: {} };
+  for (let r = 0; r < SPACE_ROWS; r++) for (let c = 0; c < SPACE_COLS; c++)
+    S.cells[`${c},${r}`] = { kind: "starfield", ways: [], things: [], spaceSeed: 3 + 7 * (r * SPACE_COLS + c), spacePlanet: "none", spaceMoons: 0 };
+  Object.assign(S.cells[SPACE_HOME], { spacePlanet: "ocean", spacePlanetSize: 46, spacePlanetX: 78, spaceMoons: 1, planet: "home" });
+  for (const P of SPACE_WORLD_PLANETS) {
+    Object.assign(S.cells[P.at], { spacePlanet: P.look, spacePlanetSize: 52, spacePlanetX: 78, spaceMoons: 2, planet: P.id });
+    const W = { id: "w" + (++n), name: P.name, planet: P.id, cols: P.cols, rows: P.rows, cells: {}, start: "0,0", at: "0,0" };
+    for (let r = 0; r < P.rows; r++) for (let c = 0; c < P.cols; c++)
+      W.cells[`${c},${r}`] = { kind: "alienplanet", ways: [], things: [], alienSky: P.sky, alienPeople: (P.people + c + r) % 4, alienAnimals: (c + r) % 2 === 0 };
+    spaceJoin(W);
+    state.worldsAway[W.id] = W; S.planets[P.id] = W.id;
+  }
+  spaceJoin(S);
+  state.worldsAway[S.id] = S;
+  return S;
+}
+const spacePlanetOf = id => SPACE_WORLD_PLANETS.find(P => P.id === id);
+const spaceHomeName = S => { const h = S && S.home && worldById(S.home.world); return h ? worldTitle(h) : "the start world"; };
+// (the square in space where a planet is)
+const spaceKeyOf = (S, pid) => Object.keys(S.cells).find(k => S.cells[k].planet === pid) || SPACE_HOME;
+// 🚀 to outer space: from a planet, to its square; from anywhere else, to 🌍 home's, and that square remembered as the way home
+function blastToSpace() {
+  if (entering) return;
+  const S = spaceEnsure(), W = state.world;
+  if (W.space) return;
+  const key = W.planet ? spaceKeyOf(S, W.planet) : SPACE_HOME;
+  if (!W.planet) S.home = { world: W.id, key: W.at };
+  trips.length = 0;   // (the ⬅️ back chip's doorway trips: a journey through space has ways of its own, 🏡 home among them)
+  state.body.rocket = "ride";
+  // (from a planet: out of it, in space; ticket 812)
+  rocketFly(() => { worldSwitch(S.id, key, null, false); Object.assign(state.background, SPACE_ARRIVE); },
+            W.planet ? { outOf: () => document.querySelector(`#bg .portal[data-land="${W.planet}"]`) } : {});
+}
+// 🪐 down onto a planet, at its first square
+function landOn(pid) {
+  if (entering) return;
+  const S = spaceEnsure(), id = S.planets[pid], P = id && worldById(id);
+  if (!P) return;
+  state.body.rocket = "ride";
+  rocketFly(() => { worldSwitch(P.id, P.start, null, false); Object.assign(state.background, { figX: 0, figY: 50 }); },
+            { into: () => document.querySelector(`#bg .portal[data-land="${pid}"]`) });   // (into the planet: turned toward it, shrinking away)
+}
+// 🏡 home: down to the square they blasted off from (the start world's first square, if none)
+function spaceHome() {
+  if (entering) return;
+  const S = spaceEnsure(), h = S.home && worldById(S.home.world) ? S.home : { world: WORLD_FIRST, key: null };
+  const H = worldById(h.world);
+  if (!H) return;
+  state.body.rocket = "ride";
+  rocketFly(() => { worldSwitch(H.id, h.key && H.cells[h.key] ? h.key : H.at || H.start, null, false); Object.assign(state.background, { figX: 0, figY: 50 }); },
+            { into: () => document.querySelector('#bg .portal[data-land="home"]') });   // (into the start world, seen from space)
+}
+// The rocket's actions beside the friend, each a nav arrow's look, a round badge with its sign where the triangle would be: what
+// can be done here, riding (🚀 blast off, 🪐 land, 🏡 home, ⏏️ step out) or beside it (🚀 board). (Matthew: "let's provide an action
+// that looks like a nav arrow except not a triangle --- some other symbol, for getting out of the spacecraft once in a scene, to
+// avoid the backpack step")
+function rocketActions() {
+  // (none while a trip is under way: lifting off, or coming down, the friend's copy flying and the friend hidden, figAway)
+  const B = state.body, W = state.world, cell = W && W.at && W.cells[W.at], scene = state.background.kind !== "none" && !flight && !entering && !figAway;
+  if (!scene) return [];
+  const square = !!cell && state.background.kind === cell.kind, out = [];
+  if (B.rocket === "ride") {
+    if (W.space && cell && cell.planet === "home") out.push(["home", "⌂", "🏡 home", "to " + spaceHomeName(W), () => spaceHome()]);
+    else if (W.space && cell && cell.planet) { const P = spacePlanetOf(cell.planet); out.push(["land", "⇩", "🪐 land", "on " + (P ? P.name : "the planet"), () => landOn(cell.planet)]); }
+    if (!W.space && square && SCENES.starfield) out.push(["blast", "⇧", "🚀 blast off", "to outer space", () => blastToSpace()]);
+    // (each tap acts on the one played then: state.body is another object once the one played changes, and a chip may be kept)
+    if (!W.space) out.push(["out", "⏏", "⏏️ step out", teamOf().length ? "all of you" : "of the rocket", () => { state.body.rocket = "hover"; changed(); }]);
+  } else if (B.rocket === "hover" && !W.space) out.push(["board", "⤒", "🚀 board", teamOf().length ? "all of you" : "the rocket", () => { state.body.rocket = "ride"; changed(); }]);
+  return out;
+}
 // (Matthew 2026-11-21: "instead of everyone getting their own bubble, let's try to put the whole team in one: bubble, balloon
 // basket, rocket ship", and "the team shares a vehicle, when in the air. On the ground, separate horses are fine and more normal")
 // Flying, the team rides in the friend's craft (flyCraftSvg): each one seen from above as the friend is (topDownSvg, their own
