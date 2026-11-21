@@ -564,7 +564,8 @@ function flightDraw() {
     root = pic.querySelector(":scope > #fly");
     flyBuilt = { key, tiles: [...root.querySelectorAll("[data-tile]")], shown: null };
   }
-  const craft = root.querySelector("#fly-craft"), was = craft.dataset.look, look = JSON.stringify([flight.craft, flight.facing, state.face, state.hair, state.shirt, state.pants, state.costume, state.shoes, state.hands, state.person.id, teamFlyKey()]);   // (ticket 802: and the team aboard)
+  const craft = root.querySelector("#fly-craft"), was = craft.dataset.look, look = JSON.stringify([flight.craft, flight.facing, state.face, state.hair, state.shirt, state.pants, state.costume, state.shoes, state.hands, state.person.id, teamFlyKey(),
+    state.body.rocketStyle, state.body.catCoat, state.background.universe]);   // (ticket 802: and the team aboard; Matthew 2026-11-21: "rocket adjustment chips don't work in quilt mode?": its style too)
   if (was !== look) { craft.innerHTML = flyCraftSvg(); craft.dataset.look = look; }
   fitPic();   // (the picture fitted to its space, as drawNow does at its end: full screen, or the window resized, while flying)
   flyPlace();
