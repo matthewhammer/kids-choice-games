@@ -1378,7 +1378,9 @@ function drawNow() {
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)
   const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
-  if ((farDeep || farLegSvg) && !friendIsCat()) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
+  // (Matthew 2026-11-21: "certain rocket animations are drawing the friend's body outside of the rocket, perhaps even redundantly":
+  // in the rocket, the far leg and arm are not drawn on their own, outside its shell: the friend is drawn once, inside it)
+  if ((farDeep || farLegSvg) && !friendIsCat() && !rocketShell) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {

@@ -2756,6 +2756,19 @@ const spacePlanetOf = id => SPACE_WORLD_PLANETS.find(P => P.id === id);
 const spaceHomeName = S => { const h = S && S.home && worldById(S.home.world); return h ? worldTitle(h) : "the start world"; };
 // (the square in space where a planet is)
 const spaceKeyOf = (S, pid) => Object.keys(S.cells).find(k => S.cells[k].planet === pid) || SPACE_HOME;
+// 🛫 up into the sky: the rocket (and all in it) rising, smaller as it goes, out of the top of the picture; the quilt then, seen from
+// above, flying it (flightStart), from this square
+function rocketUp() {
+  if (entering || flight || !document.getElementById("figure")) return;
+  const pic = document.getElementById("pic"), up = pic.viewBox.baseVal.height * 1.1, wrap = figCopy();
+  state.body.rocket = "ride"; entering = true; figHide(true); rocketOutSync();
+  wrap.style.transformBox = "fill-box"; wrap.style.transformOrigin = "50% 100%";
+  const a = wrap.animate([{ transform: "translate(0px, 0px) scale(1)" }, { transform: "translate(0px, -6px) scale(1)", offset: 0.15 }, { transform: `translate(0px, ${f1(-up * 0.4)}px) scale(0.7)`, offset: 0.65 },
+                          { transform: `translate(0px, ${f1(-up)}px) scale(0.35)` }], { duration: 1300, easing: "ease-in", fill: "forwards" });
+  let over = false;
+  const done = () => { if (over) return; over = true; wrap.remove(); figHide(false); entering = false; flightStart("rocketride"); };
+  a.onfinish = done; setTimeout(done, 1900);
+}
 // 🚀 to outer space: from a planet, to its square; from anywhere else, to 🌍 home's, and that square remembered as the way home
 function blastToSpace() {
   if (entering) return;
@@ -2801,6 +2814,9 @@ function rocketActions() {
     if (W.space && cell && cell.planet === "home") out.push(["home", "⌂", "🏡 home", "to " + spaceHomeName(W), () => spaceHome()]);
     else if (W.space && cell && cell.planet) { const P = spacePlanetOf(cell.planet); out.push(["land", "⇩", "🪐 land", "on " + (P ? P.name : "the planet"), () => landOn(cell.planet)]); }
     if (!W.space && square && SCENES.starfield) out.push(["blast", "⇧", "🚀 blast off", "to outer space", () => blastToSpace()]);
+    // (Matthew 2026-11-21: "let's have a rocket nav action for 'elevated navigation' (so we can skip the backpack) and have a continuous
+    // experience boarding and going into the sky") 🛫 up into the sky: the quilt seen from above, flying the rocket
+    if (cell && (square || FLY_AWAY[state.background.kind])) out.push(["fly", "⤊", "🛫 fly up", W.space ? "over space" : "into the sky", () => rocketUp()]);
     // (each tap acts on the one played then: state.body is another object once the one played changes, and a chip may be kept)
     if (!W.space) out.push(["out", "⏏", "⏏️ step out", teamOf().length ? "all of you" : "of the rocket", () => { state.body.rocket = "hover"; changed(); }]);
   } else if (B.rocket === "hover" && !W.space) out.push(["board", "⤒", "🚀 board", teamOf().length ? "all of you" : "the rocket", () => { state.body.rocket = "ride"; changed(); }]);

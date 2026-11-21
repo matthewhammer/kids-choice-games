@@ -1440,3 +1440,9 @@ body.items-open .team-bar { display: none; }
 /* (ticket 813) the welcome's two ways on; the tours, lit for a moment when asked for */
 .welcome-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .tours-pick.tours-lit { outline: 3px solid var(--accent); outline-offset: 2px; transition: outline-color 0.3s; }
+/* (Matthew 2026-11-21) 🚀 outer space, over the height slider; 🛬 land here, under the flying rocket */
+.fly-side .fly-blast { display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 2px 4px; }
+.fly-side .fly-blast[hidden] { display: none; }
+.fly-side .fly-blast-words { font-size: 0.55em; white-space: nowrap; }
+.fly-hud .way-arrow.fly-landhere { pointer-events: auto; opacity: 1; }
+.fly-hud .way-arrow.fly-landhere[hidden] { display: none; }

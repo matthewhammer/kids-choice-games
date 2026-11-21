@@ -698,6 +698,8 @@ function flySpacePlace(x, y) {
   if (!flySpaceEl || !flyHudEl) return;
   const on = !!flight && flight.craft === "rocketride" && !flight.landing && !!SCENES.starfield && !flyWorld().space;   // (ticket 812: not over space itself)
   if (flySpaceEl.hidden === on) flySpaceEl.hidden = !on;
+  const blast = flyHudEl.querySelector("#fly-blast"); if (blast && blast.hidden === on) blast.hidden = !on;   // (🚀 outer space, over the slider)
+  flyLandHerePlace(x, y);
   if (!on) return;
   const M = document.getElementById("pic").getScreenCTM(), box = flyHudEl.getBoundingClientRect();
   if (!M || !box.width) return;
@@ -706,6 +708,18 @@ function flySpacePlace(x, y) {
   if (flySpaceEl.style.left !== l) flySpaceEl.style.left = l;
   if (flySpaceEl.style.top !== t) flySpaceEl.style.top = t;
   if (flySpaceEl.style.getPropertyValue("--arrow-scale") !== String(sc)) flySpaceEl.style.setProperty("--arrow-scale", String(sc));
+}
+// (🛬 land here, under the craft, as 🚀 is over its nose: placed with it, x and y the nose's point in the picture)
+function flyLandHerePlace(x, y) {
+  const b = flyHudEl && flyHudEl.querySelector("#fly-landhere"); if (!b) return;
+  const on = !!flight && !flight.landing;
+  if (b.hidden === on) b.hidden = !on;
+  if (!on) return;
+  const craft = document.querySelector("#fly-craft"), box = flyHudEl.getBoundingClientRect(), r = craft && craft.getBoundingClientRect(); if (!r || !r.width || !box.width) return;
+  const sc = ((state.access || DEFAULTS.access).arrowSize ?? 100) / 100, p = { x: r.left + r.width / 2, y: r.bottom + 26 * sc };   // (under the craft as drawn, whatever its size)
+  const l = Math.max(22, Math.min(box.width - 22, p.x - box.left)).toFixed(0) + "px", t = Math.max(22, Math.min(box.height - 22, p.y - box.top)).toFixed(0) + "px";
+  if (b.style.left !== l) b.style.left = l; if (b.style.top !== t) b.style.top = t;
+  if (b.style.getPropertyValue("--arrow-scale") !== String(sc)) b.style.setProperty("--arrow-scale", String(sc));
 }
 function flySpace() {
   if (!flight || flight.craft !== "rocketride" || entering || !SCENES.starfield) return;
@@ -733,6 +747,10 @@ if (flyHudEl) {
     for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) b.addEventListener(ev, () => set(false)); };
   hold("#fly-up", "up"); hold("#fly-down", "down");
   flyHudEl.querySelector("#fly-land").addEventListener("click", () => flightLand());
+  // (Matthew 2026-11-21: "for the elevation controls in quilt mode, let's offer a land action below the rocket to mirror the land control
+  // below the elevation slider. and, let's add a button above that slider for 'blast off into outer space'", "or 'outer space'")
+  flyHudEl.querySelector("#fly-landhere").addEventListener("click", e => { e.currentTarget.blur(); flightLand(); });
+  flyHudEl.querySelector("#fly-blast").addEventListener("click", e => { e.currentTarget.blur(); flySpace(); });
 }
 // a tap or a click on the quilt: fly there (before the picture's own walking and choosing: nothing else in it is there to touch)
 for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
