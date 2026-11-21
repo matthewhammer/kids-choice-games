@@ -566,6 +566,7 @@
   /* (ticket 342, Matthew: "when we hover over a placeable object, it glows like the doors, etc.") every placed thing, not the room's own */
   #bg [data-lever]:hover, #bg .thing[data-drag^="thing:"]:hover { filter: drop-shadow(0 0 3px rgba(255, 214, 120, 0.95)) drop-shadow(0 0 9px rgba(255, 190, 80, 0.7)); }
   #bg [data-lever-thing] { cursor: pointer; }
+  #fly .fly-planet { cursor: pointer; } #fly .fly-planet .fly-glow { opacity: 0; transition: opacity 0.2s; } #fly .fly-planet:hover .fly-glow { opacity: 0.4; }
   #bg .portal:hover { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f) brightness(1.08); }
   /* (ticket 145) the picture the controller's ✨ would go into: its glow breathes */
   #bg .enter-glow { animation: enter-glow 1.3s ease-in-out infinite alternate; }

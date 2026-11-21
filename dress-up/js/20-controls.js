@@ -162,9 +162,8 @@ const TABS = [
     ["choice", "rocketStyle", "✨ the rocket's style, after a sign of the zodiac", ROCKET_STYLES],
     // (ticket 800) the friend as a cat, in 🐱 the cat universe: their coat
     ["choice", "catCoat", "🐱 your coat, as a cat (in the cat universe)", [[0, "🟧 orange, white chest"], [1, "⬛ black, white chest"], [2, "🩶 grey"], [3, "⬜ white"]]],
-    // (ticket 799) 🚀 a trip in the rocket: up out of the picture, and down at the place chosen; 🏡 straight back
-    ...ROCKET_TRIPS.map(([kd, name]) => ["action", "rocketTo_" + kd, `🚀 fly to ${name}`, () => rocketTo(kd)]),
-    ["action", "rocketHome", "🏡 fly home, where the trips began", () => rocketHome()],
+    // (ticket 799's 🚀 fly to … chips, one a place, and 🏡 fly home: taken away, Matthew 2026-11-21: "these "fly to" buttons generally
+    // don't work please remove them all we have a tour system now instead"; the rocket goes by its own chips beside the friend)
     // (ticket 496) which side of it they walk on, leading it: one side, whichever way they go
     ["choice", "horseLead", "🚶 lead it from its", [["left", "⬅️ left side (the usual)"], ["right", "➡️ right side"]]],
     // (ticket 498: "just release and let the kids decide") its armour: none, or one of six sets; the cloth and the plume in the
@@ -1240,8 +1239,6 @@ const SHOWN_WHEN = {
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
   "body.rocketStyle": b => (b.rocket || "none") !== "none",   // (ticket 799)
   "body.catCoat": b => state.background.universe === "cats" || state.person.animal === "cat",   // (ticket 800; ticket 802: or a cat, played)
-  ...Object.fromEntries(ROCKET_TRIPS.map(([kd]) => ["body.rocketTo_" + kd, b => (b.rocket || "none") !== "none" && state.background.kind !== kd])),
-  "body.rocketHome": b => (b.rocket || "none") !== "none" && trips.length > 0,
   "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
   "body.horseMarkColor": b => (b.horse || "none") !== "none" && (b.horseMark || "none") !== "none",
   // (ticket 498: the parade armour's cloth is its saddle blanket, led too)

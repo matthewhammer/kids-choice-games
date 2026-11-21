@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.524 (2026-11-21)
+
+Everything in 0.0.523, plus:
+
+- **🪐 A planet in the quilt is a way down onto it** (Matthew: "we should permit the user to hover over the planets in the quilt mode and go to surface directly"). Flying the rocket over outer space, each planet glows under the pointer; a tap flies the rocket across to its square, down into it, and on into the planet, landing on its surface (🏡 home's planet: home, to the square they blasted off from). Any other tap, or the arrows, call it off. In the speed run's space course.
+- **Fixed: planets cut off in the quilt** (Matthew: "planet Zib is cut off"). A planet and its ring are drawn inside their own square.
+- **The 🚀 fly to … chips are gone** (Matthew: "these 'fly to' buttons generally don't work. please remove them all. we have a tour system now instead"). 🧍 Body's rocket no longer lists a trip to each place and 🏡 fly home; the rocket goes by its own chips beside the friend (🚀 blast off, 🛫 fly up, 🪐 land, 🏡 home, ⏏️ step out), and 🤖 Automated play's tours go the places for you.
+
 ## 0.0.523 (2026-11-21)
 
 Everything in 0.0.522, plus:

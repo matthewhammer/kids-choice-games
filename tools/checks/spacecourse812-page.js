@@ -70,13 +70,13 @@ window.__courseRun = async (opts = {}) => {   // (opts.only: "variations", the t
       ok(tag + ": in the start world, riding, 🚀 blast off offered", !s.space && s.at === start && s.acts.includes("blast"), s);
       aboard(tag, s, K);
       s = await trip(tag + ": 🚀 blast off", "blast", () => !!state.world.space);
-      ok(tag + ": in outer space, at home's square, 🏡 home offered", s.space && s.at === "0,2" && same(s.acts, ["home"]), s);
+      ok(tag + ": in outer space, at home's square, 🏡 home offered", s.space && s.at === "0,2" && same(s.acts, ["home", "fly"]), s);
       aboard(tag + ", in space", s, K);
       for (const pid of plan[si]) {
         const key = planetKey(pid), got = await goTo(key); s = look();
-        ok(tag + ": across space to " + pid + "'s square " + key + " by the nav arrows", got === key && same(s.acts, ["land"]), { got, s });
+        ok(tag + ": across space to " + pid + "'s square " + key + " by the nav arrows", got === key && same(s.acts, ["land", "fly"]), { got, s });
         s = await trip(tag + ": 🪐 land on " + pid, "land", () => state.world.planet === pid, { into: true });
-        ok(tag + ": on " + pid + ", 👽 its surface, blast off and step out offered", s.planet === pid && s.kind === "alienplanet" && same(s.acts, ["blast", "out"]), s);
+        ok(tag + ": on " + pid + ", 👽 its surface, blast off and step out offered", s.planet === pid && s.kind === "alienplanet" && same(s.acts, ["blast", "fly", "out"]), s);
         aboard(tag + ", on " + pid, s, K);
         let r = await act("out", () => state.body.rocket === "hover"); await w(900); s = look();
         ok(tag + ": ⏏️ stepped out on " + pid + ": the rocket beside them, 🚀 board offered", r.ok && s.rocket === "hover" && same(s.acts, ["board"]), s);
@@ -85,10 +85,10 @@ window.__courseRun = async (opts = {}) => {   // (opts.only: "variations", the t
         ok(tag + ": walked " + way + " on " + pid + ", " + at0 + " to " + to + ", as a team", got2 === to, { got2, s });
         outWith(tag + ", " + pid + " " + to, s, K);
         r = await act("board", () => state.body.rocket === "ride"); s = look();
-        ok(tag + ": 🚀 boarded on " + pid, r.ok && same(s.acts, ["blast", "out"]), s);
+        ok(tag + ": 🚀 boarded on " + pid, r.ok && same(s.acts, ["blast", "fly", "out"]), s);
         aboard(tag + ", boarded on " + pid, s, K);
         s = await trip(tag + ": 🚀 blast off from " + pid, "blast", () => !!state.world.space, { outOf: true });
-        ok(tag + ": back in space at " + pid + "'s square", s.space && s.at === key && same(s.acts, ["land"]), s);
+        ok(tag + ": back in space at " + pid + "'s square", s.space && s.at === key && same(s.acts, ["land", "fly"]), s);
         aboard(tag + ", back in space", s, K);
       }
       const got = await goTo("0,2");
@@ -133,6 +133,22 @@ window.__courseRun = async (opts = {}) => {   // (opts.only: "variations", the t
     const left = Object.values(state.peopleAway).filter(Q => Q.team && Q.place && Q.place.world + "|" + Q.place.key === from);
     ok("made in the air: none of the team left where the flight took off", left.length === 0 && s.here !== from, { from, s, left: left.map(Q => Q.id) });
     ok("made in the air: all of the team aboard after landing", s.rocket === "ride" && s.portholes === s.team.length, s);
+    // (Matthew 2026-11-21: "planet Zib is cut off"; "we should permit the user to hover over the planets in the quilt mode and go to
+    // surface directly") over outer space's quilt: each planet inside its own square; one tapped, flown to, landed on, its surface
+    s = await trip("the quilt: 🚀 blast off again", "blast", () => !!state.world.space);
+    rocketUp(); await until(() => !!flight, 6000);
+    flight.want = 1; flyGo(); await until(() => flight && flight.h > 0.97, 8000); await w(400);
+    const over = [...document.querySelectorAll("#fly .fly-planet")].map(g => { const a = g.getBoundingClientRect(), t = g.closest("[data-tile]").firstElementChild.getBoundingClientRect();
+      return { p: g.dataset.planet, out: a.width > 0 && (a.left < t.left - 1 || a.right > t.right + 1 || a.top < t.top - 1 || a.bottom > t.bottom + 1) }; });
+    ok("the quilt over outer space: its planets drawn, each inside its own square", over.length >= 4 && over.every(o => !o.out), over);
+    const zib = document.querySelector('#fly .fly-planet[data-planet="zib"] .fly-glow');
+    ok("the quilt over outer space: zib there to tap", !!zib, over);
+    if (zib) {
+      zib.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, button: 0 }));
+      const got = await until(() => !flight && state.world.planet === "zib" && settled(), 25000); await w(600); s = look();
+      ok("🪐 zib tapped in the quilt: flown to, down, and into the planet, on its surface, riding", got && s.kind === "alienplanet" && s.rocket === "ride" && same(s.acts, ["blast", "fly", "out"]), s);
+      aboard("zib, landed on from the quilt", s, s.team.length);
+    }
   } catch (e) { ok("the course ran to its end", false, String(e && e.stack || e)); }
   C.done = true;
 };

@@ -277,10 +277,16 @@ const FLY_LOOKS = {
   starfield: (k, o, cell = {}) => { const look = cell.spacePlanet !== undefined ? cell.spacePlanet : o.spacePlanet, L = PLANET_LOOKS[look];
     const x = FT * (0.12 + 0.76 * Math.max(0, Math.min(100, cell.spacePlanetX ?? o.spacePlanetX ?? 72)) / 100), y = FT * 0.42, r = FT * 0.26 * Math.max(0.3, Math.min(1, (cell.spacePlanetSize ?? o.spacePlanetSize ?? 34) / 52));
     const name = cell.planet === "home" ? "🏡 home" : cell.planet && typeof spacePlanetOf === "function" ? (spacePlanetOf(cell.planet) || {}).name || "" : "";
-    return flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
-      (L ? (L.ring ? flyE(x, y, r * 1.7, r * 0.42, "none", ` stroke="${L.ring}" stroke-width="${f1(r * 0.12)}" opacity="0.9"`) : "") + flyC(x, y, r, L.base) +
-           flyC(x - r * 0.25, y - r * 0.25, r * 0.7, (L.band || L.land || L.glow || L.base) + "88") + flyC(x + r * 0.35, y + r * 0.3, r * 0.75, (L.dark || "#000000") + "66") +
-           (name ? `<text x="${f1(x)}" y="${f1(y + r + 70)}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">${name}</text>` : "") : ""); },
+    // (Matthew 2026-11-21: "planet Zib is cut off") the planet and its ring kept inside its square
+    const half = L ? (L.ring ? 1.7 : 1.1) * r : 0, px = clamp(x, half + 16, FT - half - 16);
+    const planet = L ? (L.ring ? flyE(px, y, r * 1.7, r * 0.42, "none", ` stroke="${L.ring}" stroke-width="${f1(r * 0.12)}" opacity="0.9"`) : "") + flyC(px, y, r, L.base) +
+           flyC(px - r * 0.25, y - r * 0.25, r * 0.7, (L.band || L.land || L.glow || L.base) + "88") + flyC(px + r * 0.35, y + r * 0.3, r * 0.75, (L.dark || "#000000") + "66") +
+           (name ? `<text x="${f1(px)}" y="${f1(y + r + 70)}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">${name}</text>` : "") : "";
+    // (Matthew 2026-11-21: "we should permit the user to hover over the planets in the quilt mode and go to surface directly") in
+    // outer space, a planet glows under the pointer, and a tap on it flies there and lands on it (flyPlanetGo)
+    const go = L && cell.planet ? `<g class="fly-planet" data-planet="${cell.planet}" data-key="${k}"><title>${cell.planet === "home" ? "🏡 Home: down to " + (typeof spaceHomeName === "function" ? spaceHomeName(state.world.space ? state.world : null) : "the start world") : "🪐 Land on " + name}</title>` +
+      flyC(px, y, r * 1.25, "#ffe9a0", ` class="fly-glow"`) + planet + `</g>` : planet;
+    return flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") + go; },
 };
 FLY_LOOKS.bubbleroom = FLY_LOOKS.bubblespace;
 // (ticket 798) the space station's rooms from above: a metal deck, its panel lines, a round porthole
@@ -617,8 +623,8 @@ function flightStart(craft) {
 }
 function flightLand(now = false) {
   if (!flight) return;
-  if (!now) { flight.landing = true; flight.want = null; flight.goal = null; flyGo(); return; }
-  const W = flyWorld(), c = Math.floor(flight.x), r = Math.floor(flight.y), key = `${c},${r}`;
+  if (!now) { flight.landing = true; flight.want = null; flight.goal = null; flight.then = null; flyGo(); return; }
+  const then = flight.then, W = flyWorld(), [c, r] = then ? then.key.split(",").map(Number) : [Math.floor(flight.x), Math.floor(flight.y)], key = `${c},${r}`;
   if (!W.cells[key]) { flight.landing = false; flight.want = 0.12; flySay("🌫️ Nowhere to land here: fly over a place first."); flyGo(); return; }
   const away = flight.world, fx = flight.x - c;
   flight = null; flyBuilt = null;
@@ -629,6 +635,16 @@ function flightLand(now = false) {
   else if (key !== W.at) worldEnter(key, null, false);
   flyHudShow();
   changed();
+  // (a planet tapped in the quilt: down into its square of space, then on, into the planet; 🏡 home's, home)
+  if (then) setTimeout(() => { if (!flight && !entering) { if (then.pid === "home") spaceHome(); else landOn(then.pid); } }, 350);
+}
+// (Matthew 2026-11-21: "we should permit the user to hover over the planets in the quilt mode and go to surface directly") a planet
+// tapped, flying over outer space: across to its square at the height they are, then down, then into the planet (flightLand)
+function flyPlanetGo(key, pid) {
+  if (!flight || !flyWorld().space || !flyWorld().cells[key]) return;
+  const [c, r] = key.split(",").map(Number);
+  flight.goal = [c + 0.5, r + 0.68]; flight.landing = true; flight.want = null; flight.then = { key, pid };
+  flyGo();
 }
 // (a craft's button: off, it takes off; flying, it brings them down)
 function flightToggle(craft) { if (flight) flightLand(); else flightStart(craft); }
@@ -641,7 +657,7 @@ function flyTick(t) {
   const W = flyWorld(), S = flySpan();
   // the way: the arrows held (the keyboard's, the controller's), else toward a spot tapped
   let vx = (flyKeys.has("ArrowRight") ? 1 : 0) - (flyKeys.has("ArrowLeft") ? 1 : 0) + flight.pad[0], vy = (flyKeys.has("ArrowDown") ? 1 : 0) - (flyKeys.has("ArrowUp") ? 1 : 0) + flight.pad[1];
-  if (vx || vy) flight.goal = null;
+  if (vx || vy) { flight.goal = null; if (flight.then) { flight.then = null; flight.landing = false; } }
   else if (flight.goal) { const dx = flight.goal[0] - flight.x, dy = flight.goal[1] - flight.y, d = Math.hypot(dx, dy);
     if (d < 0.01) flight.goal = null; else { const s = Math.min(1, d / (0.25 * S)); vx = dx / d * s; vy = dy / d * s; } }
   const len = Math.hypot(vx, vy);
@@ -660,7 +676,8 @@ function flyTick(t) {
     if (f !== flight.facing) { flight.facing = f; flightDraw(); } }
   // the height: climbing or sinking while held; toward a height wanted (taking off); down, landing
   const up = flyKeys.has("up") || flyHud.up || flight.padUp, down = flyKeys.has("down") || flyHud.down || flight.padDown;
-  if (up || down) { flight.want = null; flight.landing = false; flight.h = clamp(flight.h + (up ? 0.5 : -0.5) * dt, 0, 1); }
+  if (up || down) { flight.want = null; flight.landing = false; flight.then = null; flight.h = clamp(flight.h + (up ? 0.5 : -0.5) * dt, 0, 1); }
+  else if (flight.landing && flight.then && flight.goal) { /* (to the planet's square first, then down) */ }
   else if (flight.landing) flight.h = Math.max(0, flight.h - Math.max(0.5, 1.6 * flight.h) * dt);
   else if (flight.want != null) { const d = flight.want - flight.h; flight.h += Math.sign(d) * Math.min(Math.abs(d), 0.4 * dt); if (Math.abs(d) < 0.002) flight.want = null; }
   if (flight.h <= 0 && (flight.landing || down)) { flightLand(true); return; }
@@ -757,6 +774,9 @@ for (const ev of ["pointerdown", "click"]) document.addEventListener(ev, e => {
   if (!flight || !e.target.closest || !e.target.closest("#pic")) return;
   e.stopPropagation(); e.preventDefault();
   if (ev !== "pointerdown") return;
+  const planet = e.target.closest(".fly-planet");
+  if (planet) { flyPlanetGo(planet.dataset.key, planet.dataset.planet); return; }
+  if (flight.then) { flight.then = null; flight.landing = false; }   // (somewhere else tapped: no longer down onto that planet)
   const pic = document.getElementById("pic"), m = pic.getScreenCTM();
   if (!m) return;
   const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()), vb = pic.viewBox.baseVal, g = vb.width / (flySpan() * FT);
