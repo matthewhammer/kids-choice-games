@@ -1881,57 +1881,94 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   if (kind === "people") {
     const wrap = el("div", { class: "people" });
     box.append(wrap);
-    let shown = null, newTpl = null;
+    let shown = null, newTpl = null, groupOpen = null;   // (groupOpen: the people's group whose cards are shown)
     const pathOpen = new Set();   // (ticket 599: the people whose path box is open)
     const render = () => {
       peopleInit();
       const me = state.person, all = peopleAll(), here = personHere(), tpls = all.filter(p => p.template);
-      const sig = JSON.stringify([me, all.map(p => [p.id, personTitle(p), !!p.template, p.from, p.team ? "team" : p.place || null]), here && [here.world, here.key], newTpl,
+      const sig = JSON.stringify([me, all.map(p => [p.id, personTitle(p), !!p.template, p.from, p.team ? "team" : p.place || null]), here && [here.world, here.key], newTpl, groupOpen,
                                   all.filter(p => p.place).map(p => personWhere(p))]);
       if (sig === shown) return;
       shown = sig;
       if (!tpls.some(t => t.id === newTpl)) newTpl = tpls.length ? tpls[0].id : null;
       const mark = p => (p.template ? "⭐ " : p.animal === "cat" ? "🐱 " : "🧍 ") + personTitle(p);
-      const chips = all.map(p => el("button", { class: "person-chip", "aria-pressed": String(p === me), "data-person": p.id,
-        title: p === me ? "The one in the picture: every tab dresses them, and they are the one who moves" : "Dress this person: they come into the picture, and the one now stays where they stand",
-        onclick: () => { if (p !== me) personSwitch(p.id); } }, mark(p)));
+      // (Matthew 2026-11-21: "the people menus don't employ enough sub-structure to make sense as we add more people. let's look at
+      // the other menu systems that are complex, like the music one for instance, and follow those design patterns", and "always
+      // be knolling", then "we will probably want subgroups for people, each with their own sub menu. groups are: friend team,
+      // background 1 with a friend, background 2 with a friend, etc") Knolled as 🎵 Music is, like with like, in three boxes. 🧍 you
+      // play: your name and ⭐. 👥 the people, by group: a chip for each group (🤝 the friend team, then each place with people in
+      // it, then those in no place), as 🎶 genre/track selection's genres; the group chosen shows its people below, a card each in a
+      // grid as the mixing board's strips: their name (a chip: tap, and you play them) and 🤝 follows team at its top, where they
+      // are under it, their buttons in a row. ➕ new people: the ways to make one.
+      const team = teamOf(), staying = all.filter(p => p !== me && !p.team);
+      const card = (cls, cap, kids) => el("div", { class: "chipset people-card " + cls }, [el("div", { class: "cap" }, cap), ...kids]);
+      const line = (name, kids) => el("div", { class: "people-line" }, [el("span", { class: "people-lbl" }, name), el("div", { class: "row" }, kids)]);
+      const chip = p => el("button", { class: "person-chip", "aria-pressed": String(p === me), "data-person": p.id,
+        title: p === me ? "The one you play: every tab dresses them, and they are the one who moves" : `Play ${personTitle(p)}: they step forward${p.team ? ", and the team follows them" : " where they stand"}`,
+        onclick: () => { if (p !== me) personSwitch(p.id); } }, mark(p));
       const nameBox = el("input", { type: "text", maxlength: String(PERSON_NAME_MAX), size: "14", value: String(me.name || ""), placeholder: personTitle({ ...me, name: "" }), "aria-label": "this person's name",
         onchange: e => { me.name = e.target.value.trim().slice(0, PERSON_NAME_MAX); changed(); } });
       const pick = tpls.length ? el("select", { "aria-label": "the template for a new person", onchange: e => { newTpl = e.target.value; shown = null; render(); } },
         tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, "⭐ " + personTitle(t)))) : null;
-      const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
-        el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
-        // (ticket 802) 🤝 follows team, a toggle: pressed, they go where the friend goes; not, they stay in their square
-        // (Matthew 2026-11-21: "'stays' should say 'follows team'")
-        el("button", { class: "person-team", "aria-pressed": String(!!p.team), ...(p.team || here ? {} : { disabled: "" }),
-          title: p.team ? "Follows the team: they go where the friend goes. Press again and they stay where they are now" : here ? "Press, and they follow the team: they go where the friend goes. Not pressed, they stay in their square" : "Go to a place first: the team goes from there",
-          onclick: () => teamJoin(p.id, !p.team) }, p.team ? "🤝 follows team ✓" : "🤝 follows team"),
-        ...(p.team ? [] : [el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here")]),
-        ...(p.place && !p.team ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
-        // (ticket 599) a path to walk where they stand, looped: its box opened below their row
-        ...(p.place && !p.team ? [el("button", { class: "person-path", "aria-pressed": String(pathOpen.has(p.id)), title: "A path for them to walk here, looped, with pauses and poses",
-          onclick: () => { pathOpen.has(p.id) ? pathOpen.delete(p.id) : pathOpen.add(p.id); shown = null; render(); } }, p.path && String(p.path).trim() ? "🚶 path ✓" : "🚶 path")] : []),
-        el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
-        el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]))
-        .flatMap((row, j) => { const p = all.filter(q => q !== me)[j]; if (!p.place || p.team || !pathOpen.has(p.id)) return [row];
+      const nth = n => n + (n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th");
+      // a person's card: their name and 🤝 follows team; where they are; their buttons; (ticket 599) their path's box, the card then the grid's width
+      const strip = (p, where) => {
+        const open = !p.team && p.place && pathOpen.has(p.id);
+        const kids = [
+          el("div", { class: "person-head" }, [chip(p),
+            // (ticket 802) 🤝 follows team, a toggle: pressed, they go where the friend goes; not, they stay in their square
+            // (Matthew 2026-11-21: "'stays' should say 'follows team'")
+            el("button", { class: "person-team", "aria-pressed": String(!!p.team), ...(p.team || here ? {} : { disabled: "" }),
+              title: p.team ? "Follows the team: they go where the friend goes. Press again and they stay where they are now" : here ? "Press, and they follow the team: they go where the friend goes. Not pressed, they stay in their square" : "Go to a place first: the team goes from there",
+              onclick: () => teamJoin(p.id, !p.team) }, p.team ? "🤝 follows team ✓" : "🤝 follows team")]),
+          el("div", { class: "hint person-where" }, where),
+          el("div", { class: "row" }, [
+            ...(p.team ? [] : [el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here")]),
+            ...(p.place && !p.team ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
+            ...(p.place && !p.team ? [el("button", { class: "person-path", "aria-pressed": String(pathOpen.has(p.id)), title: "A path for them to walk here, looped, with pauses and poses",
+              onclick: () => { pathOpen.has(p.id) ? pathOpen.delete(p.id) : pathOpen.add(p.id); shown = null; render(); } }, p.path && String(p.path).trim() ? "🚶 path ✓" : "🚶 path")] : []),
+            el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
+            el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")])];
+        if (open) {
           const ta = el("textarea", { class: "story-text", rows: 5, spellcheck: "false", placeholder: PERSON_PATH_EXAMPLE, "aria-label": `${personTitle(p)}'s path` });
           ta.value = p.path || "";
           let t = 0; ta.addEventListener("input", () => { p.path = ta.value; persist(); clearTimeout(t); t = setTimeout(changed, 500); });
-          return [row, el("div", { class: "person-path-box story" }, [ta, el("div", { class: "row" }, [
+          kids.push(el("div", { class: "person-path-box story" }, [ta, el("div", { class: "row" }, [
             el("button", { onclick: () => { if (!ta.value.trim()) { ta.value = PERSON_PATH_EXAMPLE; p.path = ta.value; } changed(); } }, "▶ walk it"),
             el("button", { onclick: () => { p.path = ""; ta.value = ""; changed(); } }, "⏹ stop (clear)")]),
-            el("div", { class: "hint" }, "a step a line, looped: walk X [Z] (in % across, and toward the front) · wait S · pose stand/sit/lie/meditate/hug/dance · face left/right/front/back · # a note. Empty, ▶ walks the example.")])]; });
-      wrap.replaceChildren(el("div", { class: "cap" }, "👥 people"), el("div", { class: "row people-chips" }, chips),
-        el("div", { class: "hint" }, `🧍 dressing ${personTitle(me)}: every tab dresses them, and they are the one who moves`),
-        el("label", { class: "row person-name-row" }, [el("span", { class: "hint" }, "✏️ their name:"), nameBox]),
-        el("div", { class: "row" }, [el("button", { class: "person-template", "aria-pressed": String(!!me.template), onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template: new people can be made from them")]),
-        el("div", { class: "row person-new-row" }, tpls.length ? [el("span", { class: "hint" }, "➕ a new person from"), pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
-                                                         : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
-        // (ticket 459: or from a costume, chosen in a box laid over the panels, to compare with the dropdown above)
-        el("div", { class: "row" }, [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "➕ from a costume")]),
-        // (ticket 802) a cat for the team: beside the friend, going where they go (in the cat universe, a person)
-        el("div", { class: "row" }, [el("button", { class: "person-new-cat", title: here ? "A cat for your team: it comes beside you and goes where you go. In the cat universe, where you are a cat, it is a person" : "A cat (go to a place first, for it to join your team there)", onclick: () => personNewCat() }, "➕ 🐱 a cat for the team")]),
-        ...(others.length ? [el("div", { class: "cap" }, "🧍 the others"), ...others] : []));
+            el("div", { class: "hint" }, "a step a line, looped: walk X [Z] (in % across, and toward the front) · wait S · pose stand/sit/lie/meditate/hug/dance · face left/right/front/back · # a note. Empty, ▶ walks the example.")]));
+        }
+        return el("div", { class: "strip person-row" + (p.team ? " on-team" : "") + (open ? " path-open" : ""), "data-person-row": p.id }, kids);
+      };
+      // the groups: the friend team (first, while it has anyone), then each place with people staying in it (here first), then
+      // those in no place; each a chip with how many, and the one chosen (groupOpen; at first the team, or here) shows its cards
+      const whereKey = p => !p.place ? "~" : here && p.place.world === here.world && p.place.key === here.key ? "" : personWhere(p);
+      const places = [...new Set(staying.map(whereKey))].sort();
+      const groups = [...(team.length ? [["team", "🤝 friend team", team]] : []),
+                      ...places.map(k => [k, k === "" ? "📍 here" : k === "~" ? "🫥 in no place" : k, staying.filter(p => whereKey(p) === k)])];
+      if (!groups.some(([k]) => k === groupOpen)) groupOpen = groups.length ? (groups.find(([k]) => k === "team" || k === "") || groups[0])[0] : null;
+      const open = groups.find(([k]) => k === groupOpen);
+      const groupChips = groups.map(([k, name, ps]) => el("button", { class: "people-group-chip", "aria-pressed": String(k === groupOpen), "data-group": k,
+        title: k === "team" ? `The friend team: the ones who follow ${personTitle(me)}` : `The people staying ${k === "~" ? "in no place" : "in this place"}`,
+        onclick: () => { groupOpen = k; shown = null; render(); } }, `${name} · ${ps.length}`));
+      const cards = !open ? [] : open[0] === "team"
+        ? open[2].map((p, i) => strip(p, `${nth(i + 1)} in line, behind ${personTitle(i ? team[i - 1] : me)}`))
+        : open[2].map(p => strip(p, p.place ? personWhere(p) : "in no place: 📍 here puts them beside you"));
+      const boxes = [
+        card("people-you", `🧍 you play ${personTitle(me)}`, [
+          el("label", { class: "row person-name-row" }, [el("span", { class: "people-lbl" }, "✏️ name"), nameBox,
+            el("button", { class: "person-template", "aria-pressed": String(!!me.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(me.id, !me.template) }, "⭐ a template")]),
+          el("div", { class: "hint" }, "every tab dresses the one you play, and they are the one who moves; tap someone's name below to play them")]),
+        ...(groups.length ? [card("people-groups", "👥 the people, by group", [
+          line("group", groupChips),
+          el("div", { class: "people-grid" }, cards)])] : []),
+        card("people-new", "➕ new people", [
+          el("div", { class: "people-line person-new-row" }, [el("span", { class: "people-lbl" }, "⭐ from"), el("div", { class: "row" }, tpls.length ? [pick, el("button", { class: "person-new", onclick: () => personNew(newTpl) }, "➕ new person")]
+                                                                                                        : [el("span", { class: "hint" }, "make someone ⭐ a template, to make new people from them")])]),
+          // (ticket 459: or from a costume, chosen in a box laid over the panels; ticket 802: a cat for the team, beside the friend, going where they go)
+          line("➕ or", [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "🎭 from a costume"),
+            el("button", { class: "person-new-cat", title: here ? "A cat for your team: it comes beside you and goes where you go. In the cat universe, where you are a cat, it is a person" : "A cat (go to a place first, for it to join your team there)", onclick: () => personNewCat() }, "🐱 a cat for the team")])])];
+      wrap.replaceChildren(...boxes);
     };
     syncs.push(render);
   }
