@@ -2582,18 +2582,26 @@ function teamNext() {
   personSwitch(t[0].id);
   return true;
 }
-// the team over the picture: the one played, then the line; a tap on one plays them
+// the team over the picture: 🤝, a toggle (Matthew 2026-11-21: "let's hide the list of friend chips on the team when that 'team members'
+// chip is inactive; when active, it looks like the current view (except also 'pushed down')"); on, pressed, the one played, then the
+// line, a tap on one plays them. Whether it is on is this browser's own (localStorage), off to begin with
+const TEAM_BAR_KEY = "dress-up-team-bar";
+let teamBarOpen = false;
+try { teamBarOpen = localStorage.getItem(TEAM_BAR_KEY) === "1"; } catch (_) { /* (off) */ }
 function teamBarSync() {
   const bar = document.getElementById("team-bar"); if (!bar) return;
   const team = teamOf(), on = team.length > 0 && (state.background.kind !== "none" || !!flight);
-  const sig = on ? JSON.stringify([state.person.id, personTitle(state.person), state.person.animal, team.map(P => [P.id, personTitle(P), P.animal]), !!flight]) : "";
+  const sig = on ? JSON.stringify([teamBarOpen, state.person.id, personTitle(state.person), state.person.animal, team.map(P => [P.id, personTitle(P), P.animal]), !!flight]) : "";
   if (bar.dataset.sig === sig) return;
   bar.dataset.sig = sig; bar.hidden = !on;
   if (!on) { bar.replaceChildren(); return; }
-  bar.replaceChildren(el("span", { class: "team-cap", title: "Your team: they go where you go. Tap one to play them (Q on the keyboard: the next one)" }, "🤝"),
+  const cap = el("button", { type: "button", class: "team-cap", "aria-pressed": String(teamBarOpen), "aria-label": "Your team",
+    title: teamBarOpen ? "Your team: they go where you go. Tap one to play them (Q on the keyboard: the next one). Tap 🤝 to hide them" : `Your team: ${team.length + 1} of you. Tap to show them`,
+    onclick: e => { e.currentTarget.blur(); teamBarOpen = !teamBarOpen; try { localStorage.setItem(TEAM_BAR_KEY, teamBarOpen ? "1" : "0"); } catch (_) { /* (this visit) */ } teamBarSync(); } }, "🤝");
+  bar.replaceChildren(cap, ...(teamBarOpen ? [
     el("button", { class: "team-chip", "aria-pressed": "true", title: "The one you play now" }, (state.person.animal === "cat" ? "🐱 " : "") + personTitle(state.person)),
     ...team.map(P => el("button", { class: "team-chip", "aria-pressed": "false", ...(flight ? { disabled: "" } : {}),
-      title: `Play ${personTitle(P)}: they step forward, and the others follow them`, onclick: e => { e.currentTarget.blur(); personSwitch(P.id); } }, (P.animal === "cat" ? "🐱 " : "") + personTitle(P))));
+      title: `Play ${personTitle(P)}: they step forward, and the others follow them`, onclick: e => { e.currentTarget.blur(); personSwitch(P.id); } }, (P.animal === "cat" ? "🐱 " : "") + personTitle(P)))] : []));
 }
 document.addEventListener("keydown", e => {
   if ((e.key !== "q" && e.key !== "Q") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;

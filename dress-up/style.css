@@ -1384,7 +1384,8 @@ body.still-scenery .fly-bob { animation: none; }
             max-height: calc(100% - 100px); overflow: hidden; pointer-events: none; }
 .team-bar[hidden] { display: none; }
 .team-bar > * { pointer-events: auto; }
-.team-bar .team-cap { font-size: 1.15em; line-height: 1.3; padding: 0 6px; border-radius: 8px; background: var(--panel); opacity: 0.9; }
+.team-bar .team-cap { font-size: 1.15em; line-height: 1.3; padding: 0 6px; border-radius: 8px; background: var(--panel); opacity: 0.9; cursor: pointer; }
+.team-bar .team-cap[aria-pressed="true"] { opacity: 1; background: var(--accent); border-color: var(--accent); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35); translate: 0 1px; }   /* (on: pushed down) */
 .team-bar .team-chip { max-width: 9.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 9px; font-size: 0.92em;
                        line-height: 1.5; border-radius: 999px; background: var(--panel); opacity: 0.92; }
 .team-bar .team-chip[aria-pressed="true"] { outline: 3px solid #f0b400; outline-offset: -1px; font-weight: 700; opacity: 1; }
