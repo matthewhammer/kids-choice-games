@@ -4,6 +4,8 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+- **The quilt, round its edges and in space** (Matthew: "the non-square margins of the quilt need to adjust to the squares on their edges", "the quilt squares for space don't show the position of any planets?", and "the rocket should tilt sideways when moving sideways in quilt overview"). Flying, the land round a world's squares goes on as the square beside it is (stars beside space, water beside water, woods beside land), and beyond, the ground most along its edge; no clouds in space. Each square of outer space shows its planet from above, its name under it (🏡 home among them). Flying the rocket, its nose turns the way it goes: sideways going left or right, upright again when it stops.
+
 ## 0.0.522 (2026-11-21)
 
 Everything in 0.0.521, plus:

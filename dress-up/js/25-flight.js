@@ -271,8 +271,16 @@ const FLY_LOOKS = {
   alienplanet: (k, o) => flyRect(0, 0, FT, FT, "#5b3f8f") + [0, 1, 2].map(i => flyC(120 + 260 * i, 200 + 140 * flyR(k, i), 40, "#7ef9ff80")).join("") + [0, 1, 2, 3].map(i => flyC(80 + 200 * i, 560 - 90 * flyR(k, 10 + i), 22, "#ff9bf0")).join(""),
   // (ticket 800: the black hole from above: its disk round a black middle)
   blackhole: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + flyC(FT / 2, FT / 2, 170, o.universe === "cats" ? "#ff6fae" : "#ff7a1a") + flyC(FT / 2, FT / 2, 120, "#ffd166") + flyC(FT / 2, FT / 2, 95, "#000000"),
-  starfield: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
-    (PLANET_LOOKS[o.spacePlanet] ? flyC(FT * 0.7, FT * 0.3, 60, PLANET_LOOKS[o.spacePlanet].base) : ""),
+  // (ticket 812, Matthew 2026-11-21: "the quilt squares for space don't show the position of any planets?") each square's own planet
+  // (its cell's, in outer space's grid; else the place's), where it is in the square, big, lit from the upper left, ringed if it has
+  // a ring; and in outer space, its name under it (🏡 home, the start world)
+  starfield: (k, o, cell = {}) => { const look = cell.spacePlanet !== undefined ? cell.spacePlanet : o.spacePlanet, L = PLANET_LOOKS[look];
+    const x = FT * (0.12 + 0.76 * Math.max(0, Math.min(100, cell.spacePlanetX ?? o.spacePlanetX ?? 72)) / 100), y = FT * 0.42, r = FT * 0.26 * Math.max(0.3, Math.min(1, (cell.spacePlanetSize ?? o.spacePlanetSize ?? 34) / 52));
+    const name = cell.planet === "home" ? "🏡 home" : cell.planet && typeof spacePlanetOf === "function" ? (spacePlanetOf(cell.planet) || {}).name || "" : "";
+    return flyRect(0, 0, FT, FT, "#070a1c") + [...Array(40)].map((_, i) => flyC(20 + (FT - 40) * flyR(k, i), 20 + (FT - 40) * flyR(k, 50 + i), 2 + 4 * flyR(k, 100 + i), "#eef2ff")).join("") +
+      (L ? (L.ring ? flyE(x, y, r * 1.7, r * 0.42, "none", ` stroke="${L.ring}" stroke-width="${f1(r * 0.12)}" opacity="0.9"`) : "") + flyC(x, y, r, L.base) +
+           flyC(x - r * 0.25, y - r * 0.25, r * 0.7, (L.band || L.land || L.glow || L.base) + "88") + flyC(x + r * 0.35, y + r * 0.3, r * 0.75, (L.dark || "#000000") + "66") +
+           (name ? `<text x="${f1(x)}" y="${f1(y + r + 70)}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">${name}</text>` : "") : ""); },
 };
 FLY_LOOKS.bubbleroom = FLY_LOOKS.bubblespace;
 // (ticket 798) the space station's rooms from above: a metal deck, its panel lines, a round porthole
@@ -445,9 +453,32 @@ function flyTileSvg(W, key) {
 const flyWildSvg = (key, c, r) => `<g data-tile="${key}" data-wild="" transform="translate(${c * FT} ${r * FT})">${flyRect(0, 0, FT, FT, "#8aa862")}${flyCrowns(key, 3, [60, 60, FT - 60, FT - 60], 45, 80, ["#5f8a44", "#6f9a4a"])}</g>`;
 // the world's text, for whether the quilt must be built again
 const flyWorldKey = W => { const { figX, figY, things, ...B } = state.background; return JSON.stringify([W.id, W.cols, W.rows, W.cells, B]); };   // (and the places' own settings: the castle's, the tree's)
+// (Matthew 2026-11-21: "the non-square margins of the quilt need to adjust to the squares on their edges") Round a world's squares,
+// and in its gaps, the land goes on as the nearest square is: its ground, with stars beside ✨ space, water beside water, the wild
+// woods beside land (flyMarginSvg); and beyond, as far as can be seen, the ground of the kind most along its edge (flyLandOf)
+const flyGroundOf = (kind, key) => { const look = flyLookOf(kind, key, state.background, { kind }); return look.slice(0, look.indexOf("/>") + 2); };
+const flyFillOf = svg => (svg.match(/fill="(#[0-9a-fA-F]{3,8})"/) || [, "#88a660"])[1];
+function flyNearestKind(W, c, r) {
+  let best = null, bd = Infinity;
+  for (const k of Object.keys(W.cells)) { const [x, y] = k.split(",").map(Number), d = (x - c) ** 2 + (y - r) ** 2; if (d < bd) { bd = d; best = W.cells[k].kind; } }
+  return best || "meadow";
+}
+function flyMarginSvg(W, key, c, r) {
+  const kind = flyNearestKind(W, c, r), ground = flyGroundOf(kind, key);
+  const more = kind === "starfield" || kind === "blackhole" ? [...Array(14)].map((_, i) => flyC(30 + (FT - 60) * flyR(key, i), 30 + (FT - 60) * flyR(key, i + 40), 2 + 3 * flyR(key, i + 80), "#ffffff")).join("")
+    : FLY_WET.has(kind) || kind === "lake" || kind === "alienplanet" ? "" : flyCrowns(key, 3, [60, 60, FT - 60, FT - 60], 45, 80, ["#5f8a44", "#6f9a4a"]);
+  return `<g data-tile="${key}" data-wild="" transform="translate(${c * FT} ${r * FT})">${ground}${more}</g>`;
+}
+function flyLandOf(W) {
+  if (W.land) return W.land;
+  const n = {};
+  for (const k of Object.keys(W.cells)) { const [c, r] = k.split(",").map(Number); if (c === 0 || r === 0 || c === W.cols - 1 || r === W.rows - 1) n[W.cells[k].kind] = (n[W.cells[k].kind] || 0) + 1; }
+  const kind = Object.keys(n).sort((a, b) => n[b] - n[a])[0];
+  return kind ? flyFillOf(flyGroundOf(kind, "0,0")) : "#88a660";
+}
 function flyQuiltSvg(W) {
-  let s = flyRect(-12 * FT, -12 * FT, (W.cols + 24) * FT, (W.rows + 24) * FT, W.land || "#88a660");   // (the land going on, as far as can be seen)
-  for (let r = -1; r <= W.rows; r++) for (let c = -1; c <= W.cols; c++) { const key = `${c},${r}`; s += W.cells[key] ? flyTileSvg(W, key) : W.land ? "" : flyWildSvg(key, c, r); }
+  let s = flyRect(-12 * FT, -12 * FT, (W.cols + 24) * FT, (W.rows + 24) * FT, flyLandOf(W));   // (the land going on, as far as can be seen)
+  for (let r = -1; r <= W.rows; r++) for (let c = -1; c <= W.cols; c++) { const key = `${c},${r}`; s += W.cells[key] ? flyTileSvg(W, key) : flyMarginSvg(W, key, c, r); }
   // the seams between the squares, stitched (a line the same thinness at every height)
   let d = "";
   for (let r = 0; r <= W.rows; r++) d += `M0 ${r * FT} H${W.cols * FT} `;
@@ -548,9 +579,10 @@ function flyPlace() {
   // (the shadow: the craft's own size on the ground, off toward the lower right the higher they are)
   const off = 0.9 * (S - 0.9) * 60, sh = root.querySelector("#fly-shadow");
   sh.setAttribute("cx", f1(gx + off)); sh.setAttribute("cy", f1(gy + off * 0.7));
-  root.querySelector("#fly-craft").setAttribute("transform", `translate(${f1(cx)} ${f1(cy)}) scale(${(1 - 0.35 * flight.h).toFixed(3)})`);   // (a little smaller, high up)
+  root.querySelector("#fly-craft").setAttribute("transform", `translate(${f1(cx)} ${f1(cy)}) scale(${(1 - 0.35 * flight.h).toFixed(3)})` +
+    (flight.turn ? ` rotate(${flight.turn.toFixed(1)} 0 -20)` : ""));   // (a little smaller, high up; the rocket turned the way it goes)
   // (the clouds, between: seen once up, sliding faster than the ground, as nearer)
-  const cl = root.querySelector("#fly-clouds"), op = clamp((S - 1.6) / 3, 0, 0.55);
+  const cl = root.querySelector("#fly-clouds"), op = W.space ? 0 : clamp((S - 1.6) / 3, 0, 0.55);   // (ticket 812: no clouds in outer space)
   cl.setAttribute("opacity", op.toFixed(2));
   if (op > 0) cl.querySelectorAll("[data-cloud]").forEach((n, i) => {
     const span = vb.width + 400, hs = vb.height + 300, k = 1.8 * g;
@@ -616,6 +648,13 @@ function flyTick(t) {
   const speed = 0.55 * S;
   flight.x = clamp(flight.x + vx * speed * dt, 0.02, W.cols - 0.02);
   flight.y = clamp(flight.y + vy * speed * dt, 0.02, W.rows - 0.02);
+  // (Matthew 2026-11-21: "the rocket should tilt sideways when moving sideways in quilt overview") the rocket's nose turned the way it
+  // goes (right a quarter turn, left the other way, down half), eased, at most a turn and a half a second; upright again when still
+  if (flight.craft === "rocketride") {
+    const want = len > 0.15 ? Math.atan2(vx, -vy) * 180 / Math.PI : 0, cur = flight.turn || 0;
+    let d = ((want - cur + 540) % 360) - 180; const step = 540 * dt;
+    flight.turn = Math.abs(d) <= step ? want : cur + Math.sign(d) * step;
+  }
   if (Math.abs(vx) > 0.2 || Math.abs(vy) > 0.2) { const f = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? "right" : "left") : vy > 0 ? "front" : "back";
     if (f !== flight.facing) { flight.facing = f; flightDraw(); } }
   // the height: climbing or sinking while held; toward a height wanted (taking off); down, landing
@@ -625,7 +664,7 @@ function flyTick(t) {
   else if (flight.want != null) { const d = flight.want - flight.h; flight.h += Math.sign(d) * Math.min(Math.abs(d), 0.4 * dt); if (Math.abs(d) < 0.002) flight.want = null; }
   if (flight.h <= 0 && (flight.landing || down)) { flightLand(true); return; }
   flyPlace();
-  if (vx || vy || up || down || flight.landing || flight.want != null || flight.goal) flyLoop = requestAnimationFrame(flyTick);
+  if (vx || vy || up || down || flight.landing || flight.want != null || flight.goal || flight.turn) flyLoop = requestAnimationFrame(flyTick);   // (and till the rocket is upright again)
 }
 // (padPoll, while flying: the arrows or the stick fly them, the jumps climb, crouching sinks, the craft's own button lands)
 function flightPad(g, held, hit, btn) {
