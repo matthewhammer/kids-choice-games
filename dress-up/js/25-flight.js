@@ -280,8 +280,8 @@ const FLY_LOOKS = {
   starfield: (k, o, cell = {}) => { const look = cell.spacePlanet !== undefined ? cell.spacePlanet : o.spacePlanet, L = PLANET_LOOKS[look];
     const x = FT * (0.12 + 0.76 * Math.max(0, Math.min(100, cell.spacePlanetX ?? o.spacePlanetX ?? 72)) / 100), y = FT * 0.42, r = FT * 0.26 * Math.max(0.3, Math.min(1, (cell.spacePlanetSize ?? o.spacePlanetSize ?? 34) / 52));
     const name = cell.planet === "home" ? "🏡 home" : cell.planet && typeof spacePlanetOf === "function" ? (spacePlanetOf(cell.planet) || {}).name || "" : "";
-    // (Matthew 2026-11-21: "planet Zib is cut off") the planet and its ring kept inside its square
-    const half = L ? (L.ring ? 1.7 : 1.1) * r : 0, px = clamp(x, half + 16, FT - half - 16);
+    // (Matthew 2026-11-21: "planet Zib is cut off") the planet and its ring (and its glow) kept inside its square
+    const half = L ? (L.ring ? 1.7 : 1.25) * r : 0, px = clamp(x, half + 16, FT - half - 16);
     const planet = L ? (L.ring ? flyE(px, y, r * 1.7, r * 0.42, "none", ` stroke="${L.ring}" stroke-width="${f1(r * 0.12)}" opacity="0.9"`) : "") + flyC(px, y, r, L.base) +
            flyC(px - r * 0.25, y - r * 0.25, r * 0.7, (L.band || L.land || L.glow || L.base) + "88") + flyC(px + r * 0.35, y + r * 0.3, r * 0.75, (L.dark || "#000000") + "66") +
            (name ? `<text x="${f1(px)}" y="${f1(y + r + 70)}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">${name}</text>` : "") : "";
@@ -683,10 +683,10 @@ function flyTick(t) {
   // the height: climbing or sinking while held; toward a height wanted (taking off); down, landing
   const up = flyKeys.has("up") || flyHud.up || flight.padUp, down = flyKeys.has("down") || flyHud.down || flight.padDown;
   if (up || down) { flight.want = null; flight.landing = false; flight.then = null; flight.h = clamp(flight.h + (up ? 0.5 : -0.5) * dt, 0, 1); }
-  else if (flight.landing && flight.then && flight.goal) { /* (to the planet's square first, then down) */ }
+  else if (flight.landing && flight.then && flight.goal) { if (flight.h < 0.25) flight.h = Math.min(0.25, flight.h + 0.4 * dt); }   // (to the planet's square first, a little up if low, then down)
   else if (flight.landing) flight.h = Math.max(0, flight.h - Math.max(0.5, 1.6 * flight.h) * dt);
   else if (flight.want != null) { const d = flight.want - flight.h; flight.h += Math.sign(d) * Math.min(Math.abs(d), 0.4 * dt); if (Math.abs(d) < 0.002) flight.want = null; }
-  if (flight.h <= 0 && (flight.landing || down)) { flightLand(true); return; }
+  if (flight.h <= 0 && (flight.landing || down) && !(flight.then && flight.goal)) { flightLand(true); return; }
   flyPlace();
   if (vx || vy || up || down || flight.landing || flight.want != null || flight.goal || flight.turn) flyLoop = requestAnimationFrame(flyTick);   // (and till the rocket is upright again)
 }

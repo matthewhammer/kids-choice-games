@@ -365,6 +365,37 @@ const INSTRUMENTS = {
     for (const [r, a, tau] of [[1, 1, 2.2], [1.503, 0.45, 1.6], [2.52, 0.35, 1.2], [3.37, 0.22, 0.8], [5.06, 0.12, 0.5]])
       tone(A, amp(A, out, t, 0.06 * v * a, 0.006, tau * k), "sine", f * r, t, t + 7 * tau * k, r === 1 ? 0 : 4);
   },
+  // (Matthew 2026-11-21: "each planet should have 3 songs that are unique to it --- use afrocuban themes for one, and house music
+  // for another one, and trance music for a third") the planets' own instruments. 🎹 a piano: the hammer's knock, then its strings,
+  // the upper ones dying first, damped when the key is let go (its knob: how long it rings): 🌋 Pyra's montunos, 👾 Zib's stabs
+  piano(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), k = ring(x), off = t + Math.max(0.03, dur);
+    for (const [r, a, tau] of [[1, 1, 1.2], [2, 0.45, 0.7], [3, 0.2, 0.4], [4.02, 0.1, 0.25]]) {
+      const g = A.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.1 * v * a, t + 0.003);
+      g.gain.setTargetAtTime(0, t + 0.003, tau * k); g.gain.setTargetAtTime(0, off, 0.07); g.connect(out);
+      tone(A, g, r === 1 ? "triangle" : "sine", f * r, t, off + 0.6, r === 1 ? 0 : 3);
+    }
+    noise(A, filter(A, amp(A, out, t, 0.035 * v, 0.001, 0.01), "bandpass", 2400, 1), t, t + 0.05);
+  },
+  // 🌈 a supersaw: seven saws spread a little apart, through a filter, held (its knob: how wide they spread): 🧊 Frostia's leads
+  supersaw(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.92, lp = filter(A, held(A, out, t, 0.026 * v, 0.01, end, 0.18), "lowpass", 5200, 0.8);
+    for (const d of [-3, -2, -1, 0, 1, 2, 3]) tone(A, lp, "sawtooth", f, t, end + 1.2, d * 6 * x / 50);
+  },
+  // 🥢 claves: two sticks of hard wood knocked together, high (its knob: how long it rings): 🌋 Pyra's clave
+  clave(A, out, t, m, dur, v, x = 50) {
+    const k = ring(x);
+    tone(A, amp(A, out, t, 0.3 * v, 0.001, 0.035 * k), "sine", 2500, t, t + 0.25 * k);
+    tone(A, amp(A, out, t, 0.07 * v, 0.001, 0.02 * k), "sine", 5050, t, t + 0.15 * k);
+  },
+  // 🎺 brass: a saw and a square, the filter opening as the breath comes in, the note scooped up into (its knob: how bright it
+  // opens): 🌋 Pyra's mambo horns
+  brass(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur * 0.9, top = 1400 + 50 * x;
+    const lp = filter(A, held(A, out, t, 0.07 * v, 0.03, end, 0.08), "lowpass", 500, 1.5);
+    lp.frequency.setValueAtTime(500, t); lp.frequency.linearRampToValueAtTime(top, t + 0.06); lp.frequency.setTargetAtTime(top * 0.6, t + 0.08, 0.2);
+    for (const o of [tone(A, lp, "sawtooth", f * 0.97, t, end + 0.4, -5), tone(A, gainOf(A, lp, 0.5), "square", f * 0.97, t, end + 0.4, 5)]) o.frequency.setTargetAtTime(f, t, 0.02);
+  },
   // (ticket 804) the little chip of the Pinball in Hazel (matthewhammer.org/hazeljs-examples/pinball/), its sounds as made
   // there: a lead on a pulse wave a quarter on, with vibrato on a long note (its knob: how much); an arpeggio on a thinner
   // pulse, an eighth on (its knob: how long each note rings); a triangle bass; and drums of noise
@@ -1440,6 +1471,179 @@ const TUNES = {
       { name: "theremin", inst: "theremin", line: lineOf("C5:4 F5:4 A5:8 | A#5:4 A5:4 F5:8 | G5:4 E5:4 C5:8 | F5:12 r:4") },
       { name: "ghost", inst: "wail", line: lineOf("A4:16 | D5:16 | C5:16 | A4:16") },
       { name: "glass", inst: "glass", line: lineOf("F5:2 A5:2 C6:2 F6:2 r:8 | D6:2 A#5:2 F5:2 D5:2 r:8 | E5:2 G5:2 C6:2 E6:2 r:8 | F6:4 C6:4 A5:8") }] }) },
+  // (Matthew 2026-11-21: "each planet should have 3 songs that are unique to it --- use afrocuban themes for one, and house music
+  // for another one, and trance music for a third") each planet's own three, one for each of its squares (planetTune): 🌋 Pyra's
+  // Afro-Cuban (the clave under it all, the piano's montuno, the bass's tumbao a beat ahead of the chords, congas, bongos, the
+  // bell, horns), 👾 Zib's house (four on the floor, hats on the off-beat, piano and organ stabs, an acid bass) and 🧊 Frostia's
+  // trance (a rolling bass between the kicks, arpeggios, a supersaw anthem, a breakdown and its build)
+  pyrason: { name: "🌋 Pyra son montuno", key: "C major", make: () => {
+    const C = ["C", "F", "G7", "F"];
+    return { bpm: 98, room: 1.2, level: 1, parts: [
+      { name: "clave", inst: "clave", level: 0.7, line: hitsOf("x.....x.....x... ....x...x.......") },   // (son clave, 3-2)
+      { name: "guiro", inst: "shaker", level: 0.45, line: hitsOf("x.oox.oox.oox.oo") },
+      { name: "piano", inst: "piano", level: 0.8, rev: 0.15, line: lineOf(
+        "C4+C5:2 E4+G4:2 r:2 C4+C5:2 r:2 E4+G4:2 C4+C5:2 F4+A4:2 | F4+F5:2 A4+C5:2 r:2 F4+F5:2 r:2 A4+C5:2 F4+F5:2 G4+B4:2 | " +
+        "G4+G5:2 B4+D5:2 r:2 G4+G5:2 r:2 B4+F5:2 G4+G5:2 F4+A4:2 | F4+F5:2 A4+C5:2 r:2 F4+F5:2 r:2 A4+C5:2 F4+F5:2 E4+G4:2") },
+      { name: "bass", inst: "bass", level: 0.9, line: lineOf("r:6 G2:6 F2:4 | r:6 C3:6 G2:4 | r:6 D3:6 F2:4 | r:6 C3:6 C2:4") },   // (tumbao)
+      { name: "congaLo", inst: "conga", level: 0.7, line: hitsOf("............x.x.", 55) },
+      { name: "congaHi", inst: "conga", level: 0.6, line: hitsOf("o.o.x...o.o.....", 62) },
+      { name: "bongo", inst: "bongo", level: 0.5, line: hitsOf("x.o.x.o.x.o.x.oo", 72) },   // (the martillo)
+      { name: "bell", inst: "cowbell", level: 0.45, line: hitsOf("x...x.o.x...x.o.") },
+      { name: "flute", inst: "flute", level: 0.7, rev: 0.25, line: lineOf(
+        "E5:3 D5:1 C5:2 E5:2 G5:4 E5:4 | F5:3 E5:1 D5:2 F5:2 A5:4 F5:4 | G5:2 F5:2 E5:2 D5:2 B4:4 D5:4 | C5:2 D5:2 E5:2 F5:2 E5:4 C5:4") },
+      { name: "horns", inst: "brass", level: 0.75, rev: 0.2, line: lineOf(
+        "r:2 G5:2 r:2 E5:2 G5:2 r:2 C6:4 | r:2 A5:2 r:2 F5:2 A5:2 r:2 C6:4 | r:2 B5:2 r:2 G5:2 F5:2 D5:2 B4:4 | r:2 A5:2 G5:2 F5:2 E5:2 D5:2 C5:4") },
+    ], form: [
+      S(4, "clave guiro"), S(4, "clave guiro piano"), S(8, "clave guiro piano bass congaLo congaHi bongo"),
+      S(8, "clave guiro piano bass congaLo congaHi bongo flute"), S(8, "clave piano bass congaLo congaHi bell horns"),
+      S(8, "clave guiro piano bass congaLo congaHi bongo flute horns"), S(4, "clave piano"),
+    ] };
+  } },
+  pyracha: { name: "🔥 lava cha-cha-chá", key: "G major", make: () => {
+    const A = ["G", "D7", "D7", "G"], B = ["C", "G", "D7", "G"];
+    return { bpm: 116, room: 1.2, level: 1, parts: [
+      { name: "guiro", inst: "shaker", level: 0.5, line: hitsOf("x.oox.oox.oox.oo") },
+      { name: "bell", inst: "cowbell", level: 0.45, line: hitsOf("x...x...x...x...") },
+      { name: "cha", inst: "conga", level: 0.7, line: hitsOf("x...........x.x.", 57) },   // (the cha-cha-chá: four-and, one)
+      { name: "bassA", inst: "bass", level: 0.85, line: bassOf(A, 16, [[0, 0, 4], [6, 7, 2], [8, 0, 4], [12, 12, 2], [14, 7, 2]], 2) },
+      { name: "bassB", inst: "bass", level: 0.85, line: bassOf(B, 16, [[0, 0, 4], [6, 7, 2], [8, 0, 4], [12, 12, 2], [14, 7, 2]], 2) },
+      { name: "pianoA", inst: "piano", level: 0.6, line: stabsOf(A, 16, [4, 10, 14], 2, 4) },
+      { name: "pianoB", inst: "piano", level: 0.6, line: stabsOf(B, 16, [4, 10, 14], 2, 4) },
+      { name: "violin", inst: "fiddle", level: 0.65, rev: 0.25, line: lineOf(
+        "D5:4 B4:2 D5:2 G5:4 r:4 | F#5:2 E5:2 D5:2 C5:2 A4:4 r:4 | C5:2 D5:2 E5:2 F#5:2 A5:4 F#5:4 | G5:8 D5:4 B4:4") },
+      { name: "flute", inst: "flute", level: 0.7, rev: 0.25, line: lineOf(
+        "E5:2 G5:2 C6:4 B5:2 A5:2 G5:4 | B5:2 A5:2 G5:4 D5:4 r:4 | A5:2 F#5:2 D5:2 F#5:2 A5:4 C6:4 | B5:8 G5:8") },
+    ], form: [
+      S(4, "guiro bell cha"), S(8, "guiro bell cha bassA pianoA violin"), S(8, "guiro bell cha bassB pianoB flute"),
+      S(8, "guiro bell cha bassA pianoA violin flute"), S(4, "cha bassA"), S(8, "guiro bell cha bassB pianoB flute violin"), S(4, "guiro cha"),
+    ] };
+  } },
+  pyramambo: { name: "🎺 magma mambo", key: "F major", make: () => ({ bpm: 150, room: 1.1, level: 1, parts: [
+      { name: "clave", inst: "clave", level: 0.65, line: hitsOf("....x...x....... x......x....x...") },   // (rumba clave, 2-3)
+      { name: "cascara", inst: "rim", level: 0.35, line: hitsOf("x.xx.x.xx.xx.x.x") },
+      { name: "bell", inst: "cowbell", level: 0.45, line: hitsOf("x.o.x.o.x.o.x.o.") },
+      { name: "congaLo", inst: "conga", level: 0.7, line: hitsOf("............x.x.", 53) },
+      { name: "congaHi", inst: "conga", level: 0.6, line: hitsOf("o.o.x...o.o.....", 60) },
+      { name: "bass", inst: "bass", level: 0.9, line: lineOf("r:6 C3:6 Bb2:4 | r:6 F3:6 C3:4 | r:6 G2:6 F2:4 | r:6 C3:6 F2:4") },
+      { name: "piano", inst: "piano", level: 0.75, rev: 0.1, line: lineOf(
+        "F4+F5:2 A4+C5:2 r:2 F4+F5:2 r:2 A4+C5:2 F4+F5:2 Bb4+D5:2 | Bb4+Bb5:2 D5+F5:2 r:2 Bb4+Bb5:2 r:2 D5+F5:2 Bb4+Bb5:2 C5+E5:2 | " +
+        "C5+C6:2 E5+G5:2 r:2 C5+C6:2 r:2 E5+Bb5:2 C5+C6:2 A4+C5:2 | F4+F5:2 A4+C5:2 r:2 F4+F5:2 r:2 A4+C5:2 F4+F5:2 C5+E5:2") },
+      { name: "trumpets", inst: "brass", level: 0.75, rev: 0.2, line: lineOf(
+        "F5:2 r:1 F5:1 r:2 A5:2 r:2 C6:2 A5:2 F5:2 | Bb5:2 r:1 Bb5:1 r:2 D6:2 r:2 F6:2 D6:2 Bb5:2 | C6:2 r:1 C6:1 r:2 E6:2 r:2 G6:2 E6:2 C6:2 | F6:4 C6:2 A5:2 F5:4 r:4") },
+      { name: "bones", inst: "brass", level: 0.6, line: lineOf(
+        "r:4 A3+C4:2 r:2 A3+C4:2 r:6 | r:4 Bb3+D4:2 r:2 Bb3+D4:2 r:6 | r:4 Bb3+E4:2 r:2 Bb3+E4:2 r:6 | r:4 A3+C4:2 r:2 A3+F4:4 r:4") },
+    ], form: [
+      S(4, "clave cascara congaLo congaHi"), S(8, "clave cascara congaLo congaHi bass piano"), S(8, "clave cascara congaLo congaHi bass piano trumpets"),
+      S(8, "clave bell congaLo congaHi bass piano trumpets bones"), S(4, "clave congaLo congaHi"), S(8, "clave bell congaLo congaHi bass piano trumpets bones"),
+      S(4, "clave cascara piano"),
+    ] }) },
+  zibdeep: { name: "👾 Zib deep house", key: "C major", make: () => {
+    const C = ["Dm7", "G", "Cmaj7", "Am7"];
+    return { bpm: 122, room: 1.5, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.85, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.45, rev: 0.3, line: hitsOf("....x.......x...") },
+      { name: "hats", inst: "shaker", level: 0.4, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { name: "openhat", inst: "openhat", level: 0.45, line: hitsOf("..x...x...x...x.") },
+      { name: "bass", inst: "bass", level: 0.9, line: bassOf(C, 16, [[2, 0, 2], [6, 0, 2], [10, 0, 2], [13, 7, 1], [14, 0, 2]], 2) },
+      { name: "piano", inst: "piano", level: 0.6, rev: 0.3, line: rhythmOf(C, 16, [[0, 3], [3, 3], [6, 4], [10, 2], [12, 4]], 4) },
+      { name: "pad", inst: "pad", level: 0.8, line: rhythmOf(C, 16, [[0, 16]], 3) },
+      { name: "vibes", inst: "vibes", level: 0.6, rev: 0.4, line: lineOf("E5:3 D5:3 C5:2 r:8 | B4:3 D5:3 G5:2 r:8 | E5:3 G5:3 B5:2 r:8 | C6:3 B5:3 A5:2 r:4 E5:4") },
+    ], form: [
+      S(4, "kick"), S(4, "kick hats"), S(8, "kick clap hats openhat bass"), S(8, "kick clap hats openhat bass piano"),
+      S(8, "kick clap hats openhat bass piano pad vibes"), S(4, "pad vibes"), S(8, "kick clap hats openhat bass piano pad vibes"), S(4, "kick bass"),
+    ] };
+  } },
+  zibpiano: { name: "🎹 ringed piano house", key: "D major", make: () => {
+    const C = ["D", "A", "Bm", "G"];
+    return { bpm: 124, room: 1.4, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.85, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.45, rev: 0.3, line: hitsOf("....x.......x...") },
+      { name: "hats", inst: "hat", level: 0.35, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { name: "openhat", inst: "openhat", level: 0.45, line: hitsOf("..x...x...x...x.") },
+      { name: "bass", inst: "bass", level: 0.85, line: bassOf(C, 16, [[0, 0, 2], [2, 12, 2], [4, 0, 2], [6, 12, 2], [8, 0, 2], [10, 12, 2], [12, 0, 2], [14, 12, 2]], 2) },
+      { name: "piano", inst: "piano", level: 0.75, rev: 0.2, line: stabsOf(C, 16, [0, 3, 6, 10, 12], 2, 4) },
+      { name: "arps", inst: "piano", level: 0.55, rev: 0.4, line: arpOf(C, 16, [0, 1, 2, 3, 2, 1, 0, 1], 2, 4) },
+      { name: "lead", inst: "lead", level: 0.7, rev: 0.3, line: lineOf(
+        "F#5:4 E5:2 D5:2 E5:4 A5:4 | E5:4 C#5:2 E5:2 A5:8 | D5:2 F#5:2 B5:4 A5:4 F#5:4 | G5:4 F#5:2 E5:2 D5:8") },
+      { name: "roll", inst: "snare", level: 0.45, line: hitsOf("................ ................ x...x...x...x... x.x.x.x.xxxxxxxx") },
+    ], form: [
+      S(4, "kick hats"), S(8, "kick clap hats openhat bass piano"), S(8, "kick clap hats openhat bass piano lead"),
+      S(4, "arps"), S(4, "arps lead roll"), S(8, "kick clap hats openhat bass piano lead", 2), S(8, "kick clap hats openhat bass piano arps", 2), S(4, "piano"),
+    ] };
+  } },
+  zibacid: { name: "🫧 Zib acid jack", key: "A major", make: () => ({ bpm: 126, room: 1.2, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.85, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.45, rev: 0.25, line: hitsOf("....x.......x...") },
+      { name: "hats", inst: "hat", level: 0.35, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { name: "openhat", inst: "openhat", level: 0.4, line: hitsOf("..x...x...x...x.") },
+      { name: "bell", inst: "cowbell", level: 0.35, line: hitsOf("..x....x..x....x") },
+      { name: "acid", inst: "wahbass", level: 0.85, line: lineOf(
+        "A1:1 A2:1 r:1 A1:1 C#3:1 A1:1 r:1 E2:1 A1:1 G2:1 r:1 A1:1 A2:1 r:1 E2:1 G2:1 | A1:1 A2:1 r:1 A1:1 C#3:1 A1:1 r:1 E2:1 A1:1 G2:1 r:1 A1:1 A2:1 r:1 E2:1 G2:1 | " +
+        "G1:1 G2:1 r:1 G1:1 B2:1 G1:1 r:1 D2:1 G1:1 F2:1 r:1 G1:1 G2:1 r:1 D2:1 F2:1 | D2:1 D3:1 r:1 D2:1 F#3:1 D2:1 r:1 A2:1 D2:1 C3:1 r:1 D2:1 D3:1 r:1 A2:1 C3:1") },
+      { name: "stabs", inst: "lead", level: 0.45, rev: 0.3, line: stabsOf(["A", "A", "G", "D"], 16, [2, 10], 1, 4) },
+      { name: "alien", inst: "theremin", level: 0.7, rev: 0.4, line: lineOf("A5:8 E5:8 | C#6:16 | B5:8 D6:8 | A5:16") },
+      { name: "zaps", inst: "zap", level: 0.5, rev: 0.3, line: lineOf("r:14 A6:1 r:1 | r:16 | r:12 E6:1 r:1 E6:1 r:1 | r:16") },
+    ], form: [
+      S(4, "kick acid"), S(8, "kick clap hats acid"), S(8, "kick clap hats openhat bell acid stabs"),
+      S(8, "kick clap hats openhat acid alien zaps"), S(4, "acid alien"), S(8, "kick clap hats openhat bell acid stabs alien zaps"), S(4, "kick acid"),
+    ] }) },
+  frosttrance: { name: "🧊 Frostia uplifting trance", key: "D major", make: () => {
+    const C = ["Bm", "G", "D", "A"], roll = [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15].map(at => [at, 0, 1]);
+    return { bpm: 138, room: 1.8, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.85, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.4, rev: 0.35, line: hitsOf("....x.......x...") },
+      { name: "hats", inst: "hat", level: 0.3, line: hitsOf("oxoooxoooxoooxoo") },
+      { name: "openhat", inst: "openhat", level: 0.45, line: hitsOf("..x...x...x...x.") },
+      { name: "bass", inst: "bass", level: 0.75, line: bassOf(C, 16, roll, 2) },   // (rolling, between the kicks)
+      { name: "arp", inst: "pluck", level: 0.5, rev: 0.4, line: arpOf(C, 16, [0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 4], 1, 4) },
+      { name: "pad", inst: "pad", level: 0.8, line: rhythmOf(C, 16, [[0, 16]], 3) },
+      { name: "lead", inst: "supersaw", level: 0.8, rev: 0.4, line: lineOf(
+        "F#5:4 D5:2 F#5:2 B5:4 A5:2 F#5:2 | G5:4 E5:2 G5:2 B5:4 D6:2 B5:2 | A5:4 F#5:2 A5:2 D6:4 C#6:2 A5:2 | C#6:4 B5:2 A5:2 E5:8") },
+      { name: "gate", inst: "supersaw", level: 0.45, rev: 0.3, line: stabsOf(C, 16, [0, 2, 3, 6, 8, 10, 11, 14], 1, 4) },
+      { name: "roll", inst: "snare", level: 0.45, line: hitsOf("................ ................ x...x...x...x... x.x.x.x.xxxxxxxx") },
+    ], form: [
+      S(4, "kick hats"), S(8, "kick hats openhat bass"), S(8, "kick clap hats openhat bass arp"), S(4, "pad arp"), S(4, "pad arp lead"),
+      S(4, "pad lead roll"), S(8, "kick clap hats openhat bass arp lead gate pad"), S(8, "kick clap hats openhat bass arp lead gate pad", 2), S(4, "pad arp"),
+    ] };
+  } },
+  frostarps: { name: "❄️ ice arpeggios", key: "E major", make: () => {
+    const C = ["E", "C#m", "A", "B"], roll = [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15].map(at => [at, 0, 1]);
+    return { bpm: 134, room: 1.6, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.85, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.4, rev: 0.3, line: hitsOf("....x.......x...") },
+      { name: "hats", inst: "hat", level: 0.3, line: hitsOf("oxoooxoooxoooxoo") },
+      { name: "openhat", inst: "openhat", level: 0.4, line: hitsOf("..x...x...x...x.") },
+      { name: "bass", inst: "buzz", level: 0.7, line: bassOf(C, 16, roll, 2) },
+      { name: "arp", inst: "pluck", level: 0.55, rev: 0.4, line: arpOf(C, 16, [0, 1, 2, 1, 3, 2, 1, 2], 1, 4) },
+      { name: "ice", inst: "glass", level: 0.5, rev: 0.5, line: arpOf(C, 16, [0, 2, 1, 3], 4, 5) },
+      { name: "pad", inst: "pad", level: 0.7, line: rhythmOf(C, 16, [[0, 16]], 3) },
+      { name: "lead", inst: "supersaw", level: 0.75, rev: 0.4, line: lineOf("B5:8 G#5:8 | E5:8 C#6:8 | A5:12 B5:4 | B5:16") },
+      { name: "zaps", inst: "zap", level: 0.4, rev: 0.5, line: lineOf("r:16 | r:16 | r:16 | r:12 E7:4") },
+      { name: "roll", inst: "snare", level: 0.45, line: hitsOf("................ ................ x...x...x...x... x.x.x.x.xxxxxxxx") },
+    ], form: [
+      S(4, "arp"), S(4, "kick arp"), S(8, "kick hats openhat bass arp"), S(8, "kick clap hats openhat bass arp ice zaps"), S(4, "pad ice"),
+      S(4, "pad ice arp roll"), S(8, "kick clap hats openhat bass arp ice lead pad"), S(8, "kick clap hats openhat bass arp lead", 2), S(4, "arp ice"),
+    ] };
+  } },
+  frostdream: { name: "🌨️ snowfall dream trance", key: "F major", make: () => {
+    const C = ["Dm", "Bb", "F", "C"], roll = [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15].map(at => [at, 0, 1]);
+    return { bpm: 128, room: 1.8, level: 1, parts: [
+      { name: "kick", inst: "kick", level: 0.8, line: hitsOf("x...x...x...x...") },
+      { name: "clap", inst: "snare", level: 0.35, rev: 0.4, line: hitsOf("....x.......x...") },
+      { name: "shaker", inst: "shaker", level: 0.35, line: hitsOf("xoxoxoxoxoxoxoxo") },
+      { name: "openhat", inst: "openhat", level: 0.4, line: hitsOf("..x...x...x...x.") },
+      { name: "bass", inst: "bass", level: 0.7, line: bassOf(C, 16, roll, 2) },
+      { name: "pad", inst: "pad", level: 0.85, line: rhythmOf(C, 16, [[0, 16]], 3) },
+      { name: "piano", inst: "piano", level: 0.75, rev: 0.5, line: lineOf(
+        "A5:2 D6:2 E6:2 F6:6 E6:2 D6:2 | D6:2 F6:2 G6:2 A6:6 G6:2 F6:2 | C6:2 F6:2 G6:2 A6:4 G6:2 F6:2 C6:2 | E6:4 D6:2 C6:2 G5:8") },
+      { name: "snow", inst: "glass", level: 0.45, rev: 0.6, line: lineOf("r:12 F6:4 | r:12 D6:4 | r:12 C6:4 | r:8 G6:8") },
+      { name: "saws", inst: "supersaw", level: 0.4, rev: 0.4, line: lineOf("D5+F5+A5:16 | D5+F5+Bb5:16 | C5+F5+A5:16 | C5+E5+G5:16") },
+      { name: "roll", inst: "snare", level: 0.4, line: hitsOf("................ ................ x...x...x...x... x.x.x.x.xxxxxxxx") },
+    ], form: [
+      S(4, "pad snow"), S(4, "pad piano"), S(8, "kick shaker openhat bass pad"), S(8, "kick clap shaker openhat bass pad piano"), S(4, "pad piano snow"),
+      S(4, "pad piano roll"), S(8, "kick clap shaker openhat bass pad piano saws snow"), S(8, "kick clap shaker openhat bass piano saws", 2), S(4, "pad snow"),
+    ] };
+  } },
   orbit: { name: "🪐 orbit", key: "A minor", make: () => ({ bpm: 140, room: 0.6, level: 0.5, parts: [
       { name: "leadA", inst: "chiplead", line: lineOf(
         "E5:6 A5:4 G5:2 E5:4 | " +
@@ -1528,6 +1732,9 @@ const TUNE_GROUPS = [
   ["chest", "🎁 chest opening", Object.keys(CHEST_TUNES)],   // (ticket 631)
   ["pinball", "🎱 pin ball", ["overdrive", "bumperstorm", "orbit"]],   // (ticket 804: the Pinball in Hazel's three)
   ["space", "🌌 space", ["nebula", "stardrift", "planetrise"]],   // (ticket 814: ambient, major, the theremin and the ghost)
+  ["afrocuban", "🌋 Pyra's Afro-Cuban", ["pyrason", "pyracha", "pyramambo"]],   // (each planet's own three: Matthew 2026-11-21)
+  ["planethouse", "👾 Zib's house", ["zibdeep", "zibpiano", "zibacid"]],
+  ["trance", "🧊 Frostia's trance", ["frosttrance", "frostarps", "frostdream"]],
 ];
 // (ticket 631) a chest's flourish, played once, over the music, on the music's own instruments (as long as it lasts, no loop)
 function chestFlourish(id) {
@@ -1677,7 +1884,7 @@ const stepSecs = T => 60 / T.bpm / 4;
 const swingOf = (T, at) => !Number.isInteger(at) ? 0 : (at % 2 ? T.swing || 0 : 0) + (at % 4 === 2 ? T.swing8 || 0 : 0);
 const timeOf = (song, t0, loop, at) => t0 + (loop * song.steps + at + swingOf(song.T, at)) * stepSecs(song.T);
 // (drums keep their sound when the tune is moved up or down)
-const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat", "chipkick", "chipsnare", "chiphat"]);
+const PERCUSSION = new Set(["kick", "rim", "snare", "hat", "shaker", "conga", "cowbell", "bongo", "openhat", "chipkick", "chipsnare", "chiphat", "clave"]);
 // (bend: half steps more, even for a drum: where its LFO is, see below)
 function playNote(A, buses, song, ev, t, sd = stepSecs(song.T), up = 0, knobs = null, ups = null, bend = 0, wob = null) {
   const p = song.T.parts[ev.part], dur = ev.len * sd,
@@ -2009,9 +2216,9 @@ const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁",
                     vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡",
                     bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸",
                     chiplead: "🕹️", chiparp: "🕹️", chipbass: "🕹️", chipkick: "🥁", chipsnare: "🥁", chiphat: "🎩",
-                    theremin: "🛸", wail: "🌫️", glass: "🔮" };
+                    theremin: "🛸", wail: "🌫️", glass: "🔮", piano: "🎹", supersaw: "🌈", clave: "🥢", brass: "🎺" };
 // each instrument's own knob, by name (what it does is in INSTRUMENTS)
-const INST_KNOB = { theremin: "〰️ vibrato", wail: "〰️ waver", glass: "✨ ring", steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
+const INST_KNOB = { theremin: "〰️ vibrato", wail: "〰️ waver", glass: "✨ ring", piano: "✨ ring", supersaw: "↔️ spread", clave: "✨ length", brass: "🎺 bright", steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
                     bell: "✨ ring", rim: "✨ length", snare: "✨ length", hat: "✨ length", shaker: "✨ length", cowbell: "✨ length",
                     chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", wahbass: "🎸 wah", organ: "🎹 bright",
                     melodica: "〰️ vibrato", flute: "〰️ vibrato", ghost: "〰️ waver", vibes: "🌀 wobble", pad: "🌅 swell",
@@ -2233,7 +2440,13 @@ function transportBox(box) {
   requestAnimationFrame(frame);
 }
 // the tune for now: the one chosen, or the background's own (none without one)
-const tuneOf = () => { const m = state.music, id = m.track === "scene" ? SCENE_TUNE[state.background.kind] : m.track; return TUNES[id] ? id : null; };
+// (Matthew 2026-11-21: "each planet should have 3 songs that are unique to it") on a planet's surface, its own three, one for each of
+// its squares (as the square goes along, the next of the three: every planet's grid has each of them)
+const PLANET_TUNES = { pyra: ["pyrason", "pyracha", "pyramambo"], zib: ["zibdeep", "zibpiano", "zibacid"], frost: ["frosttrance", "frostarps", "frostdream"] };
+const planetTune = () => { const W = state.world, ids = W && W.planet && PLANET_TUNES[W.planet];
+  if (!ids || state.background.kind !== "alienplanet") return null;
+  const [c, r] = String(W.at || "0,0").split(",").map(Number); return ids[((c + 2 * r) % 3 + 3) % 3]; };
+const tuneOf = () => { const m = state.music, id = m.track === "scene" ? planetTune() || SCENE_TUNE[state.background.kind] : m.track; return TUNES[id] ? id : null; };
 function nowPlaying() {
   const id = tuneOf(), m = state.music;
   if (!id) return "No background, so no music. Pick a tune to play one anyway.";

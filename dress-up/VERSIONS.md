@@ -4,6 +4,17 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.526 (2026-11-21)
+
+Everything in 0.0.525, plus:
+
+- **Each planet's own three tunes** (Matthew: "each planet should have 3 songs that are unique to it --- use afrocuban themes for one, and house music for another one, and trance music for a third"). On a planet's surface the scene's music is the planet's own, a different one of its three square by square:
+  - 🌋 **Pyra, Afro-Cuban:** **🌋 Pyra son montuno** (the son clave, the piano's montuno, the bass's tumbao a beat ahead of the chords, congas, bongos, a flute, horns), **🔥 lava cha-cha-chá** (the güiro, the cha-cha-chá on the congas, a violin and a flute), **🎺 magma mambo** (the rumba clave, the cáscara, trumpets and trombones).
+  - 👾 **Zib, house:** **👾 Zib deep house** (four on the floor, off-beat hats, jazzy piano chords, vibes), **🎹 ringed piano house** (piano stabs, an octave bass, a lead, a breakdown), **🫧 Zib acid jack** (a squelching acid bass, cowbell, a theremin from another world, zaps).
+  - 🧊 **Frostia, trance:** **🧊 Frostia uplifting trance** (a rolling bass between the kicks, a plucked arpeggio, a supersaw anthem, a breakdown and its build), **❄️ ice arpeggios** (arpeggios and glass bells), **🌨️ snowfall dream trance** (a piano melody over pads).
+  - Each in 🎵 Music too, in three groups of their own. New instruments: 🎹 piano, 🌈 supersaw, 🥢 claves, 🎺 brass, each with its knob on the mixing board.
+- **Fixed: a planet tapped in the quilt, right after lifting off**, flies across to it a little higher before coming down (it had jumped straight there); a planet's glow kept inside its square too.
+
 ## 0.0.525 (2026-11-21)
 
 Everything in 0.0.524, plus:
