@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.527 (2026-11-21)
+
+Everything in 0.0.526, plus:
+
+- **🕳️ The black hole looks like where it goes** (Matthew: "The black hole in human outspace should look like a cat, and vice versa. Currently its reversed", and "the appearance should indicate the target of going into that"). In the people's universe it has a cat's ears and whiskers and pink and teal gas: the way to the cats'. In the cat universe it is a plain one, orange and gold: the way back. On the quilt too.
+- **Fixed: the scene drawn again on going through the black hole.** A scene that draws cats in the cat universe (the black hole, the bridge, the alien planet, the station) kept its look from the other universe until something else changed.
+- **Fixed: the cat in the rocket's window** (Matthew: "as a human, going into cat blackhole, post arrival, I disappear and no cat appears in cockpit port hole"). Riding the rocket as a cat, the cat sits up with its face at the window; it was drawn at the rocket's feet, hidden by the hull.
+
 ## 0.0.526 (2026-11-21)
 
 Everything in 0.0.525, plus:

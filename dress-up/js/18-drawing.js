@@ -444,7 +444,9 @@ function drawNow() {
   // each a piece cached on what it holds: outside the place's own cache,
   // which compares the settings it read by identity, so a thing changed in
   // place (moved, turned, its leaves) would draw nothing new inside it
-  const bgFull = scened ? partByReads(`scene:${BG.kind}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o, true)) +
+  // (and kept apart by universe, Matthew 2026-11-21: a scene asks catverse() itself, unseen by the reads, so the black hole stayed
+  // as it was drawn in the other universe)
+  const bgFull = scened ? partByReads(`scene:${BG.kind}:${BG.universe === "cats" ? "cats" : "people"}`, sceneOpts(BG), o => backgroundSvg(BG.kind, left, top, -left, bottom, SCENE.ground, o, true)) +
                           thingsLayer({ o: BG, F: [left, top, -left, bottom, SCENE.ground] }) + worldWaysSvg(BG, left, top, -left, bottom, SCENE.ground) : null;
   const sceneStill = sceneryStill(), bgText = bgFull && sceneStill ? stillScene(bgFull) : bgFull;   // (ticket 164: held still on a slow computer)
   if (document.body.classList.contains("still-scenery") !== sceneStill) document.body.classList.toggle("still-scenery", sceneStill);
@@ -1360,10 +1362,12 @@ function drawNow() {
   // drawings, at 0.45 of the friend's height
   if (friendIsCat()) {   // (ticket 802: or a cat, played, in the people's universe)
     const fh = ground - friendFrame.top, cs = 0.45 * fh / 50, WC = CAT_COATS[Math.max(0, Math.min(3, Math.round(B.catCoat ?? 1)))];
-    const moving = B.anim === "walk" || B.anim === "run" || (move && !move.held && !move.grounded), pose = B.pose === "lie" ? "sleep" : moving && !sitting ? "walk" : "sit";
+    // (Matthew 2026-11-21's screenshot of the cat universe: riding the rocket, the cat was drawn at its feet, hidden by the hull,
+    // the window empty) in the rocket, sitting up, its head at the window
+    const inWin = !!rocketShell, moving = B.anim === "walk" || B.anim === "run" || (move && !move.held && !move.grounded), pose = B.pose === "lie" ? "sleep" : moving && !sitting && !inWin ? "walk" : "sit";
     const W = catWag({}, 0), inner = pose === "sleep" ? sleepingCat(WC, W, 0) : pose === "walk" ? walkingCat(WC, W, 0) : shoulderCat(4, WC, W, false);
-    const y = sitting ? L + 12 : ground;
-    svg = svg.slice(0, figAt) + (sitting ? "" : `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(24 * cs)}" ry="${f1(5 * cs)}" fill="#000000" opacity="0.15"/>`) +
+    const y = inWin ? ground - 0.84 * fh + 48 * cs : sitting ? L + 12 : ground;
+    svg = svg.slice(0, figAt) + (sitting || inWin ? "" : `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(24 * cs)}" ry="${f1(5 * cs)}" fill="#000000" opacity="0.15"/>`) +
       `<g class="friend-cat" data-cat="${pose}" transform="translate(0 ${f1(y + (pose === "sit" ? 7 * cs : 0))}) scale(${(dir < 0 ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`;
   }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)

@@ -671,10 +671,12 @@ function catverseCats(list, alien = false) {
   return list.map(([name, x, y, s, coat, pose], i) => obj(name, y, spaceCatSvg(x, y, s, (alien ? ALIEN_CAT_COATS : CAT_COATS)[coat % 4], pose, i, alien))).join("");
 }
 // 🕳️ the black hole: deep space round it, the stars, a glow; its disk of hot gas going round (back half, then the hole, the
-// light bent over its top, the front half); the hole itself, black, ringed with light. In the cat universe its gas is pink
-// and teal, and it has a cat's ears and whiskers. Tap it to fall in (blackHoleEnter).
+// light bent over its top, the front half); the hole itself, black, ringed with light. It looks like where it goes (Matthew
+// 2026-11-21: "The black hole in human outspace should look like a cat, and vice versa"): in the people's universe, the way to
+// the cats', its gas pink and teal, a cat's ears and whiskers; in the cat universe, the way back, a plain one, its gas orange and
+// gold. Tap it to fall in (blackHoleEnter).
 function blackholeScene(c) {
-  const { x0, y0, x1, y1, W, H, k, pad, R, all, o } = c, cats = catverse();
+  const { x0, y0, x1, y1, W, H, k, pad, R, all, o } = c, cats = o.universe !== "cats";   // (cats: it goes to the cat universe; read from o, so the scene is drawn again when the universe changes)
   const cx = 0, cy = y0 + H * 0.36, rh = H * 0.13, disk = cats ? ["#ff6fae", "#7ef9ff", "#ffe0f0"] : ["#ff7a1a", "#ffd166", "#fff6e0"];
   let s = SEP + part("blackhole-sky", [c.F, cats, o.spaceSeed, o.spaceStars, o.spaceNebula, o.starShape, o.starSize, o.starBright, o.starTwinkle, sceneLfoKey(o, "fast")], () =>
     spaceViewSvg({ ...c, o: { ...o, spacePlanet: "none" } }, x0 - pad, y0 - pad, x1 + pad, y1 + pad, "bg-bh-view") +

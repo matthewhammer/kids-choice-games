@@ -271,7 +271,10 @@ const FLY_LOOKS = {
   alienplanet: (k, o) => flyRect(0, 0, FT, FT, "#5b3f8f") + [0, 1, 2].map(i => flyC(120 + 260 * i, 200 + 140 * flyR(k, i), 40, "#7ef9ff80")).join("") + [0, 1, 2, 3].map(i => flyC(80 + 200 * i, 560 - 90 * flyR(k, 10 + i), 22, "#ff9bf0")).join(""),
   // (ticket 800: the black hole from above: its disk round a black middle)
   // (in outer space's grid, SPACE_HOLE: a way in from the quilt, as its planets are, its name under it)
-  blackhole: (k, o, cell = {}) => { const disk = flyC(FT / 2, FT / 2, 170, o.universe === "cats" ? "#ff6fae" : "#ff7a1a") + flyC(FT / 2, FT / 2, 120, "#ffd166") + flyC(FT / 2, FT / 2, 95, "#000000");
+  // (as in its scene, it looks like where it goes: from the people's universe a cat's, pink and teal with a cat's ears)
+  blackhole: (k, o, cell = {}) => { const toCats = o.universe !== "cats", c = FT / 2;
+    const ears = toCats ? [-1, 1].map(sd => `<path d="M${c + sd * 30} ${c - 88} L${c + sd * 85} ${c - 160} L${c + sd * 92} ${c - 45} Z" fill="#000000"/>`).join("") : "";
+    const disk = flyC(c, c, 170, toCats ? "#ff6fae" : "#ff7a1a") + flyC(c, c, 120, toCats ? "#7ef9ff" : "#ffd166") + ears + flyC(c, c, 95, "#000000");
     return flyRect(0, 0, FT, FT, "#070a1c") + (!cell.spaceHole ? disk : `<g class="fly-planet" data-planet="blackhole" data-key="${k}"><title>🕳️ Into the black hole: out in the ${o.universe === "cats" ? "people's" : "cats'"} universe</title>` +
       flyC(FT / 2, FT / 2, 205, "#ffe9a0", ` class="fly-glow"`) + disk + `<text x="${FT / 2}" y="${FT / 2 + 170 + 70}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">🕳️ black hole</text></g>`); },
   // (ticket 812, Matthew 2026-11-21: "the quilt squares for space don't show the position of any planets?") each square's own planet
