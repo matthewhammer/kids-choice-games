@@ -337,6 +337,34 @@ const INSTRUMENTS = {
       o.frequency.exponentialRampToValueAtTime(f * (1 + 0.014 * x), t + dt + 0.06);
     }
   },
+  // (ticket 814, Matthew 2026-11-21: "let's create some new music tracks for space ---- more ambient sounds, and strange harmonics
+  // that are major key themed. ghost/theramin please") 🛸 a theremin: a sine with a little of its third harmonic, scooping up into
+  // each note from a quarter tone under it, its vibrato coming in late and widening (its knob: how much)
+  theremin(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur, g = held(A, out, t, 0.13 * v, 0.12, end, 0.25), o = tone(A, g, "sine", f * 0.97, t, end + 1.2);
+    o.frequency.setTargetAtTime(f, t, 0.06);
+    tone(A, gainOf(A, g, 0.06), "sine", f * 3, t, end + 1.2);
+    const l = A.createOscillator(), lg = A.createGain(); l.frequency.value = 5.2;
+    lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.025 * x / 50, t + Math.min(0.9, dur));
+    l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(end + 1.2);
+  },
+  // 🌫️ a wail: a ghost's breath, noise through two narrow bands where a voice's vowel would be (its note, and a little over twice
+  // it), swelling slowly, wavering (its knob: how much), a faint hum of the note under it
+  wail(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), end = t + dur, g = held(A, out, t, 0.5 * v, 0.45, end, 0.6);
+    const b1 = filter(A, g, "bandpass", f, 14), b2 = filter(A, gainOf(A, g, 0.5), "bandpass", f * 2.1, 10);
+    const src = gainOf(A, b1, 1); src.connect(b2); noise(A, src, t, end + 2.5);
+    const l = A.createOscillator(), lg = A.createGain(); l.frequency.value = 0.9 + 0.4 * Math.random(); lg.gain.value = f * 0.03 * x / 50;
+    l.connect(lg); lg.connect(b1.frequency); l.start(t); l.stop(end + 2.5);
+    tone(A, held(A, out, t, 0.025 * v, 0.5, end, 0.6), "sine", f, t, end + 2.5);
+  },
+  // 🔮 a glass bell, its overtones strange but sweet: the note, a fifth over it, a major third and a sixth an octave up, a little off
+  // true (as glass is), each dying away at its own pace, a slow shimmer between them (its knob: how long it rings)
+  glass(A, out, t, m, dur, v, x = 50) {
+    const f = hz(m), k = ring(x);
+    for (const [r, a, tau] of [[1, 1, 2.2], [1.503, 0.45, 1.6], [2.52, 0.35, 1.2], [3.37, 0.22, 0.8], [5.06, 0.12, 0.5]])
+      tone(A, amp(A, out, t, 0.06 * v * a, 0.006, tau * k), "sine", f * r, t, t + 7 * tau * k, r === 1 ? 0 : 4);
+  },
   // (ticket 804) the little chip of the Pinball in Hazel (matthewhammer.org/hazeljs-examples/pinball/), its sounds as made
   // there: a lead on a pulse wave a quarter on, with vibrato on a long note (its knob: how much); an arpeggio on a thinner
   // pulse, an eighth on (its knob: how long each note rings); a triangle bass; and drums of noise
@@ -1395,6 +1423,23 @@ const TUNES = {
       { name: "snare4", inst: "chipsnare", line: hitsOf("....x.......x... ....x.......x... ....x.......x... ....x.......xxxx") },
       { name: "hats4", inst: "chiphat", line: hitsOf("..x...x...x...x. ..x...x...x...x. ..x...x...x...x. ..x...x...x.....") },
     ], form: [S(4, "leadA bassA arpA kick snare4 hats4"), S(4, "leadB bassB arpB kick snare4 hats4"), S(4, "leadC bassC arpC kick snare4 hats4")] }) },
+  // (ticket 814) 🌌 space's own: slow, wide, in major keys, the pad underneath, a theremin or a wailing ghost singing over it, glass
+  // bells between: nebula (C major), stardrift (D major, with the Lydian G♯ of its strangeness), planet rise (F major)
+  nebula: { name: "🌌 nebula", key: "C major", make: () => ({ bpm: 64, room: 0.85, level: 0.6, parts: [
+      { name: "pad", inst: "pad", line: lineOf("C3+G3+E4+B4:16 | F3+C4+A4+E5:16 | G3+D4+A4+E5:16 | C3+G3+E4+D5:16") },
+      { name: "theremin", inst: "theremin", line: lineOf("r:8 E5:8 | F5:12 E5:4 | D5:10 E5:2 D5:4 | C5:8 G5:8") },
+      { name: "ghost", inst: "wail", line: lineOf("E4:16 | F4:16 | D4:16 | E4:16") },
+      { name: "glass", inst: "glass", line: lineOf("C5:2 G5:2 E6:4 r:8 | A5:2 C6:2 F6:4 r:8 | B5:2 D6:2 G6:4 r:8 | C6:2 E6:2 G6:4 r:8") }] }) },
+  stardrift: { name: "✨ stardrift", key: "D major", make: () => ({ bpm: 58, room: 0.9, level: 0.6, parts: [
+      { name: "pad", inst: "pad", line: lineOf("D3+A3+F#4:16 | G3+D4+B4:16 | E3+B3+G#4:16 | D3+A3+F#4+C#5:16") },
+      { name: "ghost", inst: "wail", line: lineOf("F#5:6 E5:2 D5:8 | B4:6 D5:2 G5:8 | G#5:8 F#5:4 E5:4 | F#5:16") },
+      { name: "theremin", inst: "theremin", line: lineOf("r:16 | r:8 D6:8 | B5:8 G#5:8 | A5:16") },
+      { name: "glass", inst: "glass", line: lineOf("D6:4 A5:4 F#5:4 A5:4 | G5:4 D6:4 B5:4 D6:4 | E6:4 B5:4 G#5:4 B5:4 | F#6:8 r:8") }] }) },
+  planetrise: { name: "🪐 planet rise", key: "F major", make: () => ({ bpm: 70, room: 0.8, level: 0.6, parts: [
+      { name: "pad", inst: "pad", line: lineOf("F3+C4+A4:16 | A#3+F4+D5:16 | C4+G4+E5:16 | F3+C4+A4+G5:16") },
+      { name: "theremin", inst: "theremin", line: lineOf("C5:4 F5:4 A5:8 | A#5:4 A5:4 F5:8 | G5:4 E5:4 C5:8 | F5:12 r:4") },
+      { name: "ghost", inst: "wail", line: lineOf("A4:16 | D5:16 | C5:16 | A4:16") },
+      { name: "glass", inst: "glass", line: lineOf("F5:2 A5:2 C6:2 F6:2 r:8 | D6:2 A#5:2 F5:2 D5:2 r:8 | E5:2 G5:2 C6:2 E6:2 r:8 | F6:4 C6:4 A5:8") }] }) },
   orbit: { name: "🪐 orbit", key: "A minor", make: () => ({ bpm: 140, room: 0.6, level: 0.5, parts: [
       { name: "leadA", inst: "chiplead", line: lineOf(
         "E5:6 A5:4 G5:2 E5:4 | " +
@@ -1432,7 +1477,8 @@ const TUNES = {
     ], form: [S(4, "leadA bassA arpA kick snare4 hats4"), S(4, "leadB bassB arpB kick snare4 hats4")] }) },
 };
 // each background's own tune
-const SCENE_TUNE = { starfield: "vibes", blackhole: "vibes", bridge: "vibes", alienplanet: "cemetery", stationlab: "vibes", stationgarden: "cemetery", stationbunks: "lullaby", stationkitchen: "cushions", stationmess: "skatepark", hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
+// (ticket 814: the starfield's, the black hole's and the planets' own, space's music)
+const SCENE_TUNE = { starfield: "nebula", blackhole: "stardrift", bridge: "vibes", alienplanet: "planetrise", stationlab: "vibes", stationgarden: "cemetery", stationbunks: "lullaby", stationkitchen: "cushions", stationmess: "skatepark", hut: "forest", hutroom: "cushions", hutbed: "lullaby", hutpotion: "healerwaltz", hutcenter: "lullaby", forest: "forest", underwater: "underwater", deepsea: "underwater", beach: "beach", sea: "beach", witch: "witch", cemetery: "cemetery",
                      lake: "duckdash", house: "housechase", treehouse: "treechase", treeroom: "treechase", treetop: "treechase", livingroom: "cushions", diningroom: "cushions", kitchen: "cushions", stairhall: "cushions", bedroom: "lullaby", laundry: "cushions", furnace: "cushions",
                      witchroom: "witch", clearing: "forest", mountains: "forest", waterfall: "steppers", campsite: "lullaby", healerroom: "healerwaltz", fairyforest: "healerwaltz",
                      tent: "lullaby", cave: "steppers", caveroom: "steppers", farmyard: "forest", desert: "canyon", woodpath: "forest", pasture: "forest", garden: "cemetery", spring: "roots", crossing: "forest", cavecross: "steppers", dungeon: "steppers", castle: "castlewaltz", castleroom: "ballroom",
@@ -1481,6 +1527,7 @@ const TUNE_GROUPS = [
   ["story", "📖 storybook", ["forest", "harpsichord", "spiders", "cemetery"]],
   ["chest", "🎁 chest opening", Object.keys(CHEST_TUNES)],   // (ticket 631)
   ["pinball", "🎱 pin ball", ["overdrive", "bumperstorm", "orbit"]],   // (ticket 804: the Pinball in Hazel's three)
+  ["space", "🌌 space", ["nebula", "stardrift", "planetrise"]],   // (ticket 814: ambient, major, the theremin and the ghost)
 ];
 // (ticket 631) a chest's flourish, played once, over the music, on the music's own instruments (as long as it lasts, no loop)
 function chestFlourish(id) {
@@ -1961,9 +2008,10 @@ const INST_ICON = { steelpan: "🥘", organ: "🎹", bass: "🎸", kick: "🥁",
                     bell: "🔔", pad: "☁️", musicbox: "🎶", flute: "🌬️", bird: "🐦", buzz: "🐝", wahbass: "🎸", harpsichord: "🎼",
                     vibes: "🔮", fiddle: "🎻", lead: "🎛️", zap: "⚡",
                     bassgtr: "🎸", bongo: "🪘", openhat: "🎩", tonewheel: "🎹", funkgtr: "🎸", twang: "🎸",
-                    chiplead: "🕹️", chiparp: "🕹️", chipbass: "🕹️", chipkick: "🥁", chipsnare: "🥁", chiphat: "🎩" };
+                    chiplead: "🕹️", chiparp: "🕹️", chipbass: "🕹️", chipkick: "🥁", chipsnare: "🥁", chiphat: "🎩",
+                    theremin: "🛸", wail: "🌫️", glass: "🔮" };
 // each instrument's own knob, by name (what it does is in INSTRUMENTS)
-const INST_KNOB = { steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
+const INST_KNOB = { theremin: "〰️ vibrato", wail: "〰️ waver", glass: "✨ ring", steelpan: "✨ ring", harpsichord: "✨ ring", fiddle: "✨ ring", pizz: "✨ ring", pluck: "✨ ring", musicbox: "✨ ring",
                     bell: "✨ ring", rim: "✨ length", snare: "✨ length", hat: "✨ length", shaker: "✨ length", cowbell: "✨ length",
                     chop: "✨ length", kick: "💥 boom", conga: "🎵 pitch", bass: "🎸 growl", buzz: "🐝 wah", wahbass: "🎸 wah", organ: "🎹 bright",
                     melodica: "〰️ vibrato", flute: "〰️ vibrato", ghost: "〰️ waver", vibes: "🌀 wobble", pad: "🌅 swell",
