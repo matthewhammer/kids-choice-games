@@ -20,7 +20,11 @@ const ITEMS = [["bubbles", "🫧", "blow bubbles", "ability"], ["fire", "🔥", 
                ["net", "🥅", "the bug net", "tool"], ["sword", "🗡️", "the sword", "tool"], ["can", "💧", "the watering can", "tool"],
                // (ticket 691: the crafts, which anyone has, as the abilities: used, the friend takes off, and flies over the world seen
                // from above; used again, lands: js/25-flight.js)
-               ["balloon", "🎈", "the hot-air balloon", "craft"], ["bubbleride", "🫧", "a big bubble to ride", "craft"], ["rocketride", "🚀", "the rocket", "craft"],
+               ["balloon", "🎈", "the hot-air balloon", "craft"], ["bubbleride", "🫧", "a big bubble to ride", "craft"], ["rocketride", "🚀", "the rocket, up over the world", "craft"],
+               // (Matthew 2026-11-21: "let's integrate the 'horse on/off' or 'rocket on/off' stuff from 'Body' into backpack menu, so
+               // we can control those things 'in game'") the friend's own horse and rocket, as 🧍 Body has them (MOUNTS): each press
+               // the next way (none, led, ridden; none, beside them, inside it), or chosen on its tile
+               ["horse", "🐴", "your horse", "mount"], ["rocket", "🚀", "your rocket: beside you, or in it", "mount"],
                // (Matthew: "costume props [to] appear in the backpack when we add the costume": itemsDressed) a costume's own things, held
                // in the hand (drawn as HOLDABLES draws them), nothing done by their button: shown on the screen once had
                ["broom", "🧹", "a broom", "prop"], ["staff", "🪄", "a staff", "prop"], ["scepter", "👑", "a scepter", "prop"],
@@ -46,7 +50,7 @@ const slotMark = m => el("span", { class: "slot-mark", "aria-hidden": "true" }, 
 function itemHas(id) {
   const it = itemOf(id);
   if (!it) return false;
-  if (it.kind === "ability" || it.kind === "craft") return true;
+  if (it.kind === "ability" || it.kind === "craft" || it.kind === "mount") return true;
   if (packList().some(o => o.id === id)) return true;
   if (id !== "sword") return false;
   const h = heldItems(state.body, state.costume.kind, state.costume);
@@ -177,10 +181,21 @@ function itemKey(s, down) {
   if (!id) return;
   if (itemOf(id).kind === "craft") flightToggle(id);   // (ticket 691)
   else if (flight) return;   // (flying, only a craft's button does anything: landing)
+  else if (itemOf(id).kind === "mount") mountNext(id);
   else if (itemOf(id).kind === "tool") itemToolUse(id);
   else if (id === "bubbles") blowGo();
   else if (id === "fire") fireGo();
 }
+// a mount's ways, as 🧍 Body's choices for it; one chosen puts the other away (the horse would win: no rocket with the horse)
+const MOUNTS = { horse: ["horse", "rocket", [["none", "🚫 no horse"], ["lead", "🚶 led by its rein"], ["ride", "🏇 ridden"]]],
+                 rocket: ["rocket", "horse", [["none", "🚫 no rocket"], ["hover", "🛸 beside you"], ["ride", "🧑‍🚀 inside it"]]] };
+function mountSet(id, v) {
+  const [key, other] = MOUNTS[id];
+  if (v !== "none" && (state.body[other] || "none") !== "none") state.body[other] = "none";
+  set("body", key, v);
+  if (itemsOpen) itemsRender();
+}
+function mountNext(id) { const [key, , ways] = MOUNTS[id], i = ways.findIndex(([v]) => v === (state.body[key] || "none")); mountSet(id, ways[(i + 1) % ways.length][0]); }
 // what the slots' buttons were holding, let go (a slot changed, or the screen opened)
 function itemLetGo() { itemKeys.a = itemKeys.b = false; blowPad = false; firePad = false; }
 
@@ -230,11 +245,14 @@ function itemsRender() {
     return el("div", { class: "items-tile" + (has ? "" : " missing") + (i === itemsAt ? " at" : ""), "data-item": id }, [
       el("div", { class: "items-icon", "aria-hidden": "true" }, icon),
       el("div", { class: "items-name" }, name),
-      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "craft" ? "press to fly, again to land" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
+      el("div", { class: "hint" }, !has ? "not found yet" : kind === "tool" ? "a tool: press to use" : kind === "craft" ? "press to fly, again to land" : kind === "mount" ? "press for the next way" : kind === "prop" || kind === "thing" ? "held in the hand" : "hold to use"),
       el("div", { class: "items-pick" }, SLOTS.map(([s, , mark]) => el("button", { type: "button", ...(has ? {} : { disabled: "" }),
         "aria-pressed": String(itemIn(s) === id), title: `${mark}: ${name}`, onclick: () => { itemsAt = i; itemSet(s, id); } }, slotMark(mark)))),
       // (ticket 691: a craft flown at once, from here: on a line of its own under 🔹 and 🔸, which stay as every tile's are)
-      ...(kind === "craft" ? [el("button", { type: "button", class: "items-fly", title: `fly ${name}`, onclick: () => flightStart(id) }, "🛫 fly")] : [])]);
+      ...(kind === "craft" ? [el("button", { type: "button", class: "items-fly", title: `fly ${name}`, onclick: () => flightStart(id) }, "🛫 fly")] : []),
+      // (a mount's ways, one a chip, the one now pressed: chosen at once, from here)
+      ...(kind === "mount" ? [el("div", { class: "items-ways", role: "group", "aria-label": name }, MOUNTS[id][2].map(([v, label]) =>
+        el("button", { type: "button", "aria-pressed": String((state.body[MOUNTS[id][0]] || "none") === v), onclick: () => { itemsAt = i; mountSet(id, v); } }, label)))] : [])]);
   });
   itemsEl.replaceChildren(
     el("div", { class: "items-top" }, [el("h2", {}, "🎒 Your items"),

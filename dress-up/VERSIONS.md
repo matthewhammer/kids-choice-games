@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.529 (2026-11-21)
+
+Everything in 0.0.528, plus:
+
+- **🐴 Your horse and 🚀 your rocket in the 🎒 backpack** (Matthew: "let's integrate the 'horse on/off' or 'rocket on/off' stuff from 'Body' into backpack menu, so we can control those things 'in game'"). Two new items: **🐴 your horse** (no horse, led by its rein, ridden) and **🚀 your rocket** (no rocket, beside you, inside it). Choose a way on its tile, or put it on 🔹 or 🔸 and each press goes to the next way (Z or X, or the controller's triggers). Choosing one puts the other away. The flying rocket's item is now called "the rocket, up over the world".
+
 ## 0.0.528 (2026-11-21)
 
 Everything in 0.0.527, plus:

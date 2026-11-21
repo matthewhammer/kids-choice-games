@@ -1375,6 +1375,7 @@ body.flying .ways-layer, body.flying #back { display: none !important; }
 .fly-hud .way-arrow.fly-space[hidden] { display: none; }
 .fly-hud .fly-space .way-tri::before { background: #fde68a; }
 .items-fly { margin-top: 4px; font-size: 1em; padding: 1px 12px; white-space: nowrap; }
+.items-ways { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 4px; } .items-ways button { font-size: 0.85em; padding: 1px 8px; }
 #fly.fly-high .fly-things, #fly.fly-high .fly-near { display: none; }   /* (high up, the squares' things left out: too small to see, and many) */
 /* (the craft bobbing as it floats: a CSS animation of its own group, nothing done a frame for it) */
 .fly-bob { animation: fly-bob 3.2s ease-in-out infinite; }
