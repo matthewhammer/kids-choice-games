@@ -1069,6 +1069,7 @@ function changed() {
   const t0 = performance.now(); draw(); perfMeter.ms += performance.now() - t0; perfMeter.draws++;   // (ticket 155: for the ⚙️ advanced tab's meter)
   flagCastles = null;   // (ticket 365: each round of syncs reads the castles afresh, once: flagCastle)
   for (const f of syncs) f(); for (const f of hudSyncs) f(); persist(); musicSync(); backSync(); feedMusic();
+  if (typeof teamBarSync === "function") teamBarSync();   // (ticket 802: the team's chips over the picture)
   // a new friend (loaded, started over, surprised) or a scene turned on or
   // off rebuilds the HUD; a slider moving in it does not
   if (!hud.hidden && hudKey() !== hudShown) renderHud();
@@ -1233,7 +1234,7 @@ const SHOWN_WHEN = {
   // (ticket 495) the mark's colour with a mark; the saddle's and its blanket's while ridden (the only time they are drawn)
   "body.horseLead": b => b.horse === "lead",   // (ticket 496)
   "body.rocketStyle": b => (b.rocket || "none") !== "none",   // (ticket 799)
-  "body.catCoat": b => state.background.universe === "cats",   // (ticket 800)
+  "body.catCoat": b => state.background.universe === "cats" || state.person.animal === "cat",   // (ticket 800; ticket 802: or a cat, played)
   ...Object.fromEntries(ROCKET_TRIPS.map(([kd]) => ["body.rocketTo_" + kd, b => (b.rocket || "none") !== "none" && state.background.kind !== kd])),
   "body.rocketHome": b => (b.rocket || "none") !== "none" && trips.length > 0,
   "body.horseBows": b => (b.horse || "none") !== "none" && b.horseManeStyle === "bows",   // (ticket 497)
@@ -1885,12 +1886,12 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
     const render = () => {
       peopleInit();
       const me = state.person, all = peopleAll(), here = personHere(), tpls = all.filter(p => p.template);
-      const sig = JSON.stringify([me, all.map(p => [p.id, personTitle(p), !!p.template, p.from, p.place || null]), here && [here.world, here.key], newTpl,
+      const sig = JSON.stringify([me, all.map(p => [p.id, personTitle(p), !!p.template, p.from, p.team ? "team" : p.place || null]), here && [here.world, here.key], newTpl,
                                   all.filter(p => p.place).map(p => personWhere(p))]);
       if (sig === shown) return;
       shown = sig;
       if (!tpls.some(t => t.id === newTpl)) newTpl = tpls.length ? tpls[0].id : null;
-      const mark = p => (p.template ? "⭐ " : "🧍 ") + personTitle(p);
+      const mark = p => (p.template ? "⭐ " : p.animal === "cat" ? "🐱 " : "🧍 ") + personTitle(p);
       const chips = all.map(p => el("button", { class: "person-chip", "aria-pressed": String(p === me), "data-person": p.id,
         title: p === me ? "The one in the picture: every tab dresses them, and they are the one who moves" : "Dress this person: they come into the picture, and the one now stays where they stand",
         onclick: () => { if (p !== me) personSwitch(p.id); } }, mark(p)));
@@ -1900,14 +1901,18 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, "⭐ " + personTitle(t)))) : null;
       const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
         el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
-        el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here"),
-        ...(p.place ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
+        // (ticket 802) 🏠 stays in their square, or 🤝 on the team: they go where the friend goes
+        el("button", { class: "person-team", "aria-pressed": String(!!p.team), ...(p.team || here ? {} : { disabled: "" }),
+          title: p.team ? "On the team: they go where the friend goes. Press to have them stay here" : here ? "Stays in their square. Press to have them join the team and go where the friend goes" : "Go to a place first: the team goes from there",
+          onclick: () => teamJoin(p.id, !p.team) }, p.team ? "🤝 on the team" : "🏠 stays"),
+        ...(p.team ? [] : [el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here")]),
+        ...(p.place && !p.team ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
         // (ticket 599) a path to walk where they stand, looped: its box opened below their row
-        ...(p.place ? [el("button", { class: "person-path", "aria-pressed": String(pathOpen.has(p.id)), title: "A path for them to walk here, looped, with pauses and poses",
+        ...(p.place && !p.team ? [el("button", { class: "person-path", "aria-pressed": String(pathOpen.has(p.id)), title: "A path for them to walk here, looped, with pauses and poses",
           onclick: () => { pathOpen.has(p.id) ? pathOpen.delete(p.id) : pathOpen.add(p.id); shown = null; render(); } }, p.path && String(p.path).trim() ? "🚶 path ✓" : "🚶 path")] : []),
         el("button", { class: "person-tpl", "aria-pressed": String(!!p.template), title: "A template: new people can be made from them", onclick: () => personSetTemplate(p.id, !p.template) }, "⭐"),
         el("button", { class: "person-drop", title: "Take this person out of the game", onclick: () => { if (confirm(`Take ${personTitle(p)} out of the game? This can't be undone.`)) personDrop(p.id); } }, "🗑️")]))
-        .flatMap((row, j) => { const p = all.filter(q => q !== me)[j]; if (!p.place || !pathOpen.has(p.id)) return [row];
+        .flatMap((row, j) => { const p = all.filter(q => q !== me)[j]; if (!p.place || p.team || !pathOpen.has(p.id)) return [row];
           const ta = el("textarea", { class: "story-text", rows: 5, spellcheck: "false", placeholder: PERSON_PATH_EXAMPLE, "aria-label": `${personTitle(p)}'s path` });
           ta.value = p.path || "";
           let t = 0; ta.addEventListener("input", () => { p.path = ta.value; persist(); clearTimeout(t); t = setTimeout(changed, 500); });
@@ -1923,6 +1928,8 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                          : [el("span", { class: "hint" }, "➕ to make new people, make someone ⭐ a template")]),
         // (ticket 459: or from a costume, chosen in a box laid over the panels, to compare with the dropdown above)
         el("div", { class: "row" }, [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "➕ from a costume")]),
+        // (ticket 802) a cat for the team: beside the friend, going where they go (in the cat universe, a person)
+        el("div", { class: "row" }, [el("button", { class: "person-new-cat", title: here ? "A cat for your team: it comes beside you and goes where you go. In the cat universe, where you are a cat, it is a person" : "A cat (go to a place first, for it to join your team there)", onclick: () => personNewCat() }, "➕ 🐱 a cat for the team")]),
         ...(others.length ? [el("div", { class: "cap" }, "🧍 the others"), ...others] : []));
     };
     syncs.push(render);

@@ -1209,7 +1209,9 @@ const PAD_ACTIONS = [["jumpShort", "🐸 short, fast jump"], ["jumpHigh", "🦘 
                      ["useA", "🔹 use your 🔹 item (a tool: press; an ability: hold)"], ["useB", "🔸 use your 🔸 item (a tool: press; an ability: hold)"],
                      ["items", "🎒 your items: the screen, open or shut (press)"], ["throw", "🏺 throw what you hold (with a pot held)"],
                      // (ticket 639: "permit a gamepad action to do 'open/use item' on it") on ✨'s button: what glows in reach first
-                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"]];
+                     ["act", "🫳 open a chest, pick up, lift a pot (what glows)"],
+                     // (ticket 802) ⇄ the next one on the team played, the one played till then to the end of the line
+                     ["team", "🤝 play the next one on your team (press)"]];
 // (ticket 146) teaching a pad its buttons, by their SNES names: pressed in
 // this order. Then A is the short jump, B the high one, X into the picture
 // that glows (ticket 145), Y crouch, R crawling on or off, select back,
@@ -1349,6 +1351,7 @@ function padPoll(t) {
   if (hit("jumpHigh") && !onLadder) { startJump(B.anim, "jumphigh"); changed(); }
   const acted = hit("act") && actionPress();   // (ticket 639: a chest, a thing to carry or a pot in reach, before the passage)
   if (hit("enter") && !acted) enterPicture();   // (ticket 145)
+  if (hit("team")) teamNext();   // (ticket 802)
   // (ticket 687) 🔹 and 🔸: a tool in the slot used by a press (ticket 639), 🫧 bubbles (221) and 🔥 fire (499) while it is held
   for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && itemOf(id).kind === "tool" && hit(a)) itemToolUse(id);
   for (const [a, id] of [["useA", slotA], ["useB", slotB]]) if (id && itemOf(id).kind === "craft" && hit(a)) flightStart(id);   // (ticket 691: a craft's button, taking off)
@@ -2247,7 +2250,7 @@ function padUse(id) {
 const TOUCH_ID = "on-screen controller";
 // (ticket 499: 🫧 and 🔥 on their own buttons here too, so a layout kept from before an action came in gets it on its button)
 // (ticket 687: 🔹 and 🔸 where 🫧 and 🔥 were)
-const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: -1, enter: 3, useA: 6, useB: 7, items: 9, throw: 1, act: 3 };   // (ticket 687: 🎒 on start, 🚪 off it)
+const TOUCH_CONTROLS = { jumpShort: 1, jumpHigh: 0, run: 5, crouch: 2, crawlToggle: 4, back: 8, door: -1, enter: 3, useA: 6, useB: 7, items: 9, throw: 1, act: 3, team: -1 };   // (ticket 687: 🎒 on start, 🚪 off it)
 const touchPad = { want: false, shown: false, el: null, keys: "",
   pad: { id: TOUCH_ID, index: -1, connected: true, mapping: "standard", axes: [0, 0, 0, 0], timestamp: 0,
          buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0, at: 0, tok: 0 })) } };

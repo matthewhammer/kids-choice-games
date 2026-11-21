@@ -1355,7 +1355,7 @@ function drawNow() {
   // their place (their clothes and all kept for the people universe): walking as they move, sitting as they stand or sit (on
   // a seat at its top), curled up asleep as they lie; facing their way; its coat 🐱's (CAT_COATS). The castle's cats' own
   // drawings, at 0.45 of the friend's height
-  if (state.background.universe === "cats") {
+  if (friendIsCat()) {   // (ticket 802: or a cat, played, in the people's universe)
     const fh = ground - friendFrame.top, cs = 0.45 * fh / 50, WC = CAT_COATS[Math.max(0, Math.min(3, Math.round(B.catCoat ?? 1)))];
     const moving = B.anim === "walk" || B.anim === "run" || (move && !move.held && !move.grounded), pose = B.pose === "lie" ? "sleep" : moving && !sitting ? "walk" : "sit";
     const W = catWag({}, 0), inner = pose === "sleep" ? sleepingCat(WC, W, 0) : pose === "walk" ? walkingCat(WC, W, 0) : shoulderCat(4, WC, W, false);
@@ -1371,7 +1371,7 @@ function drawNow() {
   // (ticket 136: the far leg first, see-through with the pants and the feet,
   // then the far arm, see-through with the shirt, as it was)
   const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
-  if ((farDeep || farLegSvg) && state.background.universe !== "cats") svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
+  if ((farDeep || farLegSvg) && !friendIsCat()) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {

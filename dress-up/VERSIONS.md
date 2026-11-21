@@ -4,6 +4,14 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.521 (2026-11-21)
+
+Everything in 0.0.520, plus:
+
+- **🤝 A team that goes where you go** (ticket 802, M's request, by Matthew: "when we place other friends into the scene, each should have a toggle: stays in background square, or moves with friend on the active team (either walking after them, or riding a horse after them, or swimming after them, etc) a la games like final fantasy that have multi-person teams under the control of the player. A way to switch who is active in the active team."). In 👥 People, each of the others has a toggle: 🏠 stays (in their square, as before) or 🤝 on the team. The team follows the friend from square to square and world to world, in a line behind them along the way they walked: walking with them, each on a horse of their own when the friend rides, swimming with their heads above the water where it is deep, and turning to the friend when they stop. Switch who you play: tap their name in the team's list over the picture (top left), or press **Q** for the next one in the line (a controller's button can be set for it in 🎮 Controls). The one you played till then goes to the end of the line, and the line forms again behind the new one.
+- **🐱 A cat on the team** (Matthew: "let's be sure that the cat animal is another possible member of the team for the friend. We made a cat universe where we actually become a cat. In that universe, the cats become people, as we become cats."). 👥 People has **➕ 🐱 a cat for the team**: a cat comes beside the friend and joins the team (each new cat in the next coat: orange, black, grey, white). It walks after you and sits when you stop. You can play the cat too (its name in the team's list, or Q): then you are the cat, and 🐱 your coat is in the Body tab. Through the black hole, in the cat universe, it is the other way round: the people on the team are cats, and a cat on the team is a person (with hair and a shirt in its coat's colours).
+- **One craft for the whole team** (Matthew: "instead of everyone getting their own bubble, let's try to put the whole team in one: bubble, balloon basket, rocket ship", "the team shares a vehicle, when in the air. On the ground, separate horses are fine and more normal", "let's always have a square basket, and let's fill it with people in a square-shaped grid layout within", and "let's okay to show the people overlapping, if their heads are not overlapping. it will look more realistic"). Flying, the team rides with the friend: in the bubble (bigger, with them in a ring), in the balloon's basket (square, the team in a square grid, the friend in the front row's middle; the balloon bigger to carry them), or in the rocket (bigger, all of them seen through its window). They sit close, their bodies overlapping, their heads apart.
+
 ## 0.0.520 (2026-11-20)
 
 Everything in 0.0.519, plus:

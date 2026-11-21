@@ -2074,12 +2074,15 @@ function personSwitch(id) {
   const here = personHere();
   // (the one left stays where they stood; when the other has no place of their own, the other comes here, and the one left
   // steps aside)
+  // (ticket 802: the other on the team, the one left joins it, at the end of the line, and the line forms again behind the other)
+  const joins = to.team ? 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0)) : 0;
   state.peopleAway[from.id] = { id: from.id, name: from.name || "", template: !!from.template, from: from.from || null, look: personLookNow(),
-                                place: to.place || !here ? here : personAside(here, to.id) };
+                                place: to.place || !here ? here : personAside(here, to.id), ...(joins ? { team: joins } : {}), ...(from.animal ? { animal: from.animal } : {}) };
   delete state.peopleAway[id];
+  if (joins) teamTrail = null;
   const look = personLookWhole(to.look);
   for (const k of PERSON_PARTS) state[k] = look[k];
-  state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null };
+  state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null, ...(to.animal ? { animal: to.animal } : {}) };
   const P = to.place;
   if (P && worldById(P.world) && worldById(P.world).cells[P.key]) {
     if (P.world !== state.world.id) worldSwitch(P.world, P.key, null, false); else if (P.key !== state.world.at) worldEnter(P.key, null, false);
@@ -2095,10 +2098,40 @@ function personNew(tplId) {
   if (!T) return null;
   const all = peopleAll(), n = 1 + Math.max(0, ...all.map(personNum)), base = personTitle(T).replace(/\s+\d+$/, ""), names = new Set(all.map(personTitle));
   let k = 1; while (names.has(`${base} ${k}`)) k++;
-  const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: T.id, look: clone(T.look), place: null };
+  const P = { id: "p" + n, name: `${base} ${k}`.slice(0, PERSON_NAME_MAX), template: false, from: T.id, look: clone(T.look), place: null, ...(T.animal ? { animal: T.animal } : {}) };
   state.peopleAway[P.id] = P;
   personSwitch(P.id);
   return P.id;
+}
+// (ticket 802, Matthew 2026-11-21: "let's be sure that the cat animal is another possible member of the team for the friend.
+// We made a cat universe where we actually become a cat. In that universe, the cats become people, as we become cats.")
+// 🐱 A cat: one of the people, animal "cat", its coat its look's body.catCoat (each new cat the next of CAT_COATS). Made beside
+// the friend and on the team. In the people's universe a cat is drawn as a cat (walkingCat, shoulderCat sitting), the
+// friend's own cat drawing (ticket 800); in 🐱 the cat universe it is a person, as the people there are cats: its look
+// then, a person's, its hair and shirt in its coat's colour. Played (⇄), the friend is the cat, the same way round.
+const personIsCat = P => !!P && (P.animal === "cat") !== (state.background.universe === "cats");
+const friendIsCat = () => !personBusy && personIsCat(state.person);   // (a person drawn off the page, a person: personBusy)
+function personNewCat() {
+  peopleInit();
+  const all = peopleAll(), n = 1 + Math.max(0, ...all.map(personNum)), names = new Set(all.map(personTitle));
+  let k = 1; while (names.has(`cat ${k}`)) k++;
+  const coat = (all.filter(P => P.animal === "cat").length) % CAT_COATS.length, C = CAT_COATS[coat], look = personLookWhole(null);
+  look.body.catCoat = coat; look.hair.color = C.catFur; look.shirt.color = C.catWhite && C.catWhite !== "off" ? C.catWhite : C.catFur;
+  const here = personHere();
+  const P = { id: "p" + n, name: `cat ${k}`, template: false, from: null, look, place: here ? personAside(here) : null, animal: "cat",
+              ...(here ? { team: 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0)) } : {}) };
+  state.peopleAway[P.id] = P;
+  changed();
+  return P.id;
+}
+// a cat's figure, as a team's member's node draws it: walking (WAY) or sitting, its height `h` that of the friend's own cat
+// (0.45 of a person's height), its feet at (0, 0)
+const TEAM_CAT_FH = 330;
+function personCatFig(P, v) {
+  const C = CAT_COATS[Math.max(0, Math.min(3, Math.round(Number(((P.look || {}).body || {}).catCoat ?? 1))))], cs = 0.45 * TEAM_CAT_FH / 50, i = personNum(P);
+  const walk = /^(walk|ride|wet):/.test(v), dir = (v.match(/(left|right)$/) || [])[1] || "right", W = catWag({}, i);
+  const inner = walk ? walkingCat(C, W, i) : shoulderCat(4, C, W, false);
+  return { svg: `<g transform="translate(0 ${walk ? 0 : f1(7 * cs)}) scale(${(dir === "left" && walk ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`, g: 0, h: 56 * cs, cat: true };
 }
 // (ticket 459, Matthew: "permit '+ from costume' and show a box -- on top of other panels, not within them? -- with the
 // costume chips to choose (or cancel at the bottom) --- experimenting with a new UX, instead of a drop down, to compare") a
@@ -2149,11 +2182,12 @@ function holdChipBox(part, key, label) {
   return chipBox(label, label, HOLD_CHOICES.filter(([v]) => v !== "rein" || horse).map(([v, lab]) => [v, lab, v === now]), v => set(part, key, v), "person-pick-chip hold-pick-chip", "hold");
 }
 function personSetTemplate(id, on) { const P = id === state.person.id ? state.person : state.peopleAway[id]; if (P) { P.template = !!on; changed(); } }
-function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; changed(); } }
+function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place = at || null; if (!at) delete P.team; changed(); } }
 // (one away taken out of the game; never the one dressed now)
 function personDrop(id) { if (!state.peopleAway[id]) return false; delete state.peopleAway[id]; for (const P of peopleAll()) if (P.from === id) P.from = null; changed(); return true; }
 // Where a person stands, said: the world (when another), the square's place and name
 function personWhere(P) {
+  if (P.team) return "🤝 on the team: where " + personTitle(state.person) + " goes";
   if (!P.place) return "not in any place";
   const W = worldById(P.place.world), c = W && W.cells[P.place.key];
   const nm = worldName(W, P.place.key);
@@ -2164,14 +2198,18 @@ function personWhere(P) {
 // node kept by person (personNodes) and put among the scene's objects by depth, as the friend is (peopleShow).
 const personDrawn = new Map(), personNodes = new Map();
 let personBusy = false, personWanted = false;
+const PERSON_DRAW_AT_ONCE = 4;
 // (ticket 599) a figure kept per look and per variant: "" standing as dressed; "walk:A:right" and its B, left and right, the two
 // steps of a walk; "pose:NAME", a pose struck (strikePose); "face:WAY", standing, turned that way
 const personKey = (P, v = "") => JSON.stringify(P.look) + (v ? "#" + v : "");
+// (ticket 802) a person's figure for a variant, drawn and kept, or a cat's (personCatFig): { svg, g: its feet's depth, h: its height }
+const personFig = (P, v) => { if (personIsCat(P)) return personCatFig(P, v); const f = personDrawn.get(personKey(P, v)); return f && { svg: f.svg, g: f.g, h: f.g }; };
 function personVariant(v) {
   const B = state.body; if (!v) return;
   const [kind, a, b] = v.split(":");
   if (kind === "pose") { strikePose(a); return; }
   if (kind === "face") { strikePose("stand"); B.facing = a; B.turn = ""; return; }
+  if (kind === "ride") { strikePose("stand"); B.horse = "ride"; B.facing = a; B.turn = ""; return; }   // (ticket 802: a horse of their own)
   if (kind === "walk") {   // (a step: legs apart, the arms swinging against them, in profile)
     strikePose("stand"); B.facing = b; B.turn = "";
     const s = a === "A" ? 1 : -1;
@@ -2182,10 +2220,13 @@ function peopleDrawMissing() {
   personWanted = false;
   if (personBusy) return;
   const want = [];
-  for (const P of Object.values(state.peopleAway)) if (P.place) for (const v of ["", ...peoplePathVariants(P)]) if (!personDrawn.has(personKey(P, v))) want.push([P, v]);
+  for (const P of Object.values(state.peopleAway)) if (P.place && !personIsCat(P)) for (const v of ["", ...(P.team ? teamVariants() : peoplePathVariants(P))]) if (!personDrawn.has(personKey(P, v))) want.push([P, v]);
   if (!want.length) return;
   // (not while the friend is held, climbing, dragged or going in somewhere: the drawing's own state is busy then)
   if (poseHeld || climb || drag || entering) { setTimeout(peopleDrawMissing, 400); return; }
+  // (ticket 802, 60 fps first: not while the friend walks, unless one has no figure at all yet; and a few at a time, the rest soon after)
+  if (padMoving && want.every(([P]) => personDrawn.has(personKey(P)))) { setTimeout(peopleDrawMissing, 400); return; }
+  if (want.length > PERSON_DRAW_AT_ONCE) { want.length = PERSON_DRAW_AT_ONCE; setTimeout(peopleDrawMissing, 60); }
   personBusy = true;
   const real = document.getElementById("pic"), tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   tmp.setAttribute("style", "position:fixed;left:-10000px;top:0;width:400px;height:600px;visibility:hidden;pointer-events:none");
@@ -2258,7 +2299,7 @@ const personScale = (BG, y) => (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * d
 // per variant drawn so far, one shown (personShowVariant)
 function personNodeFor(P) {
   let kept = personNodes.get(P.id);
-  const sig = JSON.stringify(P.look);
+  const sig = (personIsCat(P) ? "cat|" : "") + JSON.stringify(P.look);
   if (!kept || kept.sig !== sig) {
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "person-placed"); g.setAttribute("data-person", P.id);
@@ -2268,13 +2309,23 @@ function personNodeFor(P) {
   return kept;
 }
 function personShowVariant(P, kept, v) {
-  if (!personDrawn.has(personKey(P, v))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } v = ""; }
+  // (ticket 802) wet:WAY, swimming: drawn from face:WAY, sunk to the shoulders in the water, cut off at its surface
+  const cat = personIsCat(P);
+  if (cat) v = v.startsWith("wet:") ? v : /^(walk|ride):/.test(v) ? "walk:" + ((v.match(/(left|right)$/) || [])[1] || "right") : "sit";   // (a cat: sitting, or walking either way)
+  const wet = v.startsWith("wet:"), base = wet ? (cat ? "walk:" : "face:") + v.slice(4) : v;
+  if (!cat && !personDrawn.has(personKey(P, base))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } v = ""; }
   if (kept.shown === v) return;
   let n = kept.vars.get(v);
-  if (!n) { const f = personDrawn.get(personKey(P, v)); if (!f) return;
-    n = document.createElementNS("http://www.w3.org/2000/svg", "g"); n.setAttribute("transform", `translate(0 ${f1(-f.g)})`);
-    n.innerHTML = personOwnIds(f.svg, "pp" + P.id + "-" + (v ? v.replace(/\W/g, "") + "-" : "")); kept.vars.set(v, n); kept.node.append(n); }
+  if (!n) { const f = personFig(P, wet ? base : v); if (!f) return;
+    const pre = "pp" + P.id + "-" + (v ? v.replace(/\W/g, "") + "-" : "");
+    n = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    if (!wet) { n.setAttribute("transform", `translate(0 ${f1(-f.g)})`); n.innerHTML = personOwnIds(f.svg, pre); }
+    else n.innerHTML = `<clipPath id="${pre}cut"><rect x="-900" y="-4000" width="1800" height="4000"/></clipPath>` +
+      `<g clip-path="url(#${pre}cut)"><g transform="translate(0 ${f1(TEAM_SINK * f.h - f.g)})">${personOwnIds(f.svg, pre)}</g></g>` +
+      `<ellipse cx="0" cy="0" rx="74" ry="11" fill="none" stroke="#fff" stroke-opacity="0.75" stroke-width="5"/><ellipse cx="0" cy="3" rx="104" ry="15" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="4"/>`;
+    kept.vars.set(v, n); kept.node.append(n); }
   for (const [k, m] of kept.vars) m.style.display = k === v ? "" : "none";
+  if (kept.node.firstChild) kept.node.firstChild.style.display = wet || cat ? "none" : "";   // (a cat's drawing has its own shadow)
   kept.shown = v;
 }
 const personPlaceTransform = (x, z, k) => `translate(${f1(x)} ${f1(z)}) scale(${k.toFixed(4)})`;
@@ -2282,17 +2333,18 @@ function peopleShow(pic, scenery, feetZ) {
   for (const n of pic.querySelectorAll("g.person-placed")) n.remove();
   if (personBusy || !scenery) { peoplePathsSync([]); return; }
   const BG = state.background, W = state.world;
+  teamSync();   // (ticket 802: the team, put where the friend is)
   const here = Object.values(state.peopleAway).filter(P => P.place && P.place.world === W.id && P.place.key === W.at);
-  peoplePathsSync(here);
+  peoplePathsSync(here.filter(P => !P.team));
   if (!here.length) return;
   const items = [];
   for (const P of here) {
-    if (!personDrawn.get(personKey(P))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
-    const R = peoplePaths.get(P.id), x = R ? R.cx ?? R.x : P.place.x, y = R ? R.cy ?? R.y : P.place.y, z = SCENE.ground + y;
+    if (!personIsCat(P) && !personDrawn.get(personKey(P))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
+    const R = teamRun.get(P.id) || peoplePaths.get(P.id), x = R ? R.cx ?? R.x : P.place.x, y = R ? R.cy ?? R.y : P.place.y, z = SCENE.ground + y + (R && R.bob || 0);
     const kept = personNodeFor(P);
     kept.node.setAttribute("transform", personPlaceTransform(x, z, personScale(BG, y)));
     personShowVariant(P, kept, R ? R.v : "");
-    kept.node.setAttribute("data-obj", "👤 " + personTitle(P));
+    kept.node.setAttribute("data-obj", (P.team ? "🤝 " : personIsCat(P) ? "🐱 " : "👤 ") + personTitle(P));
     items.push({ node: kept.node, z });
   }
   for (const id of [...personNodes.keys()]) if (!state.peopleAway[id]) personNodes.delete(id);
@@ -2381,6 +2433,182 @@ function peoplePathsKeepDepth() {
     const z = SCENE.ground + (R.cy ?? R.y), ahead = objectAhead(z);
     if (ahead && ahead !== kept.node.nextSibling) ahead.parentNode.insertBefore(kept.node, ahead);
   }
+}
+// (ticket 802, M by Matthew 2026-11-20: "when we place other friends into the scene, each should have a toggle: stays in
+// background square, or moves with friend on the active team (either walking after them, or riding a horse after them, or
+// swimming after them, etc) a la games like final fantasy that have multi-person teams under the control of the player. A way to
+// switch who is active in the active team.")
+// 🤝 The team. A person put in a place stays there (🏠, as before) or joins the team (P.team: the order they joined in). The
+// team goes where the friend goes, square to square and world to world, in a line behind them along the way the friend came
+// (teamTrail: the friend's own steps, kept as far back as the line is long), each TEAM_GAP behind the one before, catching up at a
+// pace that grows with how far behind they are (TEAM_CATCH). As the friend walks or runs they walk, the two steps of a walk a
+// step each TEAM_STRIDE they go; while the friend rides, each rides a horse of their own, the line longer; where the water is
+// deep they swim, their heads and shoulders above it, bobbing (personShowVariant's wet:WAY); while the friend flies, each rides
+// in the friend's craft with them, one craft for them all (teamRiders, flyCraftSvg). Stopped, they turn toward the friend. Each frame moves only their nodes
+// (teamTick), as a path's walker's (ticket 599). ⇄ Anyone on the team can be the one played: their chip over the picture
+// (teamBarSync), Q on the keyboard or a controller's button set in 🎮 Controls (the next in the line, teamNext); the one played
+// till then goes to the end of the line, and the line forms again behind the new one.
+const TEAM_GAP = 105, TEAM_RIDE_GAP = 180, TEAM_CATCH = 6, TEAM_FAST = 650, TEAM_STRIDE = 42, TEAM_SINK = 0.56;
+const TEAM_VARIANTS = ["face:left", "face:right", "walk:A:left", "walk:B:left", "walk:A:right", "walk:B:right"];
+let teamTrail = null, teamWhere = "", teamRaf = 0, teamDepthT = 0, teamLast = 0, teamFriendT = 0;
+const teamRun = new Map();
+const teamOf = () => Object.values(state.peopleAway).filter(P => P.team).sort((a, b) => (Number(a.team) || 0) - (Number(b.team) || 0));
+const teamRiding = () => state.body.horse === "ride";
+const teamVariants = () => teamRiding() ? [...TEAM_VARIANTS, "ride:left", "ride:right"] : TEAM_VARIANTS;
+const teamGap = () => teamRiding() ? TEAM_RIDE_GAP : TEAM_GAP;
+const teamDist = (x0, y0, x1, y1) => Math.hypot(x1 - x0, (y1 - y0) / 0.6);   // (toward the back, counted as a path's walk counts it)
+// 🤝 joining (a place found beside the friend, for one in no place), or 🏠 staying where they are now
+function teamJoin(id, on) {
+  const P = state.peopleAway[id]; if (!P) return;
+  if (on) {
+    const here = personHere(); if (!here) return;
+    if (!P.place) P.place = personAside(here, id);
+    P.team = 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0));
+  } else { delete P.team; teamRun.delete(id); }
+  changed();
+}
+// (the line's ground before the friend has taken any steps: straight back from them, away from the way they face, or toward
+// the side with more room when that side has too little for the line)
+function teamSeed(x, y) {
+  const F = sceneFrame, lo = F.left + 40, hi = F.right - 40, need = (teamOf().length + 1) * teamGap(), f = state.body.facing;
+  const room = sd => sd < 0 ? x - lo : hi - x;
+  let s = f === "right" ? -1 : f === "left" ? 1 : room(-1) > room(1) ? -1 : 1;
+  if (room(s) < need && room(-s) > room(s)) s = -s;
+  return { pts: [[x + s * need, y], [x, y]], s, len: need };
+}
+// a spot `d` back along the line from the friend, inside the scene
+function teamAt(d) {
+  const T = teamTrail, p = T.pts, F = sceneFrame;
+  let [x, y] = p[p.length - 1], out = null;
+  for (let i = p.length - 2; i >= 0 && !out; i--) {
+    const [x0, y0] = p[i], L = teamDist(x, y, x0, y0);
+    if (L >= d) { const u = L ? d / L : 0; out = [x + (x0 - x) * u, y + (y0 - y) * u]; }
+    else { d -= L; x = x0; y = y0; }
+  }
+  if (!out) {   // (past the friend's oldest step kept: on, the way the line was going)
+    const [ax, ay] = p.length > 1 ? p[1] : [x - T.s, y], L = teamDist(ax, ay, x, y) || 1;
+    out = [x + (x - ax) / L * d, y + (y - ay) / L * d];
+  }
+  const yhi = F.bottom - F.ground - 4, ylo = Math.min(figYMin(F), yhi);
+  return [clamp(out[0], F.left + 30, F.right - 30), clamp(out[1], ylo, yhi)];
+}
+// (the friend's step, kept at the trail's newest end; its oldest let go once the rest is longer than the line; carried
+// rather than walked, a long way at once, the line formed again behind them)
+function teamStep(x, y) {
+  const T = teamTrail, p = T.pts, [hx, hy] = p[p.length - 1], d = teamDist(hx, hy, x, y);
+  if (d < 3) return false;
+  if (d > 260) { teamTrail = teamSeed(x, y); return true; }
+  p.push([x, y]); T.len += d;
+  const keep = (teamOf().length + 2) * teamGap();
+  while (p.length > 2) { const L = teamDist(p[0][0], p[0][1], p[1][0], p[1][1]); if (T.len - L < keep) break; p.shift(); T.len -= L; }
+  return true;
+}
+// (each drawing: the team put where the friend is. Come into a new place with the friend, they are in the line at once; one
+// joining here, or the line formed again, starts from where they stand)
+function teamSync() {
+  for (const id of [...teamRun.keys()]) if (!(state.peopleAway[id] && state.peopleAway[id].team)) teamRun.delete(id);
+  const team = teamOf();
+  if (!team.length) { teamTrail = null; teamWhere = ""; return; }
+  const here = flight ? null : personHere();
+  if (!here) return;
+  const where = [here.world, here.key, state.background.kind].join("|"), moved = where !== teamWhere;
+  if (moved || !teamTrail) teamTrail = teamSeed(here.x, here.y); else teamStep(here.x, here.y);
+  teamWhere = where;
+  const gap = teamGap();
+  team.forEach((P, i) => {
+    const [tx, ty] = teamAt((i + 1) * gap);
+    let R = teamRun.get(P.id);
+    if (!R) { const mine = !moved && P.place && P.place.world === here.world && P.place.key === here.key;
+      R = { x: mine ? P.place.x : tx, y: mine ? P.place.y : ty, dir: "right", stride: 0, still: 1, v: "", bob: 0 }; teamRun.set(P.id, R); }
+    else if (moved) Object.assign(R, { x: tx, y: ty, still: 1, bob: 0 });
+    if (!R.v || moved) R.v = "face:" + (here.x >= R.x ? "right" : "left");
+    P.place = { world: here.world, key: here.key, x: R.x, y: R.y };
+  });
+  if (!teamRaf) teamRaf = requestAnimationFrame(teamTick);
+}
+function teamTick(now) {
+  teamRaf = 0;
+  const team = teamOf(), here = team.length && teamTrail && !flight && !personBusy ? personHere() : null;
+  if (!here) { teamLast = 0; return; }
+  const BG = state.background, g = SCENE.ground, dt = teamLast ? clamp((now - teamLast) / 1000, 0, 0.05) : 1 / 60;
+  teamLast = now;
+  if (teamStep(here.x, here.y)) teamFriendT = now;
+  const gap = teamGap(), ride = teamRiding(), deep = !SHALLOW_WATER[BG.kind];
+  let busy = now - teamFriendT < 400;
+  team.forEach((P, i) => {
+    const R = teamRun.get(P.id); if (!R) return;
+    const [tx, ty] = teamAt((i + 1) * gap), d = teamDist(R.x, R.y, tx, ty);
+    let m = 0;
+    if (d > 0.5) {
+      const go = Math.min(d, clamp(TEAM_CATCH * d, 60, TEAM_FAST) * dt), u = go / d, nx = R.x + (tx - R.x) * u;
+      if (Math.abs(nx - R.x) > 0.05) R.dir = nx > R.x ? "right" : "left";
+      R.x = nx; R.y += (ty - R.y) * u; m = go;
+    }
+    R.stride += m; R.still = m > 0.2 ? 0 : R.still + dt;
+    const stop = R.still > 0.15, wet = deep && inWater(BG, R.x, g + R.y);
+    const face = stop ? (here.x > R.x + 4 ? "right" : here.x < R.x - 4 ? "left" : R.dir) : R.dir;
+    R.v = ride ? "ride:" + face : wet ? "wet:" + face : stop ? "face:" + face : `walk:${Math.floor(R.stride / TEAM_STRIDE) % 2 ? "B" : "A"}:${R.dir}`;
+    R.bob = wet ? 3 * Math.sin(now / 320 + i * 1.7) : ride && !stop ? -5 * Math.abs(Math.sin(R.stride / 28)) : 0;
+    if (!stop || wet) busy = true;
+    if (P.place) { P.place.x = R.x; P.place.y = R.y; }
+    const kept = personNodes.get(P.id);
+    if (kept && kept.node.isConnected) { kept.node.setAttribute("transform", personPlaceTransform(R.x, g + R.y + R.bob, personScale(BG, R.y))); personShowVariant(P, kept, R.v); }
+  });
+  // (now and then each one's depth among the scene's objects put right, as a path's walkers')
+  if (busy && now - teamDepthT > 250) { teamDepthT = now;
+    for (const [id, R] of teamRun) { const kept = personNodes.get(id); if (!kept || !kept.node.isConnected) continue;
+      const ahead = objectAhead(g + R.y); if (ahead && ahead !== kept.node.nextSibling) ahead.parentNode.insertBefore(kept.node, ahead); } }
+  if (busy) teamRaf = requestAnimationFrame(teamTick); else teamLast = 0;
+}
+// ⇄ the next in the line played (Q, or a controller's button): the one played till then goes to the end of the line
+function teamNext() {
+  const t = teamOf();
+  if (!t.length || flight || !personHere()) return false;
+  personSwitch(t[0].id);
+  return true;
+}
+// the team over the picture: the one played, then the line; a tap on one plays them
+function teamBarSync() {
+  const bar = document.getElementById("team-bar"); if (!bar) return;
+  const team = teamOf(), on = team.length > 0 && (state.background.kind !== "none" || !!flight);
+  const sig = on ? JSON.stringify([state.person.id, personTitle(state.person), state.person.animal, team.map(P => [P.id, personTitle(P), P.animal]), !!flight]) : "";
+  if (bar.dataset.sig === sig) return;
+  bar.dataset.sig = sig; bar.hidden = !on;
+  if (!on) { bar.replaceChildren(); return; }
+  bar.replaceChildren(el("span", { class: "team-cap", title: "Your team: they go where you go. Tap one to play them (Q on the keyboard: the next one)" }, "🤝"),
+    el("button", { class: "team-chip", "aria-pressed": "true", title: "The one you play now" }, (state.person.animal === "cat" ? "🐱 " : "") + personTitle(state.person)),
+    ...team.map(P => el("button", { class: "team-chip", "aria-pressed": "false", ...(flight ? { disabled: "" } : {}),
+      title: `Play ${personTitle(P)}: they step forward, and the others follow them`, onclick: e => { e.currentTarget.blur(); personSwitch(P.id); } }, (P.animal === "cat" ? "🐱 " : "") + personTitle(P))));
+}
+document.addEventListener("keydown", e => {
+  if ((e.key !== "q" && e.key !== "Q") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
+  if (teamNext()) e.preventDefault();
+});
+// (Matthew 2026-11-21: "instead of everyone getting their own bubble, let's try to put the whole team in one: bubble, balloon
+// basket, rocket ship", and "the team shares a vehicle, when in the air. On the ground, separate horses are fine and more normal")
+// Flying, the team rides in the friend's craft (flyCraftSvg): each one seen from above as the friend is (topDownSvg, their own
+// look), or a cat from above (catAboveSvg), cat-sized among people
+const teamFlyKey = () => JSON.stringify([state.background.universe, teamOf().map(P => [P.id, P.animal, P.look])]);
+function teamRiders() {
+  return teamOf().map(P => {
+    const look = personLookWhole(P.look), keep = Object.fromEntries(PERSON_PARTS.map(k => [k, state[k]]));
+    if (personIsCat(P)) return personOwnIds(`<g transform="translate(0 -8) scale(0.6)">${catAboveSvg(look.body.catCoat)}</g>`, "tf" + P.id + "-");
+    let rider = "";
+    try { for (const k of PERSON_PARTS) state[k] = look[k];
+      rider = topDownSvg(state, { ...state.body, facing: "front", anim: "none", pose: "stand", sit: false }, 0, 100); }
+    finally { for (const k of PERSON_PARTS) state[k] = keep[k]; }
+    return personOwnIds(`<g transform="translate(0 6) scale(0.62)">${rider}</g>`, "tf" + P.id + "-");
+  });
+}
+// seats for m riders in a round space of radius R (a rider alone fills one of radius 44): a ring, as far out as their bodies
+// stay inside (a rider's TEAM_BODY), their heads clear of each other's (TEAM_HEAD apart; Matthew: "let's okay to show the people
+// overlapping, if their heads are not overlapping. it will look more realistic"), smaller only when even that does not fit; the
+// first (the friend) nearest us, at the bottom; drawn back to front
+const TEAM_HEAD = 34, TEAM_BODY = 36;
+function teamSeats(m, R) {
+  if (m <= 1) return [[0, 0, Math.min(1, R / 44)]];
+  const sn = Math.sin(Math.PI / m), k = Math.min(1, R / (TEAM_BODY + TEAM_HEAD / 2 / sn)), rho = Math.max(TEAM_HEAD / 2 / sn * k, R - TEAM_BODY * k);
+  return Array.from({ length: m }, (_, i) => { const a = Math.PI / 2 + 2 * Math.PI * i / m; return [rho * Math.cos(a), rho * Math.sin(a), k, i]; }).sort((p, q) => p[1] - q[1]);
 }
 // (ticket 639, 0.0.468) the save just read back: the extra dungeons each reload made to 0.0.467 taken away, and the save kept so
 if (dungeonDedupe(state)) persist();

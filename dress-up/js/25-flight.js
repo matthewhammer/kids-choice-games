@@ -458,30 +458,47 @@ function flyQuiltSvg(W) {
 // ---- the friend, riding: drawn in the picture's own units, the ground under them at (0, 0) ----
 function flyRiderSvg() {
   // (ticket 800) in 🐱 the cat universe the friend is a cat: seen from above, its back and tail, its head and ears, in its coat
-  if (state.background.universe === "cats") {
-    const C = CAT_COATS[Math.max(0, Math.min(3, Math.round(state.body.catCoat ?? 1)))], fur = C.catFur, chest = C.catWhite && C.catWhite !== "off" ? C.catWhite : fur;
-    return `<g transform="translate(0 -6)"><path d="M0 30 Q30 52 18 74 Q10 86 22 92" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>` +
-      `<ellipse cx="0" cy="6" rx="24" ry="34" fill="${fur}"/><ellipse cx="0" cy="-20" rx="13" ry="9" fill="${chest}"/>` +
-      `<circle cx="0" cy="-34" r="17" fill="${fur}"/>` + [-1, 1].map(sd => `<path d="M${sd * 6} -46 L${sd * 15} -60 L${sd * 17} -40 Z" fill="${fur}"/><path d="M${sd * 9} -46 L${sd * 14} -55 L${sd * 15} -43 Z" fill="${C.catNose}"/>`).join("") + `</g>`;
-  }
+  if (friendIsCat()) return catAboveSvg(state.body.catCoat);   // (ticket 802: the cat, wherever the friend is one)
   const B = { ...state.body, facing: flight.facing, anim: "none", pose: "stand", sit: false };
   return `<g transform="translate(0 6) scale(0.62)">${topDownSvg(state, B, 0, 100)}</g>`;
 }
+// a cat seen from above, in its coat (CAT_COATS' number)
+function catAboveSvg(coat) {
+  const C = CAT_COATS[Math.max(0, Math.min(3, Math.round(Number(coat ?? 1))))], fur = C.catFur, chest = C.catWhite && C.catWhite !== "off" ? C.catWhite : fur;
+  return `<g transform="translate(0 -6)"><path d="M0 30 Q30 52 18 74 Q10 86 22 92" fill="none" stroke="${fur}" stroke-width="9" stroke-linecap="round"/>` +
+    `<ellipse cx="0" cy="6" rx="24" ry="34" fill="${fur}"/><ellipse cx="0" cy="-20" rx="13" ry="9" fill="${chest}"/>` +
+    `<circle cx="0" cy="-34" r="17" fill="${fur}"/>` + [-1, 1].map(sd => `<path d="M${sd * 6} -46 L${sd * 15} -60 L${sd * 17} -40 Z" fill="${fur}"/><path d="M${sd * 9} -46 L${sd * 14} -55 L${sd * 15} -43 Z" fill="${C.catNose}"/>`).join("") + `</g>`;
+}
 function flyCraftSvg() {
-  const rider = flyRiderSvg();
-  // (ticket 799) the rocket, in the friend's style, the friend inside it seen through its window
-  if (flight.craft === "rocketride")
-    return `<g class="fly-bob">${rider}<g transform="translate(0 150)">${rocketSvg(state.body.rocketStyle, 240, -168, 44, true, "fly-rk")}</g></g>`;
-  if (flight.craft === "bubbleride")
-    return `<g class="fly-bob">${flyC(0, -34, 78, "#d8f0ff38", ` stroke="#bfe6ff" stroke-width="3"`)}${rider}${flyE(-34, -82, 22, 11, "#ffffffaa", ` transform="rotate(-30 -34 -82)"`)}` +
-      `${flyC(66, -96, 16, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}${flyC(-70, -6, 11, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}</g>`;
+  // (ticket 802) the team aboard with the friend, one craft for them all: the friend's rider first (a cat among people, cat-sized)
+  const team = teamRiders(), m = 1 + team.length, me = flyRiderSvg(), riders = [team.length && friendIsCat() ? `<g transform="translate(0 -8) scale(0.6)">${me}</g>` : me, ...team];
+  const seat = (sv, x, y, k) => `<g transform="translate(${f1(x)} ${f1(y)}) scale(${k.toFixed(3)})">${sv}</g>`;
+  const ring = (R, cy) => teamSeats(m, R).map(([x, y, k, i]) => seat(riders[i ?? 0], x, cy + y + 18 * k, k)).join("");   // (each rider's middle 18 above its foot)
+  // (ticket 799) the rocket, in the friend's style, the friend inside it seen through its window; (ticket 802) with the team, the
+  // rocket and its window bigger, all of them seen through it
+  if (flight.craft === "rocketride") { const s = Math.min(2, 1 + 0.22 * (m - 1));
+    return `<g class="fly-bob">${m === 1 ? me : ring(44 * s, -18 * s)}<g transform="translate(0 ${f1(150 * s)})">${rocketSvg(state.body.rocketStyle, 240 * s, -168 * s, 44 * s, true, "fly-rk")}</g></g>`; }
+  // (the bubble: as big as the team needs, them all inside it)
+  if (flight.craft === "bubbleride") { const s = Math.min(2.2, 1 + 0.22 * (m - 1)), R = 78 * s, cy = -34 * s;
+    return `<g class="fly-bob">${flyC(0, cy, R, "#d8f0ff38", ` stroke="#bfe6ff" stroke-width="3"`)}${m === 1 ? me : ring(0.6 * R, cy - 6 * s)}${flyE(-0.44 * R, cy - 0.62 * R, 22 * s, 11 * s, "#ffffffaa", ` transform="rotate(-30 ${f1(-0.44 * R)} ${f1(cy - 0.62 * R)})"`)}` +
+      `${flyC(0.85 * R, cy - 0.8 * R, 16, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}${flyC(-0.9 * R, cy + 0.36 * R, 11, "#d8f0ff30", ` stroke="#bfe6ff" stroke-width="2"`)}</g>`; }
   // (the balloon: its basket, the friend in it, the basket's near rim over their legs; its ropes; its envelope above, the gores
-  // in turn, from high up and in front, as the friend is seen)
+  // in turn, from high up and in front, as the friend is seen) (ticket 802, Matthew: "let's always have a square basket, and
+  // let's fill it with people in a square-shaped grid layout within": the basket square, seen from high up and in front as
+  // before (as deep as 58 is to 76), g by g seats, the friend in the front row's middle, the others from the back; the seats
+  // TEAM_HEAD apart, their bodies overlapping, drawn back to front; the envelope above it, bigger with the basket)
   const gore = (a0, a1, c) => { const p = a => [f1(Math.cos(a) * 104), f1(-168 + Math.sin(a) * 100)]; const [x0, y0] = p(a0), [x1, y1] = p(a1); return `<path d="M0 -168 L${x0} ${y0} A104 100 0 0 1 ${x1} ${y1} Z" fill="${c}"/>`; };
-  return `<g class="fly-bob">${flyRect(-38, -44, 76, 58, "#8a5a2b", ` rx="10" stroke="#5e3d22" stroke-width="4"`)}${flyRect(-30, -38, 60, 44, "#5e3d22", ` rx="6"`)}${rider}` +
-    `${flyRect(-38, -2, 76, 16, "#a8743f", ` rx="6" stroke="#5e3d22" stroke-width="3"`)}<path d="M-34 -40 L-62 -90 M34 -40 L62 -90" stroke="#5e3d22" stroke-width="3"/>` +
-    `${flyE(0, -168, 104, 100, "#e84a3a")}${[0, 1, 2, 3, 4, 5].map(i => gore(i * Math.PI / 3, i * Math.PI / 3 + Math.PI / 6, "#ffd84a")).join("")}` +
-    `${flyE(-34, -206, 30, 18, "#ffffff40")}${flyC(0, -168, 20, "#c0392b")}</g>`;
+  const g = Math.ceil(Math.sqrt(m)), P = TEAM_HEAD + 6, D = P * 58 / 76, hw = 38 + P * (g - 1) / 2, top = -44 - D * (g - 1), lift = top + 44, es = 1 + 0.18 * (g - 1);
+  const cells = [];
+  for (let r = 0; r < g; r++) for (let c = 0; c < g; c++) cells.push([(c - (g - 1) / 2) * P, -(g - 1 - r) * D]);
+  const front = (g - 1) * g + Math.floor((g - 1) / 2), others = cells.filter((_, i) => i !== front);
+  const placed = [[...cells[front], riders[0]], ...team.map((sv, i) => [...others[i], sv])].sort((p, q) => p[1] - q[1]);
+  const grid = placed.map(([x, y, sv]) => seat(sv, x, y, 1)).join("");
+  const envelope = `${flyE(0, -168, 104, 100, "#e84a3a")}${[0, 1, 2, 3, 4, 5].map(i => gore(i * Math.PI / 3, i * Math.PI / 3 + Math.PI / 6, "#ffd84a")).join("")}` +
+    `${flyE(-34, -206, 30, 18, "#ffffff40")}${flyC(0, -168, 20, "#c0392b")}`;
+  return `<g class="fly-bob">${flyRect(-hw, top, 2 * hw, 14 - top, "#8a5a2b", ` rx="10" stroke="#5e3d22" stroke-width="4"`)}${flyRect(8 - hw, top + 6, 2 * hw - 16, -top, "#5e3d22", ` rx="6"`)}${grid}` +
+    `${flyRect(-hw, -2, 2 * hw, 16, "#a8743f", ` rx="6" stroke="#5e3d22" stroke-width="3"`)}<path d="M${f1(4 - hw)} ${f1(top + 4)} L${f1(-62 * es)} ${f1(-90 + lift)} M${f1(hw - 4)} ${f1(top + 4)} L${f1(62 * es)} ${f1(-90 + lift)}" stroke="#5e3d22" stroke-width="3"/>` +
+    (g === 1 ? envelope : `<g transform="translate(0 ${f1(lift - 90)}) scale(${es.toFixed(3)}) translate(0 90)">${envelope}</g>`) + `</g>`;
 }
 
 // ---- the view: how much of the world is seen at a height; where the camera is ----
@@ -502,7 +519,7 @@ function flightDraw() {
     root = pic.querySelector(":scope > #fly");
     flyBuilt = { key, tiles: [...root.querySelectorAll("[data-tile]")], shown: null };
   }
-  const craft = root.querySelector("#fly-craft"), was = craft.dataset.look, look = JSON.stringify([flight.craft, flight.facing, state.face, state.hair, state.shirt, state.pants, state.costume, state.shoes, state.hands]);
+  const craft = root.querySelector("#fly-craft"), was = craft.dataset.look, look = JSON.stringify([flight.craft, flight.facing, state.face, state.hair, state.shirt, state.pants, state.costume, state.shoes, state.hands, state.person.id, teamFlyKey()]);   // (ticket 802: and the team aboard)
   if (was !== look) { craft.innerHTML = flyCraftSvg(); craft.dataset.look = look; }
   fitPic();   // (the picture fitted to its space, as drawNow does at its end: full screen, or the window resized, while flying)
   flyPlace();
