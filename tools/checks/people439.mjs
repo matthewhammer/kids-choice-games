@@ -26,7 +26,8 @@ try {
     state = clone(DEFAULTS); state.music.mute = true; state.world.at = null; state.background.kind = "lake"; changed(); await w(400);   // (from the start: a profile may hold an autosave)
     tab = TABS.findIndex(t => t[0] === "👥 People"); showTab(); await w(200);
     const chips = () => [...document.querySelectorAll("#panel .person-chip")].map(b => b.textContent + (b.getAttribute("aria-pressed") === "true" ? " *" : ""));
-    out.start = { chips: chips(), hint: !!document.querySelector("#panel .person-new-row .hint") && !document.querySelector("#panel .person-new") };
+    // (since 0.0.522's 👥 People by group, the one played is the "🧍 you play …" card's, not a chip: a chip each for the others)
+    out.start = { chips: chips(), you: (document.querySelector("#panel .people-you .cap") || {}).textContent || "", hint: !!document.querySelector("#panel .person-new-row .hint") && !document.querySelector("#panel .person-new") };
     set("costume", "kind", "knight"); state.person.name = "knight"; personSetTemplate(state.person.id, true); await w(150);
     out.new1 = personNew("p1"); await w(150); set("costume", "knightA", "#8a2b2b"); await w(100);
     out.new2 = personNew("p1"); await w(150); set("costume", "knightA", "#2e7d32"); await w(1500);
@@ -49,7 +50,7 @@ try {
     out.loaded = { me: next.person.name, away: Object.values(next.peopleAway).map(p => p.name) };
     return JSON.stringify(out); })()`));
   console.log(`  ${JSON.stringify(r)}`);
-  ok("to start: one person, the friend, being dressed; no new person without a template", r.start.chips.length === 1 && r.start.chips[0] === "🧍 the friend *" && r.start.hint, r.start);
+  ok("to start: one person, the friend, being dressed; no new person without a template", r.start.chips.length === 0 && /you play the friend/.test(r.start.you) && r.start.hint, r.start);
   ok("from the knight made a template: knight 1 and knight 2, made from it, knight 2 being dressed", JSON.stringify(r.names) === '["knight","knight 1","knight 2"]' && r.me === "knight 2" && r.from.every(f => f === null || f === "p1"), [r.names, r.me, r.from]);
   ok("at the lake, the two not being dressed stand there, apart, in the scene", r.placed.length === 2 && new Set(r.xs).size === 2 && r.inScene, [r.placed, r.xs]);
   ok("their figures' ids are their own (one pat-shirt, no id twice)", r.shirtIds === 1 && !r.svgIds.length, [r.shirtIds, r.svgIds]);
