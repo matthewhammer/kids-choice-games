@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.528 (2026-11-21)
+
+Everything in 0.0.527, plus:
+
+- **👽 Greys on the team** (Matthew: "in addition to adding cats to the team, let's be able to add different kinds of grey: short, medium, tall. With or without blond hair that's long, with bangs, like the friend", "let's have the greys wear jumpsuits that can be different colors (covering torso, legs and arms)", and "grey = grey alien person"). In 👥 People, **👽 a grey**: short, medium or tall, beside you and on your team, as a cat is. Choose first **💛 long blond hair, bangs** (as the friend's) and **🧥 its jumpsuit**'s colour (blue, red, green, purple, orange, yellow, silver, black, or 🌈 the next colour, a new one each time). A grey has a big head, wide above and narrow at the chin, big black eyes slanting up, and thin arms and legs; its jumpsuit covers its body, arms and legs, with a collar, a zip, a belt, a badge and boots. It walks with the team, rides in the rocket's portholes and in the team's bubble, basket or rocket in the air, and can be played (tap its chip): then the friend is the grey, in the rocket's window too. A grey stays a grey in the cat universe.
+
 ## 0.0.527 (2026-11-21)
 
 Everything in 0.0.526, plus:

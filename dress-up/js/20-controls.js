@@ -1894,7 +1894,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
       if (sig === shown) return;
       shown = sig;
       if (!tpls.some(t => t.id === newTpl)) newTpl = tpls.length ? tpls[0].id : null;
-      const mark = p => (p.template ? "⭐ " : p.animal === "cat" ? "🐱 " : "🧍 ") + personTitle(p);
+      const mark = p => (p.template ? "⭐ " : p.animal === "cat" ? "🐱 " : personIsGrey(p) ? "👽 " : "🧍 ") + personTitle(p);
       // (Matthew 2026-11-21: "the people menus don't employ enough sub-structure to make sense as we add more people. let's look at
       // the other menu systems that are complex, like the music one for instance, and follow those design patterns", and "always
       // be knolling", then "we will probably want subgroups for people, each with their own sub menu. groups are: friend team,
@@ -1970,7 +1970,17 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
                                                                                                         : [el("span", { class: "hint" }, "make someone ⭐ a template, to make new people from them")])]),
           // (ticket 459: or from a costume, chosen in a box laid over the panels; ticket 802: a cat for the team, beside the friend, going where they go)
           line("➕ or", [el("button", { class: "person-from-costume", title: "A new person in a costume: choose it in a box over the panels", onclick: () => personCostumeBox() }, "🎭 from a costume"),
-            el("button", { class: "person-new-cat", title: here ? "A cat for your team: it comes beside you and goes where you go. In the cat universe, where you are a cat, it is a person" : "A cat (go to a place first, for it to join your team there)", onclick: () => personNewCat() }, "🐱 a cat for the team")])])];
+            el("button", { class: "person-new-cat", title: here ? "A cat for your team: it comes beside you and goes where you go. In the cat universe, where you are a cat, it is a person" : "A cat (go to a place first, for it to join your team there)", onclick: () => personNewCat() }, "🐱 a cat for the team")]),
+          // (Matthew 2026-11-21: "let's be able to add different kinds of grey: short, medium, tall. With or without blond hair that's
+          // long, with bangs, like the friend", and "let's have the greys wear jumpsuits that can be different colors") 👽 a grey for
+          // the team, by its size; its hair and its jumpsuit's colour chosen first (or the next colour, as each new one comes)
+          line("👽 a grey", [...Object.keys(GREY_SIZES).map(sz => el("button", { class: "person-new-grey", "data-size": sz,
+              title: here ? `A ${sz} grey for your team, beside you, going where you go` : `A ${sz} grey (go to a place first, for it to join your team there)`, onclick: () => personNewGrey(sz) },
+              `👽 ${sz}`)),
+            el("button", { class: "grey-hair", "aria-pressed": String(!!greyNext.hair), title: "The next grey with long blond hair and bangs, like the friend's",
+              onclick: () => { greyNext.hair = !greyNext.hair; render(); } }, "💛 long blond hair, bangs")]),
+          line("🧥 its jumpsuit", [el("button", { class: "grey-suit", "aria-pressed": String(!greyNext.suit), title: "Each new grey the next colour", onclick: () => { greyNext.suit = null; render(); } }, "🌈 the next colour"),
+            ...GREY_SUITS.map(([label, col]) => el("button", { class: "grey-suit", "aria-pressed": String(greyNext.suit === col), "data-suit": col, onclick: () => { greyNext.suit = col; render(); } }, label))])])];
       wrap.replaceChildren(...boxes);
     };
     syncs.push(render);

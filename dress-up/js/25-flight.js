@@ -516,6 +516,7 @@ const flyWorld = () => (flight && flight.world) || state.world;
 function flyRiderSvg() {
   // (ticket 800) in 🐱 the cat universe the friend is a cat: seen from above, its back and tail, its head and ears, in its coat
   if (friendIsCat()) return catAboveSvg(state.body.catCoat);   // (ticket 802: the cat, wherever the friend is one)
+  if (friendIsGrey()) return greyAboveSvg(greyOf(state.person));   // (a grey, played)
   const B = { ...state.body, facing: flight.facing, anim: "none", pose: "stand", sit: false };
   return `<g transform="translate(0 6) scale(0.62)">${topDownSvg(state, B, 0, 100)}</g>`;
 }

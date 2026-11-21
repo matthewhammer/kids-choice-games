@@ -1370,6 +1370,15 @@ function drawNow() {
     svg = svg.slice(0, figAt) + (sitting || inWin ? "" : `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(24 * cs)}" ry="${f1(5 * cs)}" fill="#000000" opacity="0.15"/>`) +
       `<g class="friend-cat" data-cat="${pose}" transform="translate(0 ${f1(y + (pose === "sit" ? 7 * cs : 0))}) scale(${(dir < 0 ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`;
   }
+  // (Matthew 2026-11-21: "let's be able to add different kinds of grey") 👽 a grey, played: drawn in the friend's place, its own
+  // size of the friend's height; walking as they move; in the rocket, its face at the window
+  if (friendIsGrey()) {
+    const fh = ground - friendFrame.top, G = greyOf(state.person), { H, hh } = greyDims(G), kg = fh / GREY_FH, inWin = !!rocketShell;
+    const moving = B.anim === "walk" || B.anim === "run" || (move && !move.held && !move.grounded);
+    const y = inWin ? ground - 0.84 * fh + kg * (H - 0.52 * hh) : ground;
+    svg = svg.slice(0, figAt) + (inWin ? "" : `<ellipse cx="0" cy="${f1(ground)}" rx="${f1(60 * kg)}" ry="${f1(10 * kg)}" fill="#000000" opacity="0.15"/>`) +
+      `<g class="friend-grey" transform="translate(0 ${f1(y)}) scale(${(dir < 0 ? -kg : kg).toFixed(3)} ${kg.toFixed(3)})">${greySvg(G, moving && !inWin)}</g>`;
+  }
   // (ticket 438: riding, the friend lifted onto the saddle, and the horse's near parts over their legs)
   // (Matthew 2026-11-21: "when rocket is moving side to side (laterally), it's sideways, not upright") riding, going left or right,
   // the rocket and all in it turned to lie along the way, its nose first, about its middle; turned back upright when they stop or
@@ -1384,7 +1393,7 @@ function drawNow() {
   const farLegSvg = legApart ? veil("pants", farLeg.skin) + veil("feet", farLeg.shoe) + veil("pants", farLeg.pants) : "";
   // (Matthew 2026-11-21: "certain rocket animations are drawing the friend's body outside of the rocket, perhaps even redundantly":
   // in the rocket, the far leg and arm are not drawn on their own, outside its shell: the friend is drawn once, inside it)
-  if ((farDeep || farLegSvg) && !friendIsCat() && !rocketShell) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
+  if ((farDeep || farLegSvg) && !friendIsCat() && !friendIsGrey() && !rocketShell) svg += `<g id="figure-far" transform="translate(${f1(figureT.dx)} ${f1(figureT.dy + figureT.sg)}) scale(${figureT.k.toFixed(3)}) translate(0 ${f1(-figureT.g + lift)})${rotTf}">${farLegSvg}${veil("shirt", farDeep)}</g>`;
   svg = unveil(svg, layers);
   // a held joint: a ring round it, where the finger is
   if (poseHeld && poseJoints) {

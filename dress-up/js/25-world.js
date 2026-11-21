@@ -2084,13 +2084,13 @@ function personSwitch(id, keepTeam = false) {
   // (the team's vehicle is the team's: the rocket they ride or the one beside them, the new one in it too; their own look's put by)
   const vehicle = (state.body.rocket || "none") !== "none" ? { rocket: state.body.rocket, rocketStyle: state.body.rocketStyle } : null;
   state.peopleAway[from.id] = { id: from.id, name: from.name || "", template: !!from.template, from: from.from || null, look: personLookNow(),
-                                place: to.place || !here ? here : personAside(here, to.id), ...(joins ? { team: joins } : {}), ...(from.animal ? { animal: from.animal } : {}) };
+                                place: to.place || !here ? here : personAside(here, to.id), ...(joins ? { team: joins } : {}), ...(from.animal ? { animal: from.animal } : {}), ...(from.alien ? { alien: from.alien, grey: from.grey } : {}) };
   delete state.peopleAway[id];
   if (joins) teamTrail = null;
   const look = personLookWhole(to.look);
   for (const k of PERSON_PARTS) state[k] = look[k];
   if (vehicle && (joins || flight)) Object.assign(state.body, vehicle);
-  state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null, ...(to.animal ? { animal: to.animal } : {}) };
+  state.person = { id: to.id, name: to.name || "", template: !!to.template, from: to.from || null, ...(to.animal ? { animal: to.animal } : {}), ...(to.alien ? { alien: to.alien, grey: to.grey } : {}) };
   const P = to.team ? null : to.place;   // (ticket 812: one on the team is where the friend is: the new one played stays right here)
   if (P && worldById(P.world) && worldById(P.world).cells[P.key]) {
     if (P.world !== state.world.id) worldSwitch(P.world, P.key, null, false); else if (P.key !== state.world.at) worldEnter(P.key, null, false);
@@ -2119,7 +2119,7 @@ function personNew(tplId) {
 // then, a person's, its hair and shirt in its coat's colour. Played (⇄), the friend is the cat, the same way round.
 // (a new person made now keeps the one played on the team: there is a team, or they are in the air or the rocket)
 const teamKeeps = () => teamOf().length > 0 || !!flight || state.body.rocket === "ride";
-const personIsCat = P => !!P && (P.animal === "cat") !== (state.background.universe === "cats");
+const personIsCat = P => !!P && !P.alien && (P.animal === "cat") !== (state.background.universe === "cats");   // (a grey is a grey in both universes)
 const friendIsCat = () => !personBusy && personIsCat(state.person);   // (a person drawn off the page, a person: personBusy)
 function personNewCat() {
   peopleInit();
@@ -2142,6 +2142,86 @@ function personCatFig(P, v) {
   const walk = /^(walk|ride|wet):/.test(v), dir = (v.match(/(left|right)$/) || [])[1] || "right", W = catWag({}, i);
   const inner = walk ? walkingCat(C, W, i) : shoulderCat(4, C, W, false);
   return { svg: `<g transform="translate(0 ${walk ? 0 : f1(7 * cs)}) scale(${(dir === "left" && walk ? -cs : cs).toFixed(3)} ${cs.toFixed(3)})">${inner}</g>`, g: 0, h: 56 * cs, cat: true };
+}
+// (Matthew 2026-11-21: "in addition to adding cats to the team, let's be able to add different kinds of grey: short, medium, tall.
+// With or without blond hair that's long, with bangs, like the friend", "let's have the greys wear jumpsuits that can be different
+// colors (covering torso, legs and arms)", and "grey = grey alien person") 👽 A grey: one of the people, alien "grey", its kind
+// its own (P.grey: its size, short, medium or tall; long blond hair with bangs, or none; its jumpsuit's colour, each new one the
+// next of GREY_SUITS unless chosen). Made beside the friend and on the team, as a cat is; a grey in both universes. Its big head,
+// wide above and narrow at the chin, its big black eyes slanting up, thin arms and legs; the jumpsuit over its body, arms and legs,
+// a collar, a zip, a belt, a badge, boots; walking, its legs and arms swinging. Played (⇄), the friend is the grey.
+const GREY_SIZES = { short: 0.62, medium: 0.82, tall: 1.05 }, GREY_FH = 470;   // (of a person's height, as the people are drawn: 470)
+const GREY_SUITS = [["🔵 blue", "#3a6fd8"], ["🔴 red", "#d8483a"], ["🟢 green", "#2fa866"], ["🟣 purple", "#8a4ad8"], ["🟠 orange", "#ea8a26"], ["🟡 yellow", "#e6c42e"], ["⚪ silver", "#c9ced6"], ["⚫ black", "#2b2e35"]];
+const GREY_SKIN = "#aab1ba", GREY_SKIN_DARK = "#7f8790", GREY_HAIR = "#f1d27b", GREY_HAIR_DARK = "#d6b45a";
+const personIsGrey = P => !!P && P.alien === "grey";
+const friendIsGrey = () => !personBusy && personIsGrey(state.person);
+const greyOf = P => ({ size: "medium", hair: false, suit: GREY_SUITS[0][1], ...((P && P.grey) || {}) });
+const greyShade = (hex, k) => "#" + [1, 3, 5].map(i => Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(i, i + 2), 16) * k))).toString(16).padStart(2, "0")).join("");
+// (the next grey's own, as chosen in 👥 People: its hair, its jumpsuit's colour, or null for the next of them)
+const greyNext = { hair: false, suit: null };
+function personNewGrey(size = "medium", hair = greyNext.hair, suit = greyNext.suit) {
+  peopleInit();
+  const all = peopleAll(), n = 1 + Math.max(0, ...all.map(personNum)), names = new Set(all.map(personTitle));
+  const base = `${size} grey`;
+  let k = 1; while (names.has(`${base} ${k}`)) k++;
+  const here = personHere(), made = all.filter(personIsGrey).length;
+  const P = { id: "p" + n, name: `${base} ${k}`, template: false, from: null, look: personLookWhole(null), place: here ? personAside(here) : null, alien: "grey",
+              grey: { size: GREY_SIZES[size] ? size : "medium", hair: !!hair, suit: suit || GREY_SUITS[made % GREY_SUITS.length][1] },
+              ...(here ? { team: 1 + Math.max(0, ...Object.values(state.peopleAway).map(Q => Number(Q.team) || 0)) } : {}) };
+  state.peopleAway[P.id] = P;
+  changed();
+  return P.id;
+}
+// a grey's height, and its head's (a short one's head the bigger for its size, as a child's)
+const greyDims = G => { const H = GREY_FH * (GREY_SIZES[G.size] || GREY_SIZES.medium); return { H, hh: H * (G.size === "short" ? 0.34 : G.size === "tall" ? 0.26 : 0.3) }; };
+// a grey, from the front, its feet at (0, 0); walking: its legs and arms swung
+function greySvg(G, walk = false) {
+  const { H, hh } = greyDims(G), hw = hh, top = -H, chin = top + hh, suit = G.suit, suitD = greyShade(suit, 0.7), boot = greyShade(suit, 0.45);
+  const sh = chin + H * 0.035, hip = sh + H * 0.27, sw = H * 0.1, ww = H * 0.075, aw = H * 0.026, lw = H * 0.034, ankle = -H * 0.035;
+  const swing = walk ? 14 : 0, n = v => f1(v);
+  let out = "";
+  // its long hair, behind (as the friend's: down past its shoulders)
+  if (G.hair) out += `<path d="M${n(-hw * 0.5)} ${n(top + hh * 0.3)} Q${n(-hw * 0.66)} ${n(sh + H * 0.08)} ${n(-hw * 0.5)} ${n(sh + H * 0.18)} L${n(hw * 0.5)} ${n(sh + H * 0.18)} Q${n(hw * 0.66)} ${n(sh + H * 0.08)} ${n(hw * 0.5)} ${n(top + hh * 0.3)} Z" fill="${GREY_HAIR}"/>`;
+  // its legs, in the jumpsuit, booted
+  for (const sd of [-1, 1]) { const x = sd * ww * 0.5;
+    out += `<g transform="rotate(${sd * swing} ${n(x)} ${n(hip)})"><rect x="${n(x - lw)}" y="${n(hip)}" width="${n(2 * lw)}" height="${n(ankle - hip)}" rx="${n(lw)}" fill="${suit}"/>` +
+      `<ellipse cx="${n(x + sd * lw * 0.3)}" cy="${n(-H * 0.022)}" rx="${n(lw * 1.3)}" ry="${n(H * 0.024)}" fill="${boot}"/></g>`; }
+  // its arms, in the sleeves, its hands grey, three long fingers each
+  for (const sd of [-1, 1]) { const x = sd * (sw - aw * 0.6), len = H * 0.29, hy = sh + aw + len;
+    out += `<g transform="rotate(${sd * 7 - sd * swing * 0.8} ${n(x)} ${n(sh + aw)})"><rect x="${n(x - aw)}" y="${n(sh)}" width="${n(2 * aw)}" height="${n(len + aw)}" rx="${n(aw)}" fill="${suit}"/>` +
+      `<rect x="${n(x - aw * 1.1)}" y="${n(hy - aw * 0.6)}" width="${n(2.2 * aw)}" height="${n(aw * 0.8)}" rx="${n(aw * 0.3)}" fill="${suitD}"/>` +
+      `<ellipse cx="${n(x)}" cy="${n(hy + aw * 0.8)}" rx="${n(aw * 0.95)}" ry="${n(aw * 1.1)}" fill="${GREY_SKIN}"/>` +
+      [-1, 0, 1].map(f => `<path d="M${n(x + f * aw * 0.5)} ${n(hy + aw * 1.3)} L${n(x + f * aw * 0.9)} ${n(hy + aw * 3.4)}" stroke="${GREY_SKIN}" stroke-width="${n(aw * 0.5)}" stroke-linecap="round"/>`).join("") + `</g>`; }
+  // its body, in the jumpsuit: shoulders, a collar, a zip, a belt, a badge
+  out += `<path d="M${n(-sw)} ${n(sh + aw)} Q${n(-sw)} ${n(sh)} ${n(-sw + aw)} ${n(sh)} L${n(sw - aw)} ${n(sh)} Q${n(sw)} ${n(sh)} ${n(sw)} ${n(sh + aw)} L${n(ww)} ${n(hip + H * 0.04)} L${n(-ww)} ${n(hip + H * 0.04)} Z" fill="${suit}"/>` +
+    `<path d="M${n(-H * 0.04)} ${n(sh)} L0 ${n(sh + H * 0.045)} L${n(H * 0.04)} ${n(sh)} Z" fill="${suitD}"/>` +
+    `<path d="M0 ${n(sh + H * 0.045)} L0 ${n(hip)}" stroke="${suitD}" stroke-width="${n(H * 0.006)}"/>` +
+    `<rect x="${n(-ww * 0.98)}" y="${n(hip - H * 0.03)}" width="${n(ww * 1.96)}" height="${n(H * 0.018)}" fill="${suitD}"/>` +
+    `<circle cx="${n(sw * 0.5)}" cy="${n(sh + H * 0.075)}" r="${n(H * 0.02)}" fill="#ffffff" opacity="0.85"/><circle cx="${n(sw * 0.5)}" cy="${n(sh + H * 0.075)}" r="${n(H * 0.01)}" fill="${suitD}"/>`;
+  // its neck and its head: wide above, narrow at the chin, a little shadow on one side
+  out += `<rect x="${n(-H * 0.016)}" y="${n(chin - hh * 0.06)}" width="${n(H * 0.032)}" height="${n(sh - chin + hh * 0.08)}" fill="${GREY_SKIN_DARK}"/>` +
+    `<path d="M0 ${n(top)} C${n(hw * 0.68)} ${n(top)} ${n(hw * 0.68)} ${n(top + hh * 0.62)} ${n(hw * 0.12)} ${n(chin)} Q0 ${n(chin + hh * 0.04)} ${n(-hw * 0.12)} ${n(chin)} C${n(-hw * 0.68)} ${n(top + hh * 0.62)} ${n(-hw * 0.68)} ${n(top)} 0 ${n(top)} Z" fill="${GREY_SKIN}"/>` +
+    `<path d="M${n(hw * 0.3)} ${n(top + hh * 0.25)} C${n(hw * 0.52)} ${n(top + hh * 0.45)} ${n(hw * 0.4)} ${n(top + hh * 0.75)} ${n(hw * 0.12)} ${n(chin)} Q${n(hw * 0.3)} ${n(top + hh * 0.6)} ${n(hw * 0.3)} ${n(top + hh * 0.25)} Z" fill="${GREY_SKIN_DARK}" opacity="0.35"/>`;
+  // its eyes: big, black, slanting up at their outer ends, a glint in each; two dots of a nose, a small mouth
+  for (const sd of [-1, 1]) out += `<ellipse cx="${n(sd * hw * 0.2)}" cy="${n(top + hh * 0.53)}" rx="${n(hw * 0.155)}" ry="${n(hh * 0.085)}" transform="rotate(${-sd * 24} ${n(sd * hw * 0.2)} ${n(top + hh * 0.53)})" fill="#14161a"/>` +
+    `<circle cx="${n(sd * hw * 0.2 - hw * 0.05)}" cy="${n(top + hh * 0.5)}" r="${n(hh * 0.022)}" fill="#ffffff" opacity="0.8"/><circle cx="${n(sd * hw * 0.025)}" cy="${n(top + hh * 0.72)}" r="${n(hh * 0.01)}" fill="${GREY_SKIN_DARK}"/>`;
+  out += `<path d="M${n(-hw * 0.06)} ${n(top + hh * 0.84)} Q0 ${n(top + hh * 0.86)} ${n(hw * 0.06)} ${n(top + hh * 0.84)}" fill="none" stroke="${GREY_SKIN_DARK}" stroke-width="${n(hh * 0.018)}" stroke-linecap="round"/>`;
+  // its bangs over the top of its head, and a lock down each side
+  if (G.hair) out += `<path d="M${n(-hw * 0.5)} ${n(top + hh * 0.36)} C${n(-hw * 0.66)} ${n(top - hh * 0.1)} ${n(hw * 0.66)} ${n(top - hh * 0.1)} ${n(hw * 0.5)} ${n(top + hh * 0.36)} L${n(hw * 0.36)} ${n(top + hh * 0.27)} L${n(hw * 0.2)} ${n(top + hh * 0.34)} L0 ${n(top + hh * 0.26)} L${n(-hw * 0.2)} ${n(top + hh * 0.34)} L${n(-hw * 0.36)} ${n(top + hh * 0.27)} Z" fill="${GREY_HAIR}"/>` +
+    [-1, 1].map(sd => `<path d="M${n(sd * hw * 0.5)} ${n(top + hh * 0.3)} Q${n(sd * hw * 0.6)} ${n(top + hh * 0.85)} ${n(sd * hw * 0.42)} ${n(sh + H * 0.13)} L${n(sd * hw * 0.3)} ${n(sh + H * 0.11)} Q${n(sd * hw * 0.44)} ${n(top + hh * 0.8)} ${n(sd * hw * 0.42)} ${n(top + hh * 0.36)} Z" fill="${GREY_HAIR_DARK}"/>`).join("");
+  return out;
+}
+// a grey's figure, as a team's member's node draws it: standing, or walking (WAY), its feet at (0, 0)
+function personGreyFig(P, v) {
+  const G = greyOf(P), walk = /^(walk|ride|wet):/.test(v || ""), dir = ((v || "").match(/(left|right)$/) || [])[1];
+  return { svg: `<g${dir === "left" ? ` transform="scale(-1 1)"` : ""}>${greySvg(G, walk)}</g>`, g: 0, h: greyDims(G).H, grey: true };
+}
+// a grey seen from above, riding in the team's craft: its shoulders in the jumpsuit, its big head (blond on top, with hair), its eyes
+function greyAboveSvg(G) {
+  const k = (GREY_SIZES[G.size] || GREY_SIZES.medium) / GREY_SIZES.medium;
+  return `<g transform="scale(${k.toFixed(3)})"><ellipse cx="0" cy="8" rx="26" ry="16" fill="${G.suit}"/><ellipse cx="0" cy="-8" rx="24" ry="22" fill="${G.hair ? GREY_HAIR : GREY_SKIN}"/>` +
+    (G.hair ? `<ellipse cx="0" cy="-2" rx="18" ry="14" fill="${GREY_SKIN}"/>` : "") +
+    [-1, 1].map(sd => `<ellipse cx="${sd * 8}" cy="4" rx="6" ry="3.5" transform="rotate(${-sd * 20} ${sd * 8} 4)" fill="#14161a"/>`).join("") + `</g>`;
 }
 // (ticket 459, Matthew: "permit '+ from costume' and show a box -- on top of other panels, not within them? -- with the
 // costume chips to choose (or cancel at the bottom) --- experimenting with a new UX, instead of a drop down, to compare") a
@@ -2213,7 +2293,7 @@ const PERSON_DRAW_AT_ONCE = 4;
 // steps of a walk; "pose:NAME", a pose struck (strikePose); "face:WAY", standing, turned that way
 const personKey = (P, v = "") => JSON.stringify(P.look) + (v ? "#" + v : "");
 // (ticket 802) a person's figure for a variant, drawn and kept, or a cat's (personCatFig): { svg, g: its feet's depth, h: its height }
-const personFig = (P, v) => { if (personIsCat(P)) return personCatFig(P, v); const f = personDrawn.get(personKey(P, v)); return f && { svg: f.svg, g: f.g, h: f.g }; };
+const personFig = (P, v) => { if (personIsGrey(P)) return personGreyFig(P, v); if (personIsCat(P)) return personCatFig(P, v); const f = personDrawn.get(personKey(P, v)); return f && { svg: f.svg, g: f.g, h: f.g }; };
 function personVariant(v) {
   const B = state.body; if (!v) return;
   const [kind, a, b] = v.split(":");
@@ -2230,7 +2310,7 @@ function peopleDrawMissing() {
   personWanted = false;
   if (personBusy) return;
   const want = [];
-  for (const P of Object.values(state.peopleAway)) if (P.place && !personIsCat(P)) for (const v of ["", ...(P.team ? teamVariants() : peoplePathVariants(P))]) if (!personDrawn.has(personKey(P, v))) want.push([P, v]);
+  for (const P of Object.values(state.peopleAway)) if (P.place && !personIsCat(P) && !personIsGrey(P)) for (const v of ["", ...(P.team ? teamVariants() : peoplePathVariants(P))]) if (!personDrawn.has(personKey(P, v))) want.push([P, v]);
   if (!want.length) return;
   // (not while the friend is held, climbing, dragged or going in somewhere: the drawing's own state is busy then)
   if (poseHeld || climb || drag || entering) { setTimeout(peopleDrawMissing, 400); return; }
@@ -2310,7 +2390,7 @@ const personScale = (BG, y) => (BG.figSize ?? 100) / 100 * sceneFig(BG.kind) * d
 // per variant drawn so far, one shown (personShowVariant)
 function personNodeFor(P) {
   let kept = personNodes.get(P.id);
-  const sig = (personIsCat(P) ? "cat|" : "") + JSON.stringify(P.look);
+  const sig = (personIsCat(P) ? "cat|" : personIsGrey(P) ? "grey|" + JSON.stringify(greyOf(P)) + "|" : "") + JSON.stringify(P.look);
   if (!kept || kept.sig !== sig) {
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "person-placed"); g.setAttribute("data-person", P.id);
@@ -2321,10 +2401,11 @@ function personNodeFor(P) {
 }
 function personShowVariant(P, kept, v) {
   // (ticket 802) wet:WAY, swimming: drawn from face:WAY, sunk to the shoulders in the water, cut off at its surface
-  const cat = personIsCat(P);
+  const cat = personIsCat(P), grey = personIsGrey(P);
+  if (grey) v = v.startsWith("wet:") ? v : /^(walk|ride):/.test(v) ? "walk:" + ((v.match(/(left|right)$/) || [])[1] || "right") : "";   // (a grey: standing, or walking either way)
   if (cat) v = v.startsWith("wet:") ? v : /^(walk|ride):/.test(v) ? "walk:" + ((v.match(/(left|right)$/) || [])[1] || "right") : "sit";   // (a cat: sitting, or walking either way)
-  const wet = v.startsWith("wet:"), base = wet ? (cat ? "walk:" : "face:") + v.slice(4) : v;
-  if (!cat && !personDrawn.has(personKey(P, base))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } v = ""; }
+  const wet = v.startsWith("wet:"), base = wet ? (cat || grey ? "walk:" : "face:") + v.slice(4) : v;
+  if (!cat && !grey && !personDrawn.has(personKey(P, base))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } v = ""; }
   if (kept.shown === v) return;
   let n = kept.vars.get(v);
   if (!n) { const f = personFig(P, wet ? base : v); if (!f) return;
@@ -2352,12 +2433,12 @@ function peopleShow(pic, scenery, feetZ) {
   if (!here.length) return;
   const items = [];
   for (const P of here) {
-    if (!personIsCat(P) && !personDrawn.get(personKey(P))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
+    if (!personIsCat(P) && !personIsGrey(P) && !personDrawn.get(personKey(P))) { if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); } continue; }
     const R = teamRun.get(P.id) || peoplePaths.get(P.id), x = R ? R.cx ?? R.x : P.place.x, y = R ? R.cy ?? R.y : P.place.y, z = SCENE.ground + y + (R && R.bob || 0);
     const kept = personNodeFor(P);
     kept.node.setAttribute("transform", personPlaceTransform(x, z, personScale(BG, y)));
     personShowVariant(P, kept, R ? R.v : "");
-    kept.node.setAttribute("data-obj", (P.team ? "🤝 " : personIsCat(P) ? "🐱 " : "👤 ") + personTitle(P));
+    kept.node.setAttribute("data-obj", (P.team ? "🤝 " : personIsCat(P) ? "🐱 " : personIsGrey(P) ? "👽 " : "👤 ") + personTitle(P));
     kept.node.style.display = R && (R.gone || (R.wait && R.wait > performance.now())) ? "none" : "";   // (ticket 802: not come in yet, or gone through)
     items.push({ node: kept.node, z });
   }
@@ -2633,9 +2714,9 @@ function teamBarSync() {
     title: teamBarOpen ? "Your team: they go where you go. Tap one to play them (Q on the keyboard: the next one). Tap 🤝 to hide them" : `Your team: ${team.length + 1} of you. Tap to show them`,
     onclick: e => { e.currentTarget.blur(); teamBarOpen = !teamBarOpen; try { localStorage.setItem(TEAM_BAR_KEY, teamBarOpen ? "1" : "0"); } catch (_) { /* (this visit) */ } teamBarSync(); } }, "🤝");
   bar.replaceChildren(cap, ...(teamBarOpen ? [
-    el("button", { class: "team-chip", "aria-pressed": "true", title: "The one you play now" }, (state.person.animal === "cat" ? "🐱 " : "") + personTitle(state.person)),
+    el("button", { class: "team-chip", "aria-pressed": "true", title: "The one you play now" }, (state.person.animal === "cat" ? "🐱 " : personIsGrey(state.person) ? "👽 " : "") + personTitle(state.person)),
     ...team.map(P => el("button", { class: "team-chip", "aria-pressed": "false", ...(flight ? { disabled: "" } : {}),
-      title: `Play ${personTitle(P)}: they step forward, and the others follow them`, onclick: e => { e.currentTarget.blur(); personSwitch(P.id); } }, (P.animal === "cat" ? "🐱 " : "") + personTitle(P)))] : []));
+      title: `Play ${personTitle(P)}: they step forward, and the others follow them`, onclick: e => { e.currentTarget.blur(); personSwitch(P.id); } }, (P.animal === "cat" ? "🐱 " : personIsGrey(P) ? "👽 " : "") + personTitle(P)))] : []));
 }
 document.addEventListener("keydown", e => {
   if ((e.key !== "q" && e.key !== "Q") || e.repeat || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]"))) return;
@@ -2649,6 +2730,7 @@ const teamAboard = () => state.body.rocket === "ride" && !flight && teamOf().len
 const personHeads = new Map();   // (a look's head, where its figure is cropped for a porthole: measured once)
 function personHead(P) {
   if (personIsCat(P)) { const cs = 0.45 * TEAM_CAT_FH / 50; return { cx: -3 * cs, cy: -44 * cs, r: 19 * cs, cat: true }; }
+  if (personIsGrey(P)) { const { H, hh } = greyDims(greyOf(P)); return { cx: 0, cy: -H + 0.46 * hh, r: 0.6 * hh, cat: true }; }   // (its face and its bangs: drawn by its own figure, as a cat's)
   const k = personKey(P), f = personDrawn.get(k); if (!f) return null;
   let h = personHeads.get(k);
   if (!h) {
@@ -2669,7 +2751,7 @@ function teamPortholesSvg(h, style) {
     const row = Math.floor(i / 2), two = !(n % 2 === 1 && i === n - 1), x = two ? (i % 2 ? 1 : -1) * (pr + 0.012 * h) : 0, y = top + (row + 0.5) * (room / rows);
     const hd = personHead(P), pre = "tp" + P.id + "-";
     let face = "";
-    if (hd && hd.cat) face = `<g transform="scale(${(pr / hd.r).toFixed(4)}) translate(${f1(-hd.cx)} ${f1(-hd.cy)})">${personOwnIds(personCatFig(P, "").svg, pre)}</g>`;
+    if (hd && hd.cat) face = `<g transform="scale(${(pr / hd.r).toFixed(4)}) translate(${f1(-hd.cx)} ${f1(-hd.cy)})">${personOwnIds(personFig(P, "").svg, pre)}</g>`;   // (a cat's, or a grey's)
     else if (hd) face = `<g transform="scale(${(pr / hd.r).toFixed(4)}) translate(${f1(-hd.cx)} ${f1(-hd.cy)})">${personOwnIds(personDrawn.get(personKey(P)).svg, pre)}</g>`;
     else if (!personWanted) { personWanted = true; setTimeout(peopleDrawMissing, 0); }
     return `<g class="porthole" data-person="${P.id}" transform="translate(${f1(x)} ${f1(y)})"><clipPath id="${pre}cut"><circle r="${f1(pr)}"/></clipPath>` +
@@ -2832,11 +2914,12 @@ function rocketActions() {
 // basket, rocket ship", and "the team shares a vehicle, when in the air. On the ground, separate horses are fine and more normal")
 // Flying, the team rides in the friend's craft (flyCraftSvg): each one seen from above as the friend is (topDownSvg, their own
 // look), or a cat from above (catAboveSvg), cat-sized among people
-const teamFlyKey = () => JSON.stringify([state.background.universe, teamOf().map(P => [P.id, P.animal, P.look])]);
+const teamFlyKey = () => JSON.stringify([state.background.universe, teamOf().map(P => [P.id, P.animal, P.alien, P.grey, P.look])]);
 function teamRiders() {
   return teamOf().map(P => {
     const look = personLookWhole(P.look), keep = Object.fromEntries(PERSON_PARTS.map(k => [k, state[k]]));
     if (personIsCat(P)) return personOwnIds(`<g transform="translate(0 -8) scale(0.6)">${catAboveSvg(look.body.catCoat)}</g>`, "tf" + P.id + "-");
+    if (personIsGrey(P)) return `<g transform="translate(0 2) scale(0.7)">${greyAboveSvg(greyOf(P))}</g>`;
     let rider = "";
     try { for (const k of PERSON_PARTS) state[k] = look[k];
       rider = topDownSvg(state, { ...state.body, facing: "front", anim: "none", pose: "stand", sit: false }, 0, 100); }
