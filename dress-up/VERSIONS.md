@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.530 (2026-11-21)
+
+Everything in 0.0.529, plus:
+
+- **Fixed: 💭 our imagination slow on slow computers** (ticket 810; 0.0.529's speed run read it at 9.1 frames a second). On GitHub's slowest computers it walked at 9 to 33 frames a second, 0.0.522 too; on the others, at 60. The picture's animation clock stands still through a frame while the page's runs on, so a frame longer than a quarter second (a scene built afresh, a still picture made) looked as if the clock had jumped: every animation's timing was worked out again, the scene and each of its 56 pictures were built again, the next frame was longer still, and it never stopped. Now the clocks are compared only near a frame's start. Walking in our imagination with the slow fallback on: no scene built again (667 times before, in 24 steps), 2.6 ms a drawing, no long frames.
+
 ## 0.0.529 (2026-11-21)
 
 Everything in 0.0.528, plus:

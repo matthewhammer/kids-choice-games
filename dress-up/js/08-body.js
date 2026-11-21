@@ -661,11 +661,17 @@ const musicSeconds = () => stillAt === null && playing && typeof audio !== "unde
 // was, and measured again once it ends (ticket 133): a press on the picture
 // can start the music, and measuring it then built the whole scene again in
 // the middle of the drag.
-const PIC_GAP_SLACK = 0.25;
+// (^ticket(810), 2026-11-21: the picture's clock stands still through a frame, the page's runs on, so a frame longer than
+// PIC_GAP_SLACK (a scene built afresh, a still picture made) read the gap as moved: every wave's stamp changed, the scene and
+// each picture in it were built again, a frame longer still, and so on, never stopping: 💭 our imagination, its 56 pictures,
+// walked at 9 to 33 frames a second on GitHub's slowest computers. So the gap is measured afresh only in a frame's first
+// PIC_GAP_FRESH ms, while the picture's clock is current, never deep in a long one.)
+const PIC_GAP_SLACK = 0.25, PIC_GAP_FRESH = 40;
 let picGap = null, picDragging = false;
+const frameAge = () => { const t = document.timeline && document.timeline.currentTime; return typeof t === "number" ? performance.now() - t : 0; };
 function picGapNow() {
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, g = now - musicSeconds();
-  if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !picDragging)) picGap = g;
+  if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !picDragging && frameAge() < PIC_GAP_FRESH)) picGap = g;
   return picGap;
 }
 // when, in the picture's own time, an animation must have begun for its wave
