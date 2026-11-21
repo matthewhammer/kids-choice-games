@@ -1168,7 +1168,8 @@ function flyInto(box, arrive) {
   const fly = wrap.animate([step(0, 0, 1), step(0.2, 45, 1 - (1 - s) * 0.2), step(0.55, 240, 1 - (1 - s) * 0.6),
                             step(0.85, 720, 1 - (1 - s) * 0.9), step(1, 1260, s), step(1, 1620, s * 0.2, 0)],
                            { duration: 2000, easing: "ease-in", fill: "forwards" });
-  fly.onfinish = () => {
+  const teamGone = teamDepart(d0.x, d0.y, true, 350);   // (ticket 802: the team spinning in after the friend, one by one)
+  fly.onfinish = () => teamGone.then(() => {
     wrap.remove();
     tripPhase = "arriving";
     arrive();
@@ -1183,7 +1184,7 @@ function flyInto(box, arrive) {
       land.remove(); figHide(false);
       if (tripPhase === "spinning out") tripPhase = "arrived";
     };
-  };
+  });
 }
 // (ticket 138, as actions since ticket 141) A game controller, through the
 // browser's Gamepad API. Played as a video game is, not as a puppet: the
@@ -2702,7 +2703,9 @@ function walkInto(door, arrive, walk = true, how = "step", lad = null, opt = {})
   const dist = path.reduce((a, p, i) => { const q = i ? path[i - 1] : from; return a + Math.hypot(p[0] - q[0], (p[1] - q[1]) / 0.6); }, 0), speed = Math.max(PAD_SPEED.walk, dist / 2.5);
   let leg = 0;
   let last = 0, phase = walk ? "walk" : "in", t0 = performance.now(), tIn = 0;
-  const done = () => {
+  // (ticket 802: the team through the doorway after the friend, one by one, before the place behind it is shown)
+  const done = () => teamDepart(foot.x, foot.y).then(through);
+  const through = () => {
     for (const u of undo) u();
     tripPhase = "arriving";
     arrive();

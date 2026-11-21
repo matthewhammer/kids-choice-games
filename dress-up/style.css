@@ -1422,3 +1422,21 @@ body.items-open .team-bar { display: none; }
 .way-arrow .way-tri.way-sym::before { clip-path: circle(44% at 50% 50%); background: #fde68a; }
 .way-arrow .way-tri.way-sym::after { content: attr(data-sym); position: absolute; inset: 0; display: grid; place-items: center; font-size: 21px; line-height: 1; color: #6b4a24; font-weight: 800; }
 .way-arrow.rocket-act:hover .way-tri::before, .way-arrow.rocket-act:focus-visible .way-tri::before { filter: drop-shadow(0 0 3px #fffbe0) drop-shadow(0 0 9px #ffd23f); }
+/* (ticket 813) 🤖 automated play: the tours, a chip each; the one under way, its outline, the step under way lit; the strip over the picture */
+.tours { display: flex; flex-direction: column; gap: 8px; }
+.tours .tour-chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.tour-outline > .cap { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; }
+.tour-steps { margin: 4px 0 0; padding-left: 1.6em; display: flex; flex-direction: column; gap: 2px; }
+.tour-step { padding: 2px 6px; border-radius: 8px; line-height: 1.35; }
+.tour-step.todo { color: var(--muted); }
+.tour-step.now { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.tour-step.done { opacity: 0.85; }
+.tour-step.missed { color: #f59e0b; }
+.tour-bar { position: absolute; left: 50%; bottom: 10px; translate: -50% 0; z-index: 38; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 120px);
+            padding: 4px 6px 4px 12px; border-radius: 999px; background: var(--panel); opacity: 0.94; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); font-size: 0.92em; }
+.tour-bar[hidden] { display: none; }
+.tour-bar .tour-now { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tour-bar .tour-stop { padding: 0 8px; border-radius: 999px; }
+/* (ticket 813) the welcome's two ways on; the tours, lit for a moment when asked for */
+.welcome-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tours-pick.tours-lit { outline: 3px solid var(--accent); outline-offset: 2px; transition: outline-color 0.3s; }

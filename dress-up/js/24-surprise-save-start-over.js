@@ -74,6 +74,9 @@ function startWorld() {
   if (W && W.cells[W.start]) { if (W !== state.world) worldSwitch(W.id, W.start); else worldEnter(W.start); }
   try { localStorage.setItem("dress-up-world-started", "1"); } catch (_) { /* (for this visit) */ }
   startWorldHand.hidden = true; startWorldBtn.classList.remove("sw-new");
+  // (ticket 813, Matthew 2026-11-21: "once automated play tours work, let's open that by default after the player chooses 'start
+  // world', and let's have the welcome message encourage them to choose one") 🤖 Automated play's tab, open beside the welcome
+  const tt = TABS.findIndex(t => t[1] === "tours"); if (tt >= 0 && tab !== tt) { tab = tt; showTab(); }
   welcomeShow();
 }
 startWorldBtn.addEventListener("click", startWorld);
@@ -84,6 +87,8 @@ function welcomeShow() {
   const close = () => { pop.remove(); document.removeEventListener("keydown", esc, true); startWorldBtn.focus(); };
   const esc = e => { if (e.key === "Escape") { e.preventDefault(); close(); } };
   const go = el("button", { class: "big welcome-go", onclick: close }, "🧭 Let's explore");
+  // (ticket 813) or a tour first: the 🤖 tab's tours, shown and lit
+  const tours = el("button", { class: "big welcome-tours", onclick: () => { close(); const p = document.querySelector(".tours-pick"); if (p) { p.scrollIntoView({ block: "center", behavior: "smooth" }); p.classList.add("tours-lit"); setTimeout(() => p.classList.remove("tours-lit"), 2600); } } }, "🤖 Watch a tour first");
   const pop = el("div", { class: "welcome-pop", role: "dialog", "aria-modal": "true", "aria-labelledby": "welcome-title" }, [
     el("div", { class: "welcome-card" }, [
       el("h2", { id: "welcome-title" }, "🌍 Welcome to the world"),
@@ -91,7 +96,8 @@ function welcomeShow() {
       el("p", {}, "For now, the world has stuff in it, but no interactive people (the people here are more like background animations) and no puzzles. It's a place to explore, and to evolve into something more dynamic."),
       el("p", {}, "Current work is on ways for players to script their own adventure world. One baby step at a time. Feedback welcome!"),
       el("p", { class: "welcome-how" }, "👣 To get about: tap where your friend should walk (or use the arrow keys, or a game controller). Near the edge of a place, an arrow shows the way out: tap it to go to the next place. 🗺️ World design shows the whole world."),
-      go])]);
+      el("p", { class: "welcome-tour" }, "🤖 New here? Watch the game play itself first: choose a tour in Automated play, open beside the picture (the deep ocean, a forest hike, the witch's, the tree houses, outer space, or all of them), and see what there is to do. ⏹ stops it at any time."),
+      el("div", { class: "row welcome-buttons" }, [tours, go])])]);
   pop.addEventListener("click", e => { if (e.target === pop) close(); });
   document.body.append(pop); document.addEventListener("keydown", esc, true); go.focus();
 }

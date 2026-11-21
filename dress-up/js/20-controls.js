@@ -510,6 +510,11 @@ const TABS = [
   ["👥 People", "person", [
     ["people", "list", ""],
   ]],
+  // (ticket 813, Matthew 2026-11-21: "let's add a robot icon to the top-level menu, just after people. the menu name is 'automated
+  // play'") the game playing itself: its tours (25-tours.js)
+  ["🤖 Automated play", "tours", [
+    ["tours", "list", ""],
+  ]],
   ["🏞️ Background", "background", [
     // (ticket 285, ^du_report(5)'s step 2) 🏞️ Background as a designer: its full screen, and the game as its first card there
     ["bgbig", "big", "⛶ full screen"],
@@ -1878,6 +1883,7 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
   // stays where they stood); the one dressed now: their name, ⭐ a template or not; a new person from a template; then the
   // others, each with where they stand (a square of a world), 📍 put here beside the friend, ✖ out of the places, ⭐ and
   // 🗑️. Kept while nothing in it changes (shown).
+  if (kind === "tours") { toursPanel(box); }   // (ticket 813: 🤖 its tours, 25-tours.js)
   if (kind === "people") {
     const wrap = el("div", { class: "people" });
     box.append(wrap);

@@ -229,7 +229,7 @@ const CROSS_KEYS = ["crossN", "crossNE", "crossE", "crossSE", "crossS", "crossSW
 // (ticket 656: and the plants cut in it; ticket 659: when each was cut, and the plants put in it that were cut, to grow back)
 const CUT_KEYS = ["cut", "cutWhen", "cutThings"];
 // (ticket 812: a square of ✨ the starfield keeps its own planet and stars, one of 👽 the alien planet its own sky and who is there)
-const PLACE_OWN_KEYS = { starfield: ["spacePlanet", "spacePlanetX", "spacePlanetSize", "spaceMoons", "spaceSeed"], alienplanet: ["alienSky", "alienPeople", "alienAnimals"] };
+const PLACE_OWN_KEYS = { starfield: ["spacePlanet", "spacePlanetX", "spacePlanetSize", "spaceMoons", "spaceSeed"], alienplanet: ["alienSky", "alienPeople", "alienAnimals", "alienSeed"] };
 const cellKeys = kind => [...(isCross(kind) ? ["things", ...CUT_KEYS, ...CROSS_KEYS] : INSIDE_WHICH[kind] ? ["things", ...CUT_KEYS, INSIDE_WHICH[kind]] : ["things", ...CUT_KEYS]), ...(PLACE_OWN_KEYS[kind] || [])];
 // where the friend comes in, walking into a square from a side: just
 // inside that side, as if they had come through it (the stage's units, as
@@ -2358,6 +2358,7 @@ function peopleShow(pic, scenery, feetZ) {
     kept.node.setAttribute("transform", personPlaceTransform(x, z, personScale(BG, y)));
     personShowVariant(P, kept, R ? R.v : "");
     kept.node.setAttribute("data-obj", (P.team ? "🤝 " : personIsCat(P) ? "🐱 " : "👤 ") + personTitle(P));
+    kept.node.style.display = R && (R.gone || (R.wait && R.wait > performance.now())) ? "none" : "";   // (ticket 802: not come in yet, or gone through)
     items.push({ node: kept.node, z });
   }
   for (const id of [...personNodes.keys()]) if (!state.peopleAway[id]) personNodes.delete(id);
@@ -2461,7 +2462,7 @@ function peoplePathsKeepDepth() {
 // (teamTick), as a path's walker's (ticket 599). ⇄ Anyone on the team can be the one played: their chip over the picture
 // (teamBarSync), Q on the keyboard or a controller's button set in 🎮 Controls (the next in the line, teamNext); the one played
 // till then goes to the end of the line, and the line forms again behind the new one.
-const TEAM_GAP = 105, TEAM_RIDE_GAP = 180, TEAM_CATCH = 6, TEAM_FAST = 650, TEAM_STRIDE = 42, TEAM_SINK = 0.56;
+const TEAM_GAP = 105, TEAM_RIDE_GAP = 180, TEAM_CATCH = 6, TEAM_FAST = 650, TEAM_STRIDE = 42, TEAM_SINK = 0.56, TEAM_ARRIVE_MS = 420, TEAM_GO_MS = 300;
 const TEAM_VARIANTS = ["face:left", "face:right", "walk:A:left", "walk:B:left", "walk:A:right", "walk:B:right"];
 let teamTrail = null, teamWhere = "", teamRaf = 0, teamDepthT = 0, teamLast = 0, teamFriendT = 0;
 const teamRun = new Map();
@@ -2535,7 +2536,10 @@ function teamSync() {
     let R = teamRun.get(P.id);
     if (!R) { const mine = !moved && P.place && P.place.world === here.world && P.place.key === here.key;
       R = { x: mine ? P.place.x : tx, y: mine ? P.place.y : ty, dir: "right", stride: 0, still: 1, v: "", bob: 0 }; teamRun.set(P.id, R); }
-    else if (moved) Object.assign(R, { x: tx, y: ty, still: 1, bob: 0 });
+    // (Matthew 2026-11-21: "let's have each member of the team go, one by one, and arrive, one by one", and "similar for ladders,
+    // and bridges, and tree house doors, etc") come into a new place: each one where the friend came in, unseen till their turn (a
+    // beat after the one before, TEAM_ARRIVE_MS), then there, and on to their place in the line
+    else if (moved) Object.assign(R, { x: here.x, y: here.y, still: 1, bob: 0, wait: performance.now() + TEAM_ARRIVE_MS * (i + 1), gone: false, leaving: null });
     if (!R.v || moved) R.v = "face:" + (here.x >= R.x ? "right" : "left");
     P.place = { world: here.world, key: here.key, x: R.x, y: R.y, kind: here.kind };
   });
@@ -2552,6 +2556,11 @@ function teamTick(now) {
   let busy = now - teamFriendT < 400;
   team.forEach((P, i) => {
     const R = teamRun.get(P.id); if (!R) return;
+    const kept0 = personNodes.get(P.id);
+    // (waiting their turn to come in: unseen, still; their turn come, there, growing in, and on)
+    if (R.wait) { if (now < R.wait) { if (kept0) kept0.node.style.display = "none"; busy = true; return; }
+      R.wait = 0; if (kept0) { kept0.node.style.display = ""; teamPop(kept0.node); } }
+    if (R.gone) { if (kept0) kept0.node.style.display = "none"; return; }
     const [tx, ty] = teamAt((i + 1) * gap), d = teamDist(R.x, R.y, tx, ty);
     let m = 0;
     if (d > 0.5) {
@@ -2574,6 +2583,31 @@ function teamTick(now) {
     for (const [id, R] of teamRun) { const kept = personNodes.get(id); if (!kept || !kept.node.isConnected) continue;
       const ahead = objectAhead(g + R.y); if (ahead && ahead !== kept.node.nextSibling) ahead.parentNode.insertBefore(kept.node, ahead); } }
   if (busy) teamRaf = requestAnimationFrame(teamTick); else teamLast = 0;
+}
+// (one coming in: growing from small where they stand, as one through a doorway does)
+function teamPop(node) {
+  if (!node.animate) return;
+  node.style.transformBox = "fill-box"; node.style.transformOrigin = "50% 100%";
+  node.animate([{ scale: "0.2", opacity: 0 }, { scale: "1", opacity: 1 }], { duration: 420, easing: "ease-out" });
+}
+// The team going after the friend through a way out, one by one, in line order: each to the spot (x, y: the picture's units),
+// shrinking and fading into it (spin: turning as they go, as through a doorway's spin), TEAM_GO_MS after the one before; done when
+// the last has gone (a promise). None to go (no team here, or aboard the rocket): done at once
+function teamDepart(x, y, spin = false, after = 0) {
+  const team = teamOf(), nodes = team.map(P => [P, teamRun.get(P.id), personNodes.get(P.id)]).filter(([, R, k]) => R && k && k.node.isConnected && k.node.style.display !== "none");
+  if (!nodes.length || teamAboard() || !document.getElementById("pic")) return Promise.resolve();
+  const g = SCENE.ground;
+  return Promise.all(nodes.map(([P, R, k], i) => new Promise(res => {
+    const n = k.node, dx = x - R.x, dy = y - (g + R.y), tok = {};
+    R.leaving = tok;   // (this going, and no later one's: come into the next place, it counts no more)
+    n.style.transformBox = "fill-box"; n.style.transformOrigin = "50% 100%";
+    const a = n.animate([{ translate: "0px 0px", scale: "1", rotate: "0deg", opacity: 1 }, { translate: `${f1(dx * 0.7)}px ${f1(dy * 0.7)}px`, scale: "0.7", rotate: spin ? "200deg" : "0deg", opacity: 1, offset: 0.55 },
+                         { translate: `${f1(dx)}px ${f1(dy)}px`, scale: "0.12", rotate: spin ? "720deg" : "0deg", opacity: 0 }],
+                        { duration: spin ? 1100 : 650, delay: after + i * TEAM_GO_MS, easing: "ease-in", fill: "forwards" });
+    let over = false;
+    const end = () => { if (over) return; over = true; if (R.leaving === tok) { R.gone = true; n.style.display = "none"; } a.cancel(); res(); };
+    a.onfinish = end; setTimeout(end, after + i * TEAM_GO_MS + (spin ? 1100 : 650) + 600);   // (done anyway, where the page runs no animations)
+  })));
 }
 // ⇄ the next in the line played (Q, or a controller's button): the one played till then goes to the end of the line
 function teamNext() {
@@ -2693,9 +2727,14 @@ const SPACE_WORLD_PLANETS = [
   { id: "frost", name: "🧊 Frostia", look: "ice", sky: "teal", at: "2,3", people: 3, cols: 2, rows: 2 }];
 const spaceJoin = W => { for (const key of Object.keys(W.cells)) W.cells[key].ways = ["N", "E", "S", "W"].filter(d => { const nb = worldNeighbour(W, key, d); return !nb.off && W.cells[nb.key]; }); };
 function spaceWorlds() { worldsInit(); return [state.world, ...Object.values(state.worldsAway)]; }
+// (a planet's square's own seed for its look: its planet and place, never 0)
+const spaceSeedOf = (pid, c, r) => 1 + [...pid].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 9000, 7) + 97 * c + 389 * r;
 function spaceEnsure() {
   const all = spaceWorlds(), had = all.find(w => w.space);
-  if (had) return had;
+  if (had) {   // (planets made before each square had a look of its own: given theirs)
+    for (const w of all) if (w.planet) for (const k of Object.keys(w.cells)) if (!w.cells[k].alienSeed) { const [c, r] = k.split(",").map(Number); w.cells[k].alienSeed = spaceSeedOf(w.planet, c, r); }
+    return had;
+  }
   let n = Math.max(0, ...all.map(worldNum));
   const S = { id: "w" + (++n), name: "🌌 outer space", space: true, cols: SPACE_COLS, rows: SPACE_ROWS, cells: {}, start: SPACE_HOME, at: SPACE_HOME, planets: {} };
   for (let r = 0; r < SPACE_ROWS; r++) for (let c = 0; c < SPACE_COLS; c++)
@@ -2705,7 +2744,7 @@ function spaceEnsure() {
     Object.assign(S.cells[P.at], { spacePlanet: P.look, spacePlanetSize: 52, spacePlanetX: 78, spaceMoons: 2, planet: P.id });
     const W = { id: "w" + (++n), name: P.name, planet: P.id, cols: P.cols, rows: P.rows, cells: {}, start: "0,0", at: "0,0" };
     for (let r = 0; r < P.rows; r++) for (let c = 0; c < P.cols; c++)
-      W.cells[`${c},${r}`] = { kind: "alienplanet", ways: [], things: [], alienSky: P.sky, alienPeople: (P.people + c + r) % 4, alienAnimals: (c + r) % 2 === 0 };
+      W.cells[`${c},${r}`] = { kind: "alienplanet", ways: [], things: [], alienSky: P.sky, alienPeople: (P.people + c + r) % 4, alienAnimals: (c + r) % 2 === 0, alienSeed: spaceSeedOf(P.id, c, r) };
     spaceJoin(W);
     state.worldsAway[W.id] = W; S.planets[P.id] = W.id;
   }

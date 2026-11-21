@@ -316,20 +316,26 @@ function alienPlantSvg(x, y, k, kind, i) {
     `<ellipse cx="${f1(x + dx * k)}" cy="${f1(y - h * k + 3 * k)}" rx="${f1(5 * k)}" ry="${f1(3 * k)}" fill="${mix(col, "#000000", 0.4)}"/>`).join("");
 }
 function alienplanetScene(c) {
-  const { x0, y0, x1, y1, g, W, H, k, pad, R, all, o } = c;
+  const { x0, y0, x1, y1, g, W, H, k, pad, all, o } = c;
+  // (Matthew 2026-11-21: "the alien planet backgrounds are too similar to each other -- especially the identical placement of objects
+  // and aliens") each square its own (alienSeed, a square's own setting; 0, the place as it always was): the far spires and pools, the
+  // suns and the giant planet in the sky (another planet's look), and where each thing and alien stands, moved and, half the time, the
+  // whole of it seen the other way round
+  const seed = Math.max(0, Math.round(Number(o.alienSeed) || 0)), R = seed ? (i, s) => c.R(i, s + 7919 * (seed % 9973)) : c.R;
+  const flip = seed && R(0, 8903) < 0.5 ? -1 : 1, giants = Object.keys(PLANET_LOOKS), giant = seed ? giants[Math.floor(R(0, 8904) * giants.length)] : "ringed", gx = seed ? 0.15 + 0.7 * R(0, 8905) : 0.7;
   const sky = ALIEN_SKY[o.alienSky] ? o.alienSky : "dusk", [gr0, gr1, gr2] = ALIEN_GROUND[sky], hz = g - 150 * k;
   const aliens = Math.max(0, Math.min(4, Math.round(o.alienPeople ?? 2))), animals = o.alienAnimals !== false;
   // the sky, its two suns, the great ringed planet low over the hills, faint stars
-  let s = SEP + part("alien-sky", [c.F, sky], () => {
+  let s = SEP + part("alien-sky", [c.F, sky, seed], () => {
     const [a, b2, c3] = ALIEN_SKY[sky];
     return `<defs><linearGradient id="bg-alien-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="0.65" stop-color="${b2}"/><stop offset="1" stop-color="${c3}"/></linearGradient>` +
       `<radialGradient id="bg-alien-sun"><stop offset="0" stop-color="#ffffff"/><stop offset="0.35" stop-color="#fff2c4"/><stop offset="1" stop-color="#fff2c4" stop-opacity="0"/></radialGradient></defs>` +
       all("url(#bg-alien-sky)") + starsSvg({ starShape: "dot", starSize: 70, starBright: 50, starTwinkle: 0 }, 40, x0, x1, y0, y0 + (hz - y0) * 0.45, k, R, 8801) +
-      `<circle cx="${f1(x0 + W * 0.2)}" cy="${f1(y0 + H * 0.12)}" r="${f1(44 * k)}" fill="url(#bg-alien-sun)"/><circle cx="${f1(x0 + W * 0.3)}" cy="${f1(y0 + H * 0.2)}" r="${f1(24 * k)}" fill="url(#bg-alien-sun)" opacity="0.8"/>` +
-      alienPlanetSvg("ringed", x0 + W * 0.7, hz - 40 * k, 120 * k, R, "bg-alien-giant");
+      `<circle cx="${f1(x0 + W * (seed ? 1 - gx - 0.05 : 0.2))}" cy="${f1(y0 + H * (seed ? 0.08 + 0.1 * R(0, 8906) : 0.12))}" r="${f1(44 * k)}" fill="url(#bg-alien-sun)"/><circle cx="${f1(x0 + W * (seed ? 1 - gx + 0.06 : 0.3))}" cy="${f1(y0 + H * 0.2)}" r="${f1(24 * k)}" fill="url(#bg-alien-sun)" opacity="0.8"/>` +
+      alienPlanetSvg(giant, x0 + W * gx, hz - 40 * k, (seed ? 80 + 70 * R(0, 8907) : 120) * k, R, "bg-alien-giant");
   });
   // far off: tall spires and rolling hills, hazier the farther
-  s += SEP + part("alien-far", [c.F, sky], () => {
+  s += SEP + part("alien-far", [c.F, sky, seed], () => {
     const haze = ALIEN_SKY[sky][2];
     let t = "";
     for (let i = 0; i < 9; i++) { const x = x0 - pad + (W + 2 * pad) * (i + 0.3 * R(i, 8811)) / 9, h = (90 + 140 * R(i, 8812)) * k, w = (20 + 26 * R(i, 8813)) * k;
@@ -338,12 +344,12 @@ function alienplanetScene(c) {
     return wallObj("the far hills and spires", t);
   });
   // the ground: its colours in bands, and glowing pools here and there
-  s += SEP + part("alien-ground", [c.F, sky], () => wallObj("the ground", `<rect x="${f1(x0 - pad)}" y="${f1(hz + 10 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="${gr0}"/>` +
+  s += SEP + part("alien-ground", [c.F, sky, seed], () => wallObj("the ground", `<rect x="${f1(x0 - pad)}" y="${f1(hz + 10 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - hz + pad)}" fill="${gr0}"/>` +
     `<rect x="${f1(x0 - pad)}" y="${f1(g - 40 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + 40 * k + pad)}" fill="${gr1}"/>` +
     `<rect x="${f1(x0 - pad)}" y="${f1(g + 90 * k)}" width="${f1(W + 2 * pad)}" height="${f1(y1 - g + pad)}" fill="${gr2}"/>` +
     [0, 1, 2, 3].map(i => `<ellipse cx="${f1(x0 + W * (0.1 + 0.8 * R(i, 8821)))}" cy="${f1(hz + (40 + 160 * R(i, 8822)) * k)}" rx="${f1((30 + 40 * R(i, 8823)) * k)}" ry="${f1(8 * k)}" fill="#7ef9ff" opacity="0.35"><animate attributeName="opacity" values="0.35;0.15;0.35" dur="${3 + i}s" repeatCount="indefinite"/></ellipse>`).join("")));
   // what stands on it, each at its depth: crystals and stone mushrooms, plants, the aliens, the animals
-  s += SEP + part("alien-things", [c.F, sky, aliens, animals, catverse(), sceneLfoKey(o, "fast")], () => {
+  s += SEP + part("alien-things", [c.F, sky, aliens, animals, catverse(), sceneLfoKey(o, "fast"), seed], () => {
     const things = [
       ["crystals, left", -0.38, -10, (x, y) => alienCrystalsSvg(x, y, k, 1.2, 0)], ["crystals, far right", 0.36, -70, (x, y) => alienCrystalsSvg(x, y, k, 0.8, 1)],
       ["stone mushroom", -0.18, -60, (x, y) => alienMushroomRockSvg(x, y, k, 1, "#9b6bd6")], ["stone mushroom, right", 0.44, 40, (x, y) => alienMushroomRockSvg(x, y, k, 0.8, "#4fb3a8")],
@@ -355,7 +361,9 @@ function alienplanetScene(c) {
     if (animals) things.push(["rainbow squirrel on a rock", 0.42, 40, (x, y) => rainbowSquirrelSvg(x + 6 * k, y - 82 * k * 0.8, k)],
       ["rainbow snake, resting", 0.3, 50, (x, y) => rainbowSnakeSvg(x, y, k, "bg-alien-snake")],
       ["rainbow beetle", -0.4, -5, (x, y) => `<ellipse cx="${f1(x + 2 * k)}" cy="${f1(y - 100 * k)}" rx="${f1(9 * k)}" ry="${f1(6 * k)}" fill="#00d26a" stroke="#5a3cff" stroke-width="${f1(2 * k)}"/><circle cx="${f1(x + 11 * k)}" cy="${f1(y - 100 * k)}" r="${f1(3.5 * k)}" fill="#ff1e56"/>`]);
-    return things.map(([name, u, dz, f]) => { const x = u * W, y = g + dz * k; return obj(name, y, f(x, y)); }).join("") +
+    // (each square's own: each thing moved a little across and in depth, and the whole seen the other way round, by its seed)
+    const at = (u, dz, j) => seed ? [Math.max(-0.47, Math.min(0.47, flip * u + (R(j, 8901) - 0.5) * 0.36)), dz + (R(j, 8902) - 0.5) * 110] : [u, dz];
+    return things.map(([name, u0, dz0, f], j) => { const [u, dz] = at(u0, dz0, j), x = u * W, y = g + dz * k; return obj(name, y, f(x, y)); }).join("") +
       (animals ? obj("rainbow butterflies", Infinity, [0, 1, 2].map(i => rainbowButterflySvg(x0 + W * [0.1, 0.6, 0.9][i], g - [110, 210, 160][i] * k, k, i, o)).join("")) : "");
   });
   if (animals) s += SEP + part("alien-birds", [c.F], () => [0, 1].map(i => rainbowBirdSvg(0, y0 + H * (0.18 + 0.1 * i), k, i, W)).join(""));
