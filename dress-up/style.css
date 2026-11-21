@@ -1389,3 +1389,5 @@ body.still-scenery .fly-bob { animation: none; }
                        line-height: 1.5; border-radius: 999px; background: var(--panel); opacity: 0.92; }
 .team-bar .team-chip[aria-pressed="true"] { outline: 3px solid #f0b400; outline-offset: -1px; font-weight: 700; opacity: 1; }
 body.items-open .team-bar { display: none; }
+/* (ticket 802) 🤝 follows team, on: lit, as a chosen chip */
+.people .person-team[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }

@@ -4,6 +4,13 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.522 (2026-11-21)
+
+Everything in 0.0.521, plus:
+
+- **🤝 follows team, said plainly** (Matthew: "'stays' should say 'follows team'", and "'stays on team' should say 'follows team'"). In 👥 People each of the others has one toggle, **🤝 follows team**: lit, with a ✓, when they go where the friend goes; plain when they stay in their square. The 🏠 "stays" label is gone, and the list says "🤝 follows team" for each one who does.
+- **The scripts' list of places in the game's own order** (ticket 810): 🕳️ the black hole stood before the starship's bridge and the alien planet in the list the scripts use in Node, after them in the game's; the two checks that hold them equal failed in the speed runs of 0.0.519 and 0.0.520. Nothing a player sees changes.
+
 ## 0.0.521 (2026-11-21)
 
 Everything in 0.0.520, plus:

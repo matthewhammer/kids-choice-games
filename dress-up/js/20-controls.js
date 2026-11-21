@@ -1901,10 +1901,11 @@ function control(part, [kind, key, label, ...rest], opts = {}) {
         tpls.map(t => el("option", { value: t.id, ...(t.id === newTpl ? { selected: "" } : {}) }, "⭐ " + personTitle(t)))) : null;
       const others = all.filter(p => p !== me).map(p => el("div", { class: "row person-row", "data-person-row": p.id }, [
         el("span", { class: "person-name" }, mark(p)), el("span", { class: "hint person-where" }, personWhere(p)),
-        // (ticket 802) 🏠 stays in their square, or 🤝 on the team: they go where the friend goes
+        // (ticket 802) 🤝 follows team, a toggle: pressed, they go where the friend goes; not, they stay in their square
+        // (Matthew 2026-11-21: "'stays' should say 'follows team'")
         el("button", { class: "person-team", "aria-pressed": String(!!p.team), ...(p.team || here ? {} : { disabled: "" }),
-          title: p.team ? "On the team: they go where the friend goes. Press to have them stay here" : here ? "Stays in their square. Press to have them join the team and go where the friend goes" : "Go to a place first: the team goes from there",
-          onclick: () => teamJoin(p.id, !p.team) }, p.team ? "🤝 on the team" : "🏠 stays"),
+          title: p.team ? "Follows the team: they go where the friend goes. Press again and they stay where they are now" : here ? "Press, and they follow the team: they go where the friend goes. Not pressed, they stay in their square" : "Go to a place first: the team goes from there",
+          onclick: () => teamJoin(p.id, !p.team) }, p.team ? "🤝 follows team ✓" : "🤝 follows team"),
         ...(p.team ? [] : [el("button", { class: "person-here", ...(here ? {} : { disabled: "" }), title: here ? "Put them here, beside the friend" : "Go to a place first: they stand in places", onclick: () => personPlace(p.id, personAside(here, p.id)) }, "📍 here")]),
         ...(p.place && !p.team ? [el("button", { class: "person-out", title: "Take them out of the places (they stay in the list)", onclick: () => personPlace(p.id, null) }, "✖ out")] : []),
         // (ticket 599) a path to walk where they stand, looped: its box opened below their row

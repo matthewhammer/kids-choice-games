@@ -2187,7 +2187,7 @@ function personPlace(id, at) { const P = state.peopleAway[id]; if (P) { P.place 
 function personDrop(id) { if (!state.peopleAway[id]) return false; delete state.peopleAway[id]; for (const P of peopleAll()) if (P.from === id) P.from = null; changed(); return true; }
 // Where a person stands, said: the world (when another), the square's place and name
 function personWhere(P) {
-  if (P.team) return "🤝 on the team: where " + personTitle(state.person) + " goes";
+  if (P.team) return "🤝 follows team: where " + personTitle(state.person) + " goes";
   if (!P.place) return "not in any place";
   const W = worldById(P.place.world), c = W && W.cells[P.place.key];
   const nm = worldName(W, P.place.key);
