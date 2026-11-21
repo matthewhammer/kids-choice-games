@@ -148,6 +148,18 @@ window.__courseRun = async (opts = {}) => {   // (opts.only: "variations", the t
       const got = await until(() => !flight && state.world.planet === "zib" && settled(), 25000); await w(600); s = look();
       ok("🪐 zib tapped in the quilt: flown to, down, and into the planet, on its surface, riding", got && s.kind === "alienplanet" && s.rocket === "ride" && same(s.acts, ["blast", "fly", "out"]), s);
       aboard("zib, landed on from the quilt", s, s.team.length);
+      // (Matthew 2026-11-21: "does the default outer space world have a black hole into the cat world? I don't see it on the quilt
+      // view") 🕳️ in outer space's corner: on the quilt, and tapped there, fallen into, out in the other universe
+      s = await trip("the quilt: 🚀 blast off from zib", "blast", () => !!state.world.space, { outOf: true });
+      rocketUp(); await until(() => !!flight, 6000);
+      flight.want = 1; flyGo(); await until(() => flight && flight.h > 0.97, 8000); await w(400);
+      const hole = document.querySelector('#fly .fly-planet[data-planet="blackhole"] .fly-glow'), u0 = state.background.universe || "people";
+      ok("the quilt over outer space: 🕳️ the black hole there to tap", !!hole, [...document.querySelectorAll("#fly .fly-planet")].map(g => g.dataset.planet));
+      if (hole) {
+        hole.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, button: 0 }));
+        const got = await until(() => !flight && state.background.kind === "blackhole" && (state.background.universe || "people") !== u0 && settled(), 25000); await w(600); s = look();
+        ok("🕳️ the black hole tapped in the quilt: flown to, fallen into, out in the other universe", got, { u0, u: state.background.universe, s });
+      }
     }
   } catch (e) { ok("the course ran to its end", false, String(e && e.stack || e)); }
   C.done = true;

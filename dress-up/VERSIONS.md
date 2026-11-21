@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.525 (2026-11-21)
+
+Everything in 0.0.524, plus:
+
+- **🕳️ A black hole in outer space** (Matthew: "does the default outer space world have a black hole into the cat world? I don't see it on the quilt view"). Outer space's far corner square (E4) is the black hole: fly there by the nav arrows, or tap it on the quilt (it glows, as the planets do) and the rocket flies across, comes down and falls in, out in the other universe (🐱 the cats', or back to the people's). Outer space made before this gets it too. In the speed run's space course.
+
 ## 0.0.524 (2026-11-21)
 
 Everything in 0.0.523, plus:

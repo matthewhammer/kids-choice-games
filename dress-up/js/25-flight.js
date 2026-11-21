@@ -270,7 +270,10 @@ const FLY_LOOKS = {
   // (the alien planet from above: its violet ground, glowing pools, crystals)
   alienplanet: (k, o) => flyRect(0, 0, FT, FT, "#5b3f8f") + [0, 1, 2].map(i => flyC(120 + 260 * i, 200 + 140 * flyR(k, i), 40, "#7ef9ff80")).join("") + [0, 1, 2, 3].map(i => flyC(80 + 200 * i, 560 - 90 * flyR(k, 10 + i), 22, "#ff9bf0")).join(""),
   // (ticket 800: the black hole from above: its disk round a black middle)
-  blackhole: (k, o) => flyRect(0, 0, FT, FT, "#070a1c") + flyC(FT / 2, FT / 2, 170, o.universe === "cats" ? "#ff6fae" : "#ff7a1a") + flyC(FT / 2, FT / 2, 120, "#ffd166") + flyC(FT / 2, FT / 2, 95, "#000000"),
+  // (in outer space's grid, SPACE_HOLE: a way in from the quilt, as its planets are, its name under it)
+  blackhole: (k, o, cell = {}) => { const disk = flyC(FT / 2, FT / 2, 170, o.universe === "cats" ? "#ff6fae" : "#ff7a1a") + flyC(FT / 2, FT / 2, 120, "#ffd166") + flyC(FT / 2, FT / 2, 95, "#000000");
+    return flyRect(0, 0, FT, FT, "#070a1c") + (!cell.spaceHole ? disk : `<g class="fly-planet" data-planet="blackhole" data-key="${k}"><title>🕳️ Into the black hole: out in the ${o.universe === "cats" ? "people's" : "cats'"} universe</title>` +
+      flyC(FT / 2, FT / 2, 205, "#ffe9a0", ` class="fly-glow"`) + disk + `<text x="${FT / 2}" y="${FT / 2 + 170 + 70}" font-size="64" text-anchor="middle" fill="#fff8e0" font-family="system-ui, sans-serif">🕳️ black hole</text></g>`); },
   // (ticket 812, Matthew 2026-11-21: "the quilt squares for space don't show the position of any planets?") each square's own planet
   // (its cell's, in outer space's grid; else the place's), where it is in the square, big, lit from the upper left, ringed if it has
   // a ring; and in outer space, its name under it (🏡 home, the start world)
@@ -635,8 +638,11 @@ function flightLand(now = false) {
   else if (key !== W.at) worldEnter(key, null, false);
   flyHudShow();
   changed();
-  // (a planet tapped in the quilt: down into its square of space, then on, into the planet; 🏡 home's, home)
-  if (then) setTimeout(() => { if (!flight && !entering) { if (then.pid === "home") spaceHome(); else landOn(then.pid); } }, 350);
+  // (a planet tapped in the quilt: down into its square of space, then on, into the planet; 🏡 home's, home; the black hole's, falling in)
+  if (then) setTimeout(() => { if (flight || entering) return;
+    if (then.pid === "home") spaceHome();
+    else if (then.pid === "blackhole") { const hole = document.querySelector("#bg .portal[data-blackhole]"); if (hole) blackHoleEnter(hole); }   // (falling in)
+    else landOn(then.pid); }, 350);
 }
 // (Matthew 2026-11-21: "we should permit the user to hover over the planets in the quilt mode and go to surface directly") a planet
 // tapped, flying over outer space: across to its square at the height they are, then down, then into the planet (flightLand)

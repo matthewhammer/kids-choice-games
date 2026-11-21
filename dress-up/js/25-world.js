@@ -2720,7 +2720,9 @@ function rocketOutSync() {
 // square to square by the nav arrows, 🪐 land on the planet of the square they are in (or tap it), ⏏️ step out (the rocket hovers
 // beside them) and walk about as a team, 🚀 board again, blast off, on to the next planet, or 🏡 home to the square they left.
 // Each a rocket's trip (rocketFly): lift-off, and the landing from above.
-const SPACE_COLS = 5, SPACE_ROWS = 4, SPACE_HOME = "0,2", SPACE_ARRIVE = { figX: -170, figY: 40 };   // (come down in space left of the middle: its planet on the right)
+// (Matthew 2026-11-21: "does the default outer space world have a black hole into the cat world? I don't see it on the quilt view")
+// and in its far corner, 🕳️ the black hole (SPACE_HOLE): fall in, and out of the other universe's
+const SPACE_COLS = 5, SPACE_ROWS = 4, SPACE_HOME = "0,2", SPACE_HOLE = "4,3", SPACE_ARRIVE = { figX: -170, figY: 40 };   // (come down in space left of the middle: its planet on the right)
 const SPACE_WORLD_PLANETS = [
   { id: "zib", name: "👾 Zib", look: "ringed", sky: "dusk", at: "2,0", people: 2, cols: 3, rows: 2 },
   { id: "pyra", name: "🌋 Pyra", look: "lava", sky: "gold", at: "4,1", people: 1, cols: 3, rows: 2 },
@@ -2733,6 +2735,9 @@ function spaceEnsure() {
   const all = spaceWorlds(), had = all.find(w => w.space);
   if (had) {   // (planets made before each square had a look of its own: given theirs)
     for (const w of all) if (w.planet) for (const k of Object.keys(w.cells)) if (!w.cells[k].alienSeed) { const [c, r] = k.split(",").map(Number); w.cells[k].alienSeed = spaceSeedOf(w.planet, c, r); }
+    // (outer space made before it had 🕳️ the black hole: given it, in its corner, unless a planet is there)
+    const hc = had.cells[SPACE_HOLE];
+    if (hc && !hc.planet && !Object.values(had.cells).some(c => c.kind === "blackhole")) Object.assign(hc, { kind: "blackhole", spaceHole: true });
     return had;
   }
   let n = Math.max(0, ...all.map(worldNum));
@@ -2740,6 +2745,7 @@ function spaceEnsure() {
   for (let r = 0; r < SPACE_ROWS; r++) for (let c = 0; c < SPACE_COLS; c++)
     S.cells[`${c},${r}`] = { kind: "starfield", ways: [], things: [], spaceSeed: 3 + 7 * (r * SPACE_COLS + c), spacePlanet: "none", spaceMoons: 0 };
   Object.assign(S.cells[SPACE_HOME], { spacePlanet: "ocean", spacePlanetSize: 46, spacePlanetX: 78, spaceMoons: 1, planet: "home" });
+  Object.assign(S.cells[SPACE_HOLE], { kind: "blackhole", spaceHole: true });
   for (const P of SPACE_WORLD_PLANETS) {
     Object.assign(S.cells[P.at], { spacePlanet: P.look, spacePlanetSize: 52, spacePlanetX: 78, spaceMoons: 2, planet: P.id });
     const W = { id: "w" + (++n), name: P.name, planet: P.id, cols: P.cols, rows: P.rows, cells: {}, start: "0,0", at: "0,0" };
