@@ -1,0 +1,56 @@
+# (never merged) Ticket 810's fix confirmed: 💭 our imagination before (dress-up-0.0.529) and after (0.0.530, this branch) on the
+# same computer, eight jobs, at the computer's own speed and with Chrome's CPU slowed four times (any computer then as slow as
+# GitHub's slowest); the speed run's walk (tools/audit160.mjs), three runs a place; before, after, after, before at each speed.
+name: Dress Up diagnostic (imagination, 0.0.529 against 0.0.530)
+on:
+  push:
+    branches: ['diag-530b']
+jobs:
+  pair:
+    name: Before and after (${{ matrix.job }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [r1, r2, r3, r4, r5, r6, r7, r8]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: after
+      - uses: actions/checkout@v4
+        with:
+          ref: dress-up-0.0.529
+          path: before
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The runner; serve both
+        run: |
+          mkdir -p out
+          { echo "job: ${{ matrix.job }}"; lscpu | grep -E 'Model name|^CPU\(s\)'; } | tee out/runner.txt
+          (cd before && python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          (cd after && python3 -m http.server 8134 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          for i in $(seq 30); do curl -sf http://127.0.0.1:8133/dress-up/index.html > /dev/null && curl -sf http://127.0.0.1:8134/dress-up/index.html > /dev/null && break; sleep 1; done
+      - name: Before, after, after, before, at each speed
+        continue-on-error: true
+        shell: bash
+        run: |
+          PLACES=emptyroom,bubbleroom,imagination,forest
+          chrome() { pkill -f "remote-debugging-port=9333" || true; sleep 2
+            (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check --remote-debugging-port=9333 --remote-allow-origins='*' \
+              --user-data-dir="$RUNNER_TEMP/chrome-$1" about:blank > "$RUNNER_TEMP/chrome-$1.log" 2>&1 &)
+            for i in $(seq 30); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done; }
+          for cpu in 1 4; do
+            for step in before:8133:1 after:8134:1 after:8134:2 before:8133:2; do
+              IFS=: read side port pass <<< "$step"
+              chrome "$side-$pass-cpu$cpu"
+              echo "== $side, pass $pass, CPU x$cpu" | tee -a out/all.txt
+              CPU=$cpu RUNS=3 OUT=out/$side-$pass-cpu$cpu.json timeout 900 node after/tools/audit160.mjs 9333 "http://127.0.0.1:$port/dress-up/index.html#inspect" "$PLACES" | tee -a out/all.txt
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diag530b-${{ matrix.job }}
+          path: out/
