@@ -1,0 +1,55 @@
+# (never merged) Ticket 810: 🫧 the bubble room with 4 bubble makers walked at 59.3 fps in 0.0.511's speed run and at 49 to 55
+# since 0.0.519 (the same runner image), every other place of the gate unchanged. Which version between them did it? Eight
+# jobs, each serving 0.0.511 to 0.0.519 and main (0.0.530), one port each, and running the gate's bubbleroom4 case (walk and
+# drag, three runs, no retry) on each, a fresh Chrome each time: up the versions, then down them (time in a job reads lower).
+name: Dress Up diagnostic (the bubble room, 0.0.511 to 0.0.519)
+on:
+  push:
+    branches: ['diag-810']
+jobs:
+  bisect:
+    name: The versions (${{ matrix.job }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [r1, r2, r3, r4, r5, r6, r7, r8]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The runner; each version served on its own port
+        run: |
+          mkdir -p out
+          { echo "job: ${{ matrix.job }}"; lscpu | grep -E 'Model name|^CPU\(s\)'; } | tee out/runner.txt
+          cd main && git fetch -q --tags origin
+          for v in 511 512 513 514 515 516 517 518 519; do git worktree add -q ../v$v dress-up-0.0.$v; done
+          cd ..
+          for v in 511 512 513 514 515 516 517 518 519; do (cd v$v && python3 -m http.server 8$v --bind 127.0.0.1 > /dev/null 2>&1 &); done
+          (cd main && python3 -m http.server 8530 --bind 127.0.0.1 > /dev/null 2>&1 &)
+          for v in 511 512 513 514 515 516 517 518 519 530; do for i in $(seq 30); do curl -sf http://127.0.0.1:8$v/dress-up/index.html > /dev/null && break; sleep 1; done; done
+          grep -ho 'number: "[0-9.]*"' v5*/dress-up/js/01-state.js main/dress-up/js/01-state.js | tr '\n' ' '
+      - name: Up the versions, then down them
+        continue-on-error: true
+        shell: bash
+        run: |
+          chrome() { pkill -f "remote-debugging-port=9333" || true; sleep 2
+            (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check --remote-debugging-port=9333 --remote-allow-origins='*' \
+              --user-data-dir="$RUNNER_TEMP/chrome-$1" about:blank > "$RUNNER_TEMP/chrome-$1.log" 2>&1 &)
+            for i in $(seq 30); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done; }
+          for step in 511:1 512:1 513:1 514:1 515:1 516:1 517:1 518:1 519:1 530:1 530:2 519:2 518:2 517:2 516:2 515:2 514:2 513:2 512:2 511:2; do
+            IFS=: read v pass <<< "$step"
+            chrome "$v-$pass"
+            echo "== 0.0.$v, pass $pass" | tee -a out/all.txt
+            RETRIES=0 W=1920 H=1080 OUT=out/v$v-$pass.json timeout 300 node main/tools/fpsgate.mjs 9333 "http://127.0.0.1:8$v/dress-up/index.html#inspect" bubbleroom4 | tee -a out/all.txt
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diag810-${{ matrix.job }}
+          path: out/
