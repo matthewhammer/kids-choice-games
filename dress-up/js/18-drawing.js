@@ -391,7 +391,13 @@ function drawNow() {
   // The frame grows to hold it.
   const rocketMode = !horseView && (B.rocket || "none") !== "none" && !sitting && B.pose !== "lie" && !(move && (move.water || move.ladder != null || move.squash || move.rot)) ? B.rocket : null;
   const rocketFh = ground - friendFrame.top, rocketH = 1.5 * rocketFh, rocketX = rocketMode === "hover" ? ((dir || 1) > 0 ? -1 : 1) * rocketFh * 0.62 : 0;
-  if (rocketMode) { left = Math.min(left, -(Math.abs(rocketX) + rocketH * 0.4 + 20)); top = Math.min(top, ground - rocketH - rocketFh * 0.3); }
+  // (^ticket(820), 2026-11-21: the archive's clip audit found Scorpio's tail 100 above the frame, and riding, the flame 49 below it)
+  // and the rocket's own reach: a sign's motif over its nose (Scorpio's tail and its stroke to 1.26 of the rocket's height, Sagittarius's arrow
+  // and Capricorn's horns to 1.07), its flame 0.11 of it below the nozzle's foot, which is 0.12 of the friend's height over the
+  // ground hovering, 0.02 riding (rocketShell's, lifted); and the bob, 0.04 up
+  if (rocketMode) { const rkReach = { scorpio: 1.26, sagittarius: 1.07, capricorn: 1.07 }[B.rocketStyle] || 1, foot = ground - rocketFh * (rocketMode === "hover" ? 0.12 : 0.02);
+    left = Math.min(left, -(Math.abs(rocketX) + rocketH * 0.4 + 20)); top = Math.min(top, ground - rocketH - rocketFh * 0.3, foot - rocketH * rkReach - rocketFh * 0.04 - 12);
+    bottom = Math.max(bottom, foot + rocketH * 0.11 + 12); }
   // A background is a stage of its own, the same whatever the figure
   // (SCENE): the frame the usual figure gets in a scene. The figure stands
   // on its ground by its feet, at its size and where it was dragged, so

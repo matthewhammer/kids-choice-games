@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.532 (2026-11-21)
+
+Everything in 0.0.531, plus:
+
+- **The rocket whole in its picture** (ticket 820; found by the archive's clip audit, ticket 818). In the dress-up view, with no background, the frame grows to hold the rocket, but it held only the rocket's body: ♏ Scorpio's tail curls 100 above its nose, out of the picture, and riding, the flame under the nozzle hung 49 below it. The frame now holds each sign's motif over the nose (Scorpio's tail, Sagittarius's arrow, Capricorn's horns), the flame below, and the bob.
+
 ## 0.0.531 (2026-11-21)
 
 Everything in 0.0.530, plus:
