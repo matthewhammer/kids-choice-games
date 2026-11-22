@@ -4,6 +4,12 @@ Each version lists the game's features as of that version. The newest version is
 
 ## Unreleased
 
+## 0.0.531 (2026-11-21)
+
+Everything in 0.0.530, plus:
+
+- **The archive's pictures the same from run to run** (ticket 818). A picture held still (holdStill, used by the dress-up-pictures archive, never in play) still read two moving things: each LFO's start from the picture's clock, which ran on a few ms on a slow computer, and the tempo of whatever tune the last scene had started. Held still, the gap between the picture's clock and the music's is now none, and an LFO keeps the settings' own tune. The walk's and the dance's sway now read the picture's clock too (the same as the page's in play). Two archive runs of 0.0.530 differed in 48 pictures for these reasons; the game plays as before.
+
 ## 0.0.530 (2026-11-21)
 
 Everything in 0.0.529, plus:

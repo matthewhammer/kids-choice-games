@@ -1628,7 +1628,7 @@ function topDownSvg(S, B, g, H) {
   const shoe = suit ? C.fur : footStyle === "bare" || footStyle === "human" ? skin : hex(S.shoes.color, "#5a3a1e");
   const seen = visibility(), V = (part, svg) => !svg || seen[part] >= 1 ? svg : seen[part] <= 0 ? "" : `<g opacity="${seen[part].toFixed(2)}">${svg}</g>`;
   const view = B.facing === "left" ? -1 : B.facing === "right" ? 1 : B.facing === "back" || B.facing === "away" ? 2 : 0, side = view === -1 || view === 1;
-  const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(performance.now() / 1000 * Math.PI * 2 * (B.anim === "run" ? 3.2 : 2.4)) : 0;
+  const walking = B.anim === "walk" || B.anim === "run", ph = walking ? Math.sin(picClock() * Math.PI * 2 * (B.anim === "run" ? 3.2 : 2.4)) : 0;
   const lw = f1(Math.max(1.5, 0.012 * H)), ln = c => darker(c), F = c => `fill="${c}" stroke="${ln(c)}" stroke-width="${lw}"`;
   // (ticket 624, Matthew: "Zelda versions of each pose we have") the posture from above: what the pose or the animation does to the
   // body seen from high up: lowered (sitting, crouching, cross-legged: sink), the legs forward or crossed, the arms up (dancing, in
@@ -1686,7 +1686,7 @@ function topDownSvg(S, B, g, H) {
   const bw = (side ? 0.15 : 0.19) * H * Math.max(0.8, Math.min(1.4, (SH.width ?? 100) / 100)), armEnd = hip + 0.03 * H * (armF - 1);
   const sleeve = SH.style === "tank" ? 0 : SH.style === "long" || suit ? 1 : 0.45;
   const lifting = (typeof carry !== "undefined" && !!carry) || (typeof presenting !== "undefined" && !!presenting);   // (ticket 629: holding a pot overhead, both arms up to it; ticket 631: holding up what a chest gave)
-  const danceUp = posture === "dance" ? Math.sin(performance.now() / 1000 * Math.PI * 2 * 1.2) : 0;
+  const danceUp = posture === "dance" ? Math.sin(picClock() * Math.PI * 2 * 1.2) : 0;
   const arm = (x, swing) => { if (lifting) { swing = 0; } const sx = Math.sign(x || 1);
     const raised = lifting || (posture === "dance" && sx * danceUp > 0) || posture === "crawl";
     let ex = raised ? sx * 0.07 * H : x + swing * 0.3, ey = raised ? hy - hr * 1.05 : armEnd + swing;

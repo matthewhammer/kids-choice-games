@@ -670,6 +670,9 @@ const PIC_GAP_SLACK = 0.25, PIC_GAP_FRESH = 40;
 let picGap = null, picDragging = false;
 const frameAge = () => { const t = document.timeline && document.timeline.currentTime; return typeof t === "number" ? performance.now() - t : 0; };
 function picGapNow() {
+  // (^ticket(818), 2026-11-21) held still, the picture's clock and the music's both stand at stillAt: no gap, however long
+  // the frame (it was read from the picture's clock, which ran a few ms on a slow computer, so each LFO's begin moved a step)
+  if (stillAt !== null) return (picGap = 0);
   const pic = document.getElementById("pic"), now = pic && pic.getCurrentTime ? pic.getCurrentTime() : 0, g = now - musicSeconds();
   if (picGap === null || (Math.abs(g - picGap) > PIC_GAP_SLACK && !picDragging && frameAge() < PIC_GAP_FRESH)) picGap = g;
   return picGap;

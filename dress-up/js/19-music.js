@@ -2022,9 +2022,11 @@ function visLfo(g) { return lfoNow(state.visible["lfo_" + g]); }
 // with the music while it plays (else at the tune's tempo). Null for none.
 function lfoNow(L) {
   if (!LFO_NAMES.includes(L)) return null;
-  const id = (playing && playing.id) || tuneOf(), song = id ? songOf(id) : null;
+  // (^ticket(818), 2026-11-21) held still, the settings' own tune, never one still playing from before (the archive's
+  // pictures took the tempo of whatever the last scene had started, so an unchanged drawing changed from run to run)
+  const held = stillAt !== null, id = (!held && playing && playing.id) || tuneOf(), song = id ? songOf(id) : null;
   const T = song ? song.T : { bpm: 100, lfos: {} }, o = song ? lfoOf(id, T, L) : LFO_DEFAULT[L];
-  const sd = playing ? playing.sd : tunedStep(T), steps = o.beats * 4;
+  const sd = playing && !held ? playing.sd : tunedStep(T), steps = o.beats * 4;
   // (ticket 274) where the LFOs are (a walk's step, treading water, the scene's swaying): the picture's clock unless a
   // tune sounds, and held still, the picture's clock whatever plays
   const nowStep = stillAt === null && playing && typeof audio !== "undefined" && audio ? playing.s0 + (audio.currentTime - playing.t0) / playing.sd : picClock() / sd;
