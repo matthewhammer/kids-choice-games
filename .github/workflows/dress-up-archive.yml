@@ -63,11 +63,12 @@ jobs:
           node "$RUNNER_TEMP/arch/tools/archive.mjs" 9333 "file://$RUNNER_TEMP/game/dress-up/index.html" \
             "$RUNNER_TEMP/arch/pictures" "$RUN" "$RUNNER_TEMP/source.json" | tee out/archive.txt
       # (ticket 455, after ticket 454) the run's pictures audited: the friend against each picture's frame (tools/clip_audit.mjs)
+      # (ticket 818) the tool kept in dress-up-pictures' tools/ since 2026-11-21, so a branch cut from main finds it
       - name: The friend against each picture's frame (ticket 454's audit)
         continue-on-error: true
         shell: bash
         run: |
-          node tools/clip_audit.mjs 9333 "$RUNNER_TEMP/arch/pictures" out/clip.json | tee out/clip.txt
+          node "$RUNNER_TEMP/arch/tools/clip_audit.mjs" 9333 "$RUNNER_TEMP/arch/pictures" out/clip.json | tee out/clip.txt
           { echo "clip audit:"; tail -2 out/clip.txt; } >> "$GITHUB_STEP_SUMMARY"
       - name: Against the run before (what git will store)
         shell: bash
