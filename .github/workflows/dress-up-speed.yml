@@ -58,6 +58,7 @@ jobs:
       - name: Serve the game; start Chrome, muted
         run: |
           mkdir -p out
+          lscpu | grep -E 'Model name|^CPU\(s\)' | tee out/runner.txt   # (ticket 810: which computer GitHub gave, as the frame rates depend on it)
           (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
           (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
             --remote-debugging-port=9333 --remote-allow-origins='*' \
@@ -78,6 +79,19 @@ jobs:
             node "$f" 9333 "$PAGE" | tee "out/checks/$(basename "$f" .mjs).txt" || s=1
           done
           exit $s
+      # (ticket 810, 2026-11-21) The gate in a Chrome of its own, as the audit has (f948378): after the checks, about 90 minutes
+      # in the same Chrome, 🫧 the bubble room with 4 makers walked at 49 to 55 fps in every run since 0.0.520, while measured
+      # alone, a fresh Chrome each time, it ran at 60 with its scenery moving on eight runners (EPYC 7763, Xeon Platinum and
+      # 6975P-C, EPYC 9V45) and on every version from 0.0.511 to 0.0.530 alike (diag-810, run 44965087155). 0.0.511 passed only
+      # because the game held its scenery still that time. The old Chrome was slow, not the game.
+      - name: A fresh Chrome for the gate
+        shell: bash
+        run: |
+          pkill -f "remote-debugging-port=9333" || true; sleep 2
+          (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
+            --remote-debugging-port=9333 --remote-allow-origins='*' \
+            --user-data-dir="$RUNNER_TEMP/chrome-gate" about:blank > "$RUNNER_TEMP/chrome-gate.log" 2>&1 &)
+          for i in $(seq 60); do curl -sf http://127.0.0.1:9333/json/version > /dev/null && break; sleep 1; done
       - name: The frame-rate gate (ticket 152)
         id: gate
         continue-on-error: true
@@ -125,6 +139,7 @@ jobs:
       - name: Serve the game; start Chrome, muted
         run: |
           mkdir -p out
+          lscpu | grep -E 'Model name|^CPU\(s\)' | tee out/runner.txt   # (ticket 810: which computer GitHub gave, as the frame rates depend on it)
           (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
           (google-chrome --headless=new --mute-audio --no-first-run --no-default-browser-check \
             --remote-debugging-port=9333 --remote-allow-origins='*' \
@@ -166,6 +181,7 @@ jobs:
       - name: Serve the game
         run: |
           mkdir -p out
+          lscpu | grep -E 'Model name|^CPU\(s\)' | tee out/runner.txt   # (ticket 810: which computer GitHub gave, as the frame rates depend on it)
           (python3 -m http.server 8133 --bind 127.0.0.1 > /dev/null 2>&1 &)
           for i in $(seq 30); do curl -sf "$PAGE" > /dev/null && break; sleep 1; done
       - name: After rounds of changes; then the caches emptied, the music paused, a reload
